@@ -1,0 +1,5 @@
+Geography: Natural Earth, public-domain map data.
+Terms: https://www.naturalearthdata.com/about/terms-of-use/
+Source revision: ca96624a56bd078437bca8184e78163e5039ad19
+Pixel projection, terrain coloring, clouds, lighting, and stars: Pixel World.
+Terrain colors and cloud patterns are decorative, not measured land cover or weather.

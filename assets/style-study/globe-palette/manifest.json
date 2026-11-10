@@ -1,0 +1,41 @@
+{
+  "purpose": "Style study: Ninja Adventure tiles remapped to the globe palette",
+  "license": "CC0-1.0 (see ../ninja-adventure/LICENSE.txt)",
+  "generator": "scripts/art/recolor_style_study.py",
+  "palette": {
+    "#ADBC3A": "#8AC240",
+    "#91AE45": "#7DB443",
+    "#A8A129": "#74AC3D",
+    "#74A334": "#5E9F40",
+    "#4A8526": "#428C38",
+    "#56864C": "#3F7E42",
+    "#4A7F4B": "#337A40",
+    "#7A7A3E": "#4F7039",
+    "#546626": "#2F5E33",
+    "#D4F5FA": "#CDEBF2",
+    "#8FEFF1": "#62C3DA",
+    "#71DDEE": "#40A8C4",
+    "#79B8CE": "#3793C2",
+    "#54A0BF": "#2E7FB8"
+  },
+  "files": {
+    "floor.png": {
+      "source": "../ninja-adventure/floor.png",
+      "changedPixels": 15890,
+      "bytes": 27933,
+      "sha256": "e95125fa180e099cf04952937eae04f3a47cafc05529b209623227f9385a78fc"
+    },
+    "water.png": {
+      "source": "../ninja-adventure/water.png",
+      "changedPixels": 20479,
+      "bytes": 22604,
+      "sha256": "3471f4f5d95f9c160d01ab2aa33b6eecf5571a4f9b93493a9626c8611f6e7310"
+    },
+    "nature.png": {
+      "source": "../ninja-adventure/nature.png",
+      "changedPixels": 16602,
+      "bytes": 41309,
+      "sha256": "de99dfedc3a76b87a1894349003266c03162441d240e6c2a839817652c2e7eed"
+    }
+  }
+}

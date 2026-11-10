@@ -1,0 +1,64 @@
+{
+  "purpose": "P2-06 style study only; not yet adopted art",
+  "pack": "Ninja Adventure - Asset Pack",
+  "authors": [
+    "Pixel-boy",
+    "AAA"
+  ],
+  "page": "https://pixel-boy.itch.io/ninja-adventure-asset-pack",
+  "license": "CC0-1.0 (LICENSE.txt in pack)",
+  "archive": {
+    "name": "Ninja Adventure - Asset Pack.zip",
+    "itchUploadId": 16981275,
+    "bytes": 94022790,
+    "sha256": "95a06f4fdcfd1882f061a45ff313b7c905dbe2de1e8512b281d7937df62a7b15"
+  },
+  "retrieved": "2026-11-10",
+  "files": {
+    "floor.png": {
+      "source": "Backgrounds/Tilesets/TilesetFloor.png",
+      "bytes": 29615,
+      "sha256": "e111065065edf806e7e893330086e68efc8755175d92f14d087b42d40a331e16"
+    },
+    "water.png": {
+      "source": "Backgrounds/Tilesets/TilesetWater.png",
+      "bytes": 23565,
+      "sha256": "927e1fa1e793bb0398fdaad40cea22792c20f66703cdba80fb9462df7cbc275c"
+    },
+    "house.png": {
+      "source": "Backgrounds/Tilesets/TilesetHouse.png",
+      "bytes": 58356,
+      "sha256": "acdec09ff389883a48af18ebd344cac4081db0388154d4d13be0089cd376d508"
+    },
+    "nature.png": {
+      "source": "Backgrounds/Tilesets/TilesetNature.png",
+      "bytes": 43359,
+      "sha256": "51eedd957ad4ac88988d170aa83a42404ef8fdebff9e6753b6fe80841ab3d5bb"
+    },
+    "inspector.png": {
+      "source": "Actor/Character/Inspector/SpriteSheet.png",
+      "bytes": 5772,
+      "sha256": "b9d23e8f4bc653533ddbaa3a9c68cd9ad0bb9755cba1fa6985aeba7a1d3337e7"
+    },
+    "villager.png": {
+      "source": "Actor/Character/Villager4/SpriteSheet.png",
+      "bytes": 5700,
+      "sha256": "98c376de5e7145e0389781da6a99efb826a0208b456e8becffa94b63990195ee"
+    },
+    "boat.png": {
+      "source": "Backgrounds/Vehicles/Boat.png",
+      "bytes": 771,
+      "sha256": "87642e5a489aafe552946319a42413cf4858c126900635822febaad88831435a"
+    },
+    "panel.png": {
+      "source": "Ui/Theme/Theme Wood/nine_path_panel_3.png",
+      "bytes": 237,
+      "sha256": "afa9a0224448a30cbeed4599859dcc7e8bb52201fd28993c2da5b69ffaf25c2f"
+    },
+    "normal-font.ttf": {
+      "source": "Ui/Font/NormalFont.ttf",
+      "bytes": 20944,
+      "sha256": "94c5cf42f93abf4f94781055bce1c337cb96ef9fc2954dcd6b05669d25ac4e03"
+    }
+  }
+}

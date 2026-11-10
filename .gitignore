@@ -8,6 +8,14 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+/public/canvaskit.wasm
+/.cache/geography/
+/.cache/osm/
+/.venv/
+
+# Python
+__pycache__/
+*.py[cod]
 
 # Native
 .kotlin/

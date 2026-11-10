@@ -1,6 +1,5 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://unistyl.es/), etc.
+ * Shared game palette and layout tokens for native and web screens.
  */
 
 import '@/global.css';
@@ -9,22 +8,38 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#233C31',
+    background: '#F5F3E8',
+    backgroundElement: '#FFFEF8',
+    backgroundSelected: '#DFE8D4',
+    textSecondary: '#626B60',
+    accent: '#2E6347',
+    textOnAccent: '#FFFEF8',
+    border: '#D4DACB',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#EAF1DF',
+    background: '#111F1A',
+    backgroundElement: '#192B23',
+    backgroundSelected: '#2A4431',
+    textSecondary: '#B2C2AF',
+    accent: '#A8D59A',
+    textOnAccent: '#111F1A',
+    border: '#365043',
   },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+
+export const WorldColors = {
+  space: '#090D16',
+} as const;
+
+/** Pixelify Sans (OFL 1.1), loaded once by the root layout. Font names, not CSS stacks. */
+export const PixelFonts = {
+  regular: 'PixelifySans_400Regular',
+  bold: 'PixelifySans_700Bold',
+} as const;
 
 export const Fonts = Platform.select({
   ios: {
@@ -44,10 +59,10 @@ export const Fonts = Platform.select({
     mono: 'monospace',
   },
   web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
+    sans: 'var(--font-display, system-ui)',
+    serif: 'var(--font-serif, serif)',
+    rounded: 'var(--font-rounded, system-ui)',
+    mono: 'var(--font-mono, monospace)',
   },
 });
 
