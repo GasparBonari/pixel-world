@@ -7,7 +7,8 @@ Writes assets/world/map-icons.png (icons from scripts/art/sprites.py) and src/da
           north-up globe). dx/dy are offsets in icon pixels, so groups keep their shape on screen.
 
 Placements (ART_CONTRACT.md):
-  - mountains: 1-10 per Natural Earth range (scalerank <= 4);
+  - mountains: 1-4 per Natural Earth range (scalerank <= 4), about one per 220,000 km2,
+    peaks at least 550 km apart across all ranges; Antarctic ranges use the glacier icon;
   - each continent's flora and landforms: the curated habitat regions in
     scripts/geography/scenery.json (oak, olive, acacia, baobab, bamboo, eucalyptus, cactus...);
   - animals: that file's sourced anchors (deer, elephant, panda, bison, jaguar, kangaroo,
@@ -31,6 +32,8 @@ REGIONS = ROOT / ".cache" / "geography" / "regions-10m.source"
 REGIONS_SHA256 = "b7b26e50ea917d3696aec87f932def2bf5f890f5770e441d59c162c6f4c92a77"
 SCENERY = ROOT / "scripts" / "geography" / "scenery.json"
 GLOBE = ROOT / "assets" / "world" / "globe.png"
+BOARD = ROOT / "assets" / "world" / "board.png"
+COUNTRIES = ROOT / ".cache" / "geography" / "countries-50m.source"
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
 GRID = 0.25  # degrees per placement-grid cell
@@ -54,6 +57,9 @@ GROUPING = {
     "eucalyptus": "pair", "bamboo": "pair", "fern": "pair", "grass": "triple",
 }
 LANDFORMS = {"dune", "red-rock", "volcano", "glacier", "iceberg"}
+# Extra animals per species beyond the curated anchors: (count, search radius in degrees around
+# the anchors). Tight radii keep island and mountain species (kiwi, panda) in their small ranges.
+EXTRA_WILDLIFE = {"panda": (1, 3.0), "kiwi": (1, 2.5), "orangutan": (1, 3.0)}
 
 
 def frame_index(kind, seed):
@@ -93,6 +99,13 @@ def main():
     scenery = json.loads(SCENERY.read_text())
     width, height = int(360 / GRID), int(180 / GRID)
     land = Image.open(GLOBE).getchannel("R").resize((width, height), Image.BOX).load()
+    # Continent of each cell, from the board texture's country index (Natural Earth CONTINENT).
+    continents = [f["properties"]["CONTINENT"] for f in json.loads(COUNTRIES.read_bytes())["features"]]
+    country = Image.open(BOARD).getchannel("R").resize((width, height), Image.NEAREST).load()
+
+    def continent_at(x, y):
+        index = country[x % width, y]
+        return continents[index - 1] if index else None
 
     def cell_center(x, y):
         return -180 + (x + 0.5) * GRID, 90 - (y + 0.5) * GRID
@@ -112,13 +125,39 @@ def main():
             icons.append([frame_index(kind, seed + i), round(lon, 4), round(lat, 4), dx, dy])
         placed.append((lon, lat))
 
-    # 1. Animals at their curated anchors, first, so plants keep clear of them.
+    # 1. Animals, first, so plants keep clear of them: the curated anchors, then a few more of
+    #    each species near those anchors, on suitable ground and spread apart.
+    anchors = {}
     for animal in scenery["animals"]:
         lon, lat = animal["anchor"]
         add(animal["kind"], lon, lat, 0)
+        anchors.setdefault(animal["kind"], []).append((lon, lat, animal["habitat"], animal["continent"]))
+    animals = list(placed)
+    for kind, points in anchors.items():
+        extra, radius = EXTRA_WILDLIFE.get(kind, (2, 6.0))
+        candidates = []
+        for ax, ay, habitat, home in points:
+            for y in range(int((90 - ay - radius) / GRID), int((90 - ay + radius) / GRID) + 1, 2):
+                for x in range(int((ax - radius + 180) / GRID), int((ax + radius + 180) / GRID) + 1, 2):
+                    if not 0 <= y < height:
+                        continue
+                    lon, lat = cell_center(x % width, y)
+                    if math.hypot(((lon - ax + 180) % 360) - 180, lat - ay) > radius:
+                        continue
+                    if habitat == "coastal-ice":
+                        ok = lat < -62 and near_land(x, y, 2)
+                    elif habitat == "coastal-sea":
+                        ok = lat < -62 and not is_land(x, y) and near_land(x, y, 4)
+                    else:  # extra animals never cross onto another continent
+                        ok = is_land(x, y) and continent_at(x, y) == home
+                    if ok:
+                        candidates.append((lon, lat))
+        for lon, lat in spread(candidates, extra, 320, sum(map(ord, kind)), animals, 260):
+            add(kind, lon, lat, 0)
+            animals.append((lon, lat))
 
     # 2. Mountains on Natural Earth ranges.
-    range_cells = set()
+    range_cells, peaks = set(), []
     for feature in regions:
         props = feature["properties"]
         if props["FEATURECLA"] != "Range/mtn" or props["SCALERANK"] > 4:
@@ -140,9 +179,13 @@ def main():
                     cells.append((lon, lat))
                     range_cells.add((x, y))
                     area += (GRID * KM_PER_DEGREE) ** 2 * math.cos(math.radians(lat))
-        count = max(1, min(10, int(area / 60000)))
-        kind = "mountain" if props["SCALERANK"] <= 3 else "hill"
-        for lon, lat in spread(cells, count, 300, 31, placed, 180):
+        count = max(1, min(4, int(area / 220000)))
+        cells = [c for c in cells if all(great_circle_km(c, a) >= 200 for a in animals)]
+        # Peaks keep 550 km from each other, across neighbouring ranges too.
+        for lon, lat in spread(cells, count, 550, 31, peaks, 550):
+            peaks.append((lon, lat))
+            # Polar ranges are ice, not rock.
+            kind = "glacier" if lat < -60 else "mountain" if props["SCALERANK"] <= 3 else "hill"
             add(kind, lon, lat, int(h01(lon * 7, lat * 7) * 9))
 
     # 3. Each continent's flora and landforms from the curated habitat regions.

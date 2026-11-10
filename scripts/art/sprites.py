@@ -948,10 +948,317 @@ def iceberg(seed=0):
     return s.image()
 
 
+
+def brown_bear(seed=0):
+    """Brown bear: heavy body, shoulder hump, round ears, short muzzle."""
+    s = Sprite(24, 17)
+    fur = ramp("#7C4F2E")
+    ground_shadow(s, 12, 15.6, 9)
+    for x in (8, 17):
+        limb(s, x, 11, 15, fur, far=True, width=2)
+    blob(s, 13.5, 9.0, 7.5, 4.2, fur)
+    blob(s, 9.5, 7.0, 3.6, 3.4, fur)  # shoulder hump
+    for x in (10, 19):
+        limb(s, x, 11, 15, fur, width=2, hoof=fur[0][0])
+    blob(s, 4.5, 8.0, 3.2, 2.6, fur)
+    dots(s, [(1, 9), (2, 9)], ramp("#B07A4E")[0][2], fur[1])
+    s.put(1, 8, INK, fur[1])
+    eye(s, 4, 7, fur[1])
+    dots(s, [(5, 5), (7, 5)], fur[0][0], fur[1])
+    return s.image()
+
+
+def wild_boar(seed=0):
+    """Wild boar: wedge-shaped dark body, bristly mane, long snout, white tusk."""
+    s = Sprite(21, 14)
+    hide = ramp("#5E4B3E")
+    ground_shadow(s, 11, 12.6, 7)
+    limb(s, 7, 9, 12, hide, far=True)
+    limb(s, 15, 9, 12, hide, far=True)
+    blob(s, 11.5, 7.0, 6.5, 3.4, hide,
+         lambda x, y, nx, ny, t: hide[0][0] if ny < -0.6 and x % 2 == 0 else None)
+    limb(s, 8, 9, 12, hide, hoof=INK)
+    limb(s, 16, 9, 12, hide, hoof=INK)
+    blob(s, 4.5, 7.4, 3.0, 2.2, hide)
+    dots(s, [(0, 8), (1, 8)], hex_rgb("#C9928A"), hide[1])
+    dots(s, [(2, 9), (2, 10)], hex_rgb("#F4EEDA"), hide[1])
+    eye(s, 4, 6, hide[1])
+    s.put(6, 4, hide[0][0], hide[1])
+    s.put(18, 6, hide[0][0], hide[1])
+    return s.image()
+
+
+def lion(seed=0):
+    """Lion: tawny body, dark full mane, tufted tail."""
+    s = Sprite(24, 16)
+    coat, mane = ramp("#D9A65C"), ramp("#9A5A2A")
+    ground_shadow(s, 12, 14.6, 8)
+    limb(s, 9, 10, 14, coat, far=True)
+    limb(s, 17, 10, 14, coat, far=True)
+    for x, y in ((19, 9), (20, 8), (21, 7), (22, 6)):
+        s.put(x, y, coat[0][1], coat[1])
+    dots(s, [(22, 5), (23, 5), (23, 6)], mane[0][1], mane[1])
+    blob(s, 13.0, 9.0, 6.5, 2.8, coat)
+    limb(s, 10, 10, 14, coat, width=2)
+    limb(s, 18, 10, 14, coat, width=2)
+    blob(s, 6.5, 7.0, 4.2, 4.4, mane)  # mane
+    blob(s, 4.8, 7.4, 2.6, 2.3, coat)  # face
+    s.put(2, 8, INK, coat[1])
+    eye(s, 4, 7, coat[1])
+    return s.image()
+
+
+def giraffe(seed=0):
+    """Giraffe: long legs and neck, brown patches on cream, small ossicones."""
+    s = Sprite(20, 28)
+    coat = ([hex_rgb("#D9B47A"), hex_rgb("#EED2A0"), hex_rgb("#F6E2BA"), hex_rgb("#FBEDD0")], hex_rgb("#5A3A1E"))
+    patch = hex_rgb("#A8642E")
+
+    def patches(x, y, nx, ny, tone):
+        return patch if (x // 2 + y // 2) % 2 == 0 and (x + y) % 2 == 0 else None
+
+    ground_shadow(s, 11, 26.6, 6)
+    limb(s, 9, 18, 26, coat, far=True, hoof=INK)
+    limb(s, 15, 18, 26, coat, far=True, hoof=INK)
+    blob(s, 12.5, 16.0, 5.0, 3.0, coat, patches)
+    limb(s, 10, 18, 26, coat, hoof=INK)
+    limb(s, 16, 18, 26, coat, hoof=INK)
+    for i, y in enumerate(range(5, 15)):  # neck, leaning forward
+        x = 6 + i * 0.35
+        for dx in (0, 1):
+            s.put(x + dx, y, patch if (y + dx) % 3 == 0 else coat[0][2 - dx], coat[1])
+    blob(s, 4.5, 4.0, 2.8, 1.6, coat)
+    eye(s, 5, 3, coat[1])
+    dots(s, [(5, 1), (7, 1)], hex_rgb("#5A3A1E"), coat[1])
+    s.put(2, 4, coat[0][0], coat[1])
+    return s.image()
+
+
+def rhinoceros(seed=0):
+    """White rhinoceros: massive grey body, low head, two horns."""
+    s = Sprite(26, 17)
+    hide, horn = ramp("#8E918E"), hex_rgb("#D8D0BE")
+    ground_shadow(s, 13, 15.6, 10)
+    for x in (9, 18):
+        limb(s, x, 11, 15, hide, far=True, width=2)
+    blob(s, 14.5, 8.5, 8.5, 4.2, hide,
+         lambda x, y, nx, ny, t: hide[0][0] if x in (11, 12) and -0.6 < ny < 0.5 else None)
+    for x in (11, 20):
+        limb(s, x, 11, 15, hide, width=3)
+    blob(s, 5.0, 10.0, 3.8, 2.6, hide)
+    dots(s, [(1, 8), (1, 9), (2, 7), (2, 8), (2, 9)], horn, hide[1])
+    dots(s, [(4, 7), (4, 8)], horn, hide[1])
+    eye(s, 6, 9, hide[1])
+    dots(s, [(7, 6), (8, 6)], hide[0][0], hide[1])
+    return s.image()
+
+
+def camel(seed=0):
+    """Bactrian camel: two humps, long legs, curved neck, shaggy throat."""
+    s = Sprite(22, 23)
+    coat = ramp("#B88C5A")
+    ground_shadow(s, 12, 21.6, 7)
+    limb(s, 9, 14, 21, coat, far=True)
+    limb(s, 16, 14, 21, coat, far=True)
+    blob(s, 13.0, 12.0, 6.0, 3.0, coat)
+    blob(s, 10.5, 8.6, 2.2, 2.2, coat)  # humps
+    blob(s, 15.5, 8.6, 2.2, 2.2, coat)
+    limb(s, 10, 14, 21, coat)
+    limb(s, 17, 14, 21, coat)
+    for i, (x, y) in enumerate(((7, 12), (6, 11), (5, 10), (5, 9), (5, 8), (5, 7), (5, 6))):
+        s.put(x, y, coat[0][2], coat[1])
+        s.put(x + 1, y, coat[0][1] if i < 3 else coat[0][0], coat[1])
+    blob(s, 3.5, 5.2, 2.6, 1.6, coat)
+    eye(s, 3, 4, coat[1])
+    dots(s, [(6, 10), (7, 11)], coat[0][0], coat[1])  # shaggy throat
+    s.put(4, 3, coat[0][0], coat[1])
+    return s.image()
+
+
+def orangutan(seed=0):
+    """Orangutan sitting: shaggy orange-red hair, long arms, dark face."""
+    s = Sprite(18, 19)
+    hair, face = ramp("#C8622E"), ramp("#6B3E28")
+    ground_shadow(s, 9, 17.6, 6)
+    blob(s, 9.5, 11.5, 5.0, 5.5, hair,
+         lambda x, y, nx, ny, t: hair[0][0] if (x + y) % 4 == 0 and t < 3 else None)
+    for x, y in ((4, 9), (3, 10), (3, 11), (3, 12), (3, 13), (3, 14), (3, 15), (4, 16)):  # long arm
+        s.put(x, y, hair[0][1], hair[1])
+    for x, y in ((14, 9), (15, 10), (15, 11), (15, 12), (15, 13), (15, 14), (14, 15)):
+        s.put(x, y, hair[0][0], hair[1])
+    blob(s, 9.0, 4.5, 3.2, 3.0, hair)
+    blob(s, 8.6, 5.2, 2.2, 1.9, face)
+    dots(s, [(8, 4), (10, 4)], INK, face[1])
+    for x in range(6, 13):
+        s.put(x, 17, hair[0][0], hair[1])
+    return s.image()
+
+
+def snow_leopard(seed=0):
+    """Snow leopard: pale smoky coat, dark rosettes, very long thick tail."""
+    s = big_cat("#C9C6BA", hex_rgb("#EEEDE6"), hex_rgb("#4A4A50"), "rosettes")
+    tail = ramp("#C9C6BA")
+    for x, y in ((19, 9), (20, 10), (21, 10), (22, 9), (23, 8), (23, 7)):
+        s.put(x, y, tail[0][1], tail[1])
+    return s.image()
+
+
+def wolf(seed=0):
+    """Gray wolf: grizzled grey coat, darker saddle, pale chest, long legs."""
+    s = Sprite(22, 16)
+    coat, pale = ramp("#8C9096"), hex_rgb("#E2E2DC")
+    ground_shadow(s, 11, 14.6, 7)
+    limb(s, 7, 10, 14, coat, far=True)
+    limb(s, 14, 10, 14, coat, far=True)
+    for x, y in ((17, 8), (18, 9), (19, 10), (20, 11)):
+        s.put(x, y, coat[0][0], coat[1])
+    blob(s, 11.0, 8.4, 5.6, 2.5, coat,
+         lambda x, y, nx, ny, t: pale if ny > 0.45 else coat[0][0] if ny < -0.5 else None)
+    limb(s, 8, 10, 14, coat)
+    limb(s, 15, 10, 14, coat)
+    blob(s, 5.0, 6.4, 2.8, 2.1, coat, lambda x, y, nx, ny, t: pale if ny > 0.35 else None)
+    dots(s, [(1, 7), (2, 7)], coat[0][1], coat[1])
+    s.put(0, 7, INK, coat[1])
+    eye(s, 4, 6, coat[1])
+    dots(s, [(5, 3), (5, 4), (7, 3), (7, 4)], coat[0][0], coat[1])
+    return s.image()
+
+
+def alligator(seed=0):
+    """American alligator: low, long, ridged dark-green body, splayed legs, broad snout."""
+    s = Sprite(28, 9)
+    hide = ramp("#4E6A3A")
+    ground_shadow(s, 14, 7.6, 12, 1.0)
+    for x in (8, 18):
+        dots(s, [(x, 7), (x + 1, 7)], hide[0][0], hide[1])
+    blob(s, 14.0, 4.8, 8.5, 2.2, hide,
+         lambda x, y, nx, ny, t: hide[0][0] if ny < -0.5 and x % 2 == 0 else hex_rgb("#C9C48E") if ny > 0.6 else None)
+    for i, x in enumerate(range(22, 28)):  # tapering tail
+        s.put(x, 4 + i // 3, hide[0][1], hide[1])
+        if i < 3:
+            s.put(x, 5 + i // 3, hide[0][0], hide[1])
+    blob(s, 3.5, 5.0, 3.8, 1.3, hide)
+    eye(s, 6, 3, hide[1])
+    for x in (9, 19):
+        dots(s, [(x, 7), (x + 1, 7)], hide[0][1], hide[1])
+    return s.image()
+
+
+def guanaco(seed=0):
+    """Guanaco: slender Andean camelid, long upright neck, white belly, upright ears."""
+    s = Sprite(18, 22)
+    coat, belly = ramp("#C48A52"), hex_rgb("#F2E6D2")
+    ground_shadow(s, 10, 20.6, 6)
+    limb(s, 8, 14, 20, coat, far=True, hoof=INK)
+    limb(s, 14, 14, 20, coat, far=True, hoof=INK)
+    blob(s, 11.5, 12.0, 5.0, 2.6, coat, lambda x, y, nx, ny, t: belly if ny > 0.4 else None)
+    limb(s, 9, 14, 20, coat, hoof=INK)
+    limb(s, 15, 14, 20, coat, hoof=INK)
+    for y in range(4, 12):
+        s.put(6, y, coat[0][2], coat[1])
+        s.put(7, y, coat[0][1], coat[1])
+    blob(s, 5.0, 3.6, 2.6, 1.6, coat, lambda x, y, nx, ny, t: hex_rgb("#5A4A40") if nx < -0.4 else None)
+    eye(s, 5, 3, coat[1])
+    dots(s, [(6, 1), (7, 1)], coat[0][1], coat[1])
+    return s.image()
+
+
+def toucan(seed=0):
+    """Toco toucan perched on a branch: black body, white throat, huge orange bill."""
+    s = Sprite(16, 18)
+    plumage = ramp("#2B2E36", "#101216")
+    bill, bill_tip, throat = hex_rgb("#F28C2E"), hex_rgb("#2B2E36"), hex_rgb("#F6F4EC")
+    branch = ramp("#7A5A3E")
+    ground_shadow(s, 9, 16.6, 4)
+    for y in range(12, 17):
+        s.put(9, y, branch[0][1], branch[1])
+    for x in range(4, 15):
+        s.put(x, 12, branch[0][2], branch[1])
+    blob(s, 10.0, 7.5, 2.8, 4.2, plumage,
+         lambda x, y, nx, ny, t: throat if nx < -0.2 and -0.8 < ny < -0.1 else None)
+    for x in range(11, 14):  # tail
+        s.put(x, 11 + (x - 11), plumage[0][0], plumage[1])
+    for x, y in ((2, 4), (3, 4), (4, 4), (5, 4), (6, 4), (3, 5), (4, 5), (5, 5), (6, 5), (7, 5)):
+        s.put(x, y, bill, hex_rgb("#7A3A10"))
+    s.put(1, 5, bill_tip, hex_rgb("#7A3A10"))
+    s.put(9, 4, hex_rgb("#4EA0E8"), plumage[1])
+    s.put(9, 5, INK, plumage[1])
+    return s.image()
+
+
+def koala(seed=0):
+    """Koala in a eucalyptus fork: round grey body, big fluffy ears, large black nose."""
+    s = Sprite(16, 18)
+    fur, ear = ramp("#9EA4AA"), hex_rgb("#EDEDEA")
+    trunk = ramp("#D8CDB6", "#5A4E3E")
+    ground_shadow(s, 8, 16.6, 4)
+    for y in range(6, 17):
+        s.put(10, y, trunk[0][2], trunk[1])
+        s.put(11, y, trunk[0][1], trunk[1])
+    blob(s, 8.0, 10.5, 3.6, 4.0, fur, lambda x, y, nx, ny, t: ear if nx < -0.3 and ny > 0.1 else None)
+    blob(s, 7.5, 5.0, 3.2, 2.6, fur)
+    blob(s, 4.5, 3.6, 1.6, 1.6, fur, lambda x, y, nx, ny, t: ear if nx < 0.2 else None)
+    blob(s, 10.5, 3.6, 1.6, 1.6, fur, lambda x, y, nx, ny, t: ear if nx > -0.2 else None)
+    dots(s, [(7, 5), (7, 6), (8, 6)], INK, fur[1])
+    dots(s, [(6, 4), (9, 4)], INK, fur[1])
+    dots(s, [(9, 9), (10, 9)], fur[0][0], fur[1])  # arm hugging the trunk
+    return s.image()
+
+
+def emu(seed=0):
+    """Emu: tall shaggy brown body, long bare blue-grey neck, long legs."""
+    s = Sprite(16, 26)
+    plumage, skin = ramp("#7A6652"), ramp("#6E7F96")
+    legs = ramp("#8A7A6A")
+    ground_shadow(s, 8, 24.6, 4.5)
+    limb(s, 7, 15, 24, legs, far=True)
+    limb(s, 9, 15, 24, legs)
+    dots(s, [(5, 24), (6, 24), (10, 24), (11, 24)], legs[0][0], legs[1])
+    blob(s, 9.0, 11.5, 5.2, 4.2, plumage,
+         lambda x, y, nx, ny, t: plumage[0][0] if (x * 3 + y) % 5 == 0 and t < 3 else None)
+    for y in range(3, 9):
+        s.put(5, y, skin[0][2], skin[1])
+        s.put(6, y, skin[0][1], skin[1])
+    blob(s, 4.5, 2.6, 2.0, 1.5, skin)
+    dots(s, [(1, 3), (2, 3)], hex_rgb("#3A3530"), skin[1])
+    eye(s, 4, 2, skin[1])
+    return s.image()
+
+
+def orca(seed=0):
+    """Orca surfacing: black back and tall dorsal fin, white eye patch, splash at the waterline."""
+    s = Sprite(26, 14)
+    body = ramp("#22252C", "#0C0E12")
+    white = hex_rgb("#F4F6F8")
+    for y in range(2, 11):
+        for x in range(1, 25):
+            arch = 10 - math.sin((x - 1) / 23 * math.pi) * 6.5
+            if y >= arch and y <= 10:
+                tone = 2 if y < arch + 1.2 else 1 if x < 14 else 0
+                color = body[0][tone]
+                if 5 <= x <= 7 and arch + 1 <= y <= arch + 2:
+                    color = white  # eye patch
+                if y == 10 and 3 < x < 20:
+                    color = white  # pale belly at the waterline
+                s.put(x, y, color, body[1])
+    for i, (x, y) in enumerate(((13, 3), (13, 2), (14, 1), (14, 0), (15, 0))):  # dorsal fin
+        s.put(x, y, body[0][1], body[1])
+    for x in range(0, 26):
+        if h01(seed, x) < 0.75:
+            s.put(x, 11, C["foam"], C["foam"])
+        if h01(seed, x, 2) < 0.3:
+            s.put(x, 12, C["foam"], C["foam"])
+    return s.image()
+
+
 FAUNA = {
     "deer": deer, "fox": fox, "elephant": elephant, "zebra": zebra, "panda": panda,
     "tiger": tiger, "bison": bison, "moose": moose, "jaguar": jaguar, "capybara": capybara,
     "kangaroo": kangaroo, "kiwi": kiwi, "penguin": penguin, "seal": seal,
+    "brown-bear": brown_bear, "wild-boar": wild_boar, "lion": lion, "giraffe": giraffe,
+    "rhinoceros": rhinoceros, "camel": camel, "orangutan": orangutan, "snow-leopard": snow_leopard,
+    "wolf": wolf, "alligator": alligator, "guanaco": guanaco, "toucan": toucan, "koala": koala,
+    "emu": emu, "orca": orca,
 }
 FLORA = {
     "oak": tree, "pine": pine, "olive": olive, "acacia": acacia, "baobab": baobab, "palm": palm,
@@ -971,7 +1278,8 @@ def preview(path, scale=5):
     rows = [
         ["tree", "pine", "mountain", "hill", "castle", "church", "house", "boat", "pin"],
         list(FLORA),
-        list(FAUNA),
+        list(FAUNA)[:14],
+        list(FAUNA)[14:],
     ]
     pad = 4
     images = [[ICONS[name](0) for name in row] for row in rows]

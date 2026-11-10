@@ -1,829 +1,1264 @@
 {
-  "version": 1,
-  "description": "Curated habitat-inspired illustrations; representative placements, not wildlife observations or exact species-range maps.",
-  "sources": {
-    "deer": "https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/animals/mammals/red-deer/",
-    "fox": "https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/animals/mammals/fox/",
-    "elephant": "https://animals.sandiegozoo.org/animals/elephant",
-    "zebra": "https://animals.sandiegozoo.org/animals/zebra",
-    "panda": "https://nationalzoo.si.edu/animals/giant-panda",
-    "tiger": "https://nationalzoo.si.edu/animals/tiger",
-    "bison": "https://www.nps.gov/yell/learn/nature/bison.htm",
-    "moose": "https://www.nps.gov/yell/learn/nature/moose.htm",
-    "jaguar": "https://animals.sandiegozoo.org/animals/jaguar",
-    "capybara": "https://animals.sandiegozoo.org/animals/capybara",
-    "kangaroo": "https://australiazoo.com.au/wildlife/our-animals/red-kangaroo/",
-    "kiwi": "https://www.doc.govt.nz/nature/native-animals/birds/birds-a-z/kiwi/",
-    "penguin": "https://www.antarctica.gov.au/about-antarctica/animals/penguins/emperor-penguin/",
-    "seal": "https://www.antarctica.gov.au/about-antarctica/animals/seals/weddell-seal/"
+ "version": 2,
+ "description": "Curated habitat-inspired illustrations; representative placements, not wildlife observations or exact species-range maps.",
+ "sources": {
+  "deer": "https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/animals/mammals/red-deer/",
+  "fox": "https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/animals/mammals/fox/",
+  "elephant": "https://animals.sandiegozoo.org/animals/elephant",
+  "zebra": "https://animals.sandiegozoo.org/animals/zebra",
+  "panda": "https://nationalzoo.si.edu/animals/giant-panda",
+  "tiger": "https://nationalzoo.si.edu/animals/tiger",
+  "bison": "https://www.nps.gov/yell/learn/nature/bison.htm",
+  "moose": "https://www.nps.gov/yell/learn/nature/moose.htm",
+  "jaguar": "https://animals.sandiegozoo.org/animals/jaguar",
+  "capybara": "https://animals.sandiegozoo.org/animals/capybara",
+  "kangaroo": "https://australiazoo.com.au/wildlife/our-animals/red-kangaroo/",
+  "kiwi": "https://www.doc.govt.nz/nature/native-animals/birds/birds-a-z/kiwi/",
+  "penguin": "https://www.antarctica.gov.au/about-antarctica/animals/penguins/emperor-penguin/",
+  "seal": "https://www.antarctica.gov.au/about-antarctica/animals/seals/weddell-seal/",
+  "brown-bear": "https://animals.sandiegozoo.org/animals/brown-bear",
+  "wild-boar": "https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/animals/mammals/wild-boar/",
+  "lion": "https://animals.sandiegozoo.org/animals/lion",
+  "giraffe": "https://animals.sandiegozoo.org/animals/giraffe",
+  "rhinoceros": "https://animals.sandiegozoo.org/animals/rhinoceros",
+  "camel": "https://animals.sandiegozoo.org/animals/camel",
+  "orangutan": "https://animals.sandiegozoo.org/animals/orangutan",
+  "snow-leopard": "https://animals.sandiegozoo.org/animals/snow-leopard",
+  "wolf": "https://animals.sandiegozoo.org/animals/wolf",
+  "alligator": "https://www.nps.gov/ever/learn/nature/alligator.htm",
+  "guanaco": "https://animals.sandiegozoo.org/animals/guanaco",
+  "toucan": "https://animals.sandiegozoo.org/animals/toucan",
+  "koala": "https://animals.sandiegozoo.org/animals/koala",
+  "emu": "https://animals.sandiegozoo.org/animals/emu",
+  "orca": "https://www.fisheries.noaa.gov/species/killer-whale"
+ },
+ "regions": [
+  {
+   "id": "eu-woodland",
+   "continent": "Europe",
+   "kind": "oak",
+   "anchor": [
+    10,
+    50
+   ],
+   "radius": [
+    17,
+    6
+   ],
+   "count": 30,
+   "habitat": "land"
   },
-  "regions": [
-    {
-      "id": "eu-woodland",
-      "continent": "Europe",
-      "kind": "oak",
-      "anchor": [
-        10,
-        50
-      ],
-      "radius": [
-        17,
-        6
-      ],
-      "count": 30,
-      "habitat": "land"
-    },
-    {
-      "id": "eu-boreal",
-      "continent": "Europe",
-      "kind": "pine",
-      "anchor": [
-        21,
-        62
-      ],
-      "radius": [
-        14,
-        7
-      ],
-      "count": 24,
-      "habitat": "land"
-    },
-    {
-      "id": "eu-med",
-      "continent": "Europe",
-      "kind": "olive",
-      "anchor": [
-        10,
-        40
-      ],
-      "radius": [
-        16,
-        3
-      ],
-      "count": 12,
-      "habitat": "land"
-    },
-    {
-      "id": "eu-alps",
-      "continent": "Europe",
-      "kind": "mountain",
-      "anchor": [
-        10,
-        46.5
-      ],
-      "radius": [
-        5,
-        1.3
-      ],
-      "count": 7,
-      "habitat": "land"
-    },
-    {
-      "id": "eu-pyrenees",
-      "continent": "Europe",
-      "kind": "mountain",
-      "anchor": [
-        0,
-        42.6
-      ],
-      "radius": [
-        2.5,
-        0.8
-      ],
-      "count": 3,
-      "habitat": "land"
-    },
-    {
-      "id": "af-savanna",
-      "continent": "Africa",
-      "kind": "acacia",
-      "anchor": [
-        29,
-        -10
-      ],
-      "radius": [
-        14,
-        23
-      ],
-      "count": 34,
-      "habitat": "land"
-    },
-    {
-      "id": "af-rainforest",
-      "continent": "Africa",
-      "kind": "palm",
-      "anchor": [
-        20,
-        0
-      ],
-      "radius": [
-        12,
-        7
-      ],
-      "count": 22,
-      "habitat": "land"
-    },
-    {
-      "id": "af-sahara",
-      "continent": "Africa",
-      "kind": "dune",
-      "anchor": [
-        13,
-        24
-      ],
-      "radius": [
-        24,
-        7
-      ],
-      "count": 16,
-      "habitat": "land"
-    },
-    {
-      "id": "af-baobab",
-      "continent": "Africa",
-      "kind": "baobab",
-      "anchor": [
-        46,
-        -20
-      ],
-      "radius": [
-        2.5,
-        5
-      ],
-      "count": 6,
-      "habitat": "land"
-    },
-    {
-      "id": "af-highlands",
-      "continent": "Africa",
-      "kind": "mountain",
-      "anchor": [
-        37,
-        2
-      ],
-      "radius": [
-        3,
-        11
-      ],
-      "count": 8,
-      "habitat": "land"
-    },
-    {
-      "id": "as-taiga",
-      "continent": "Asia",
-      "kind": "pine",
-      "anchor": [
-        100,
-        59
-      ],
-      "radius": [
-        55,
-        10
-      ],
-      "count": 40,
-      "habitat": "land"
-    },
-    {
-      "id": "as-bamboo",
-      "continent": "Asia",
-      "kind": "bamboo",
-      "anchor": [
-        106,
-        30
-      ],
-      "radius": [
-        7,
-        6
-      ],
-      "count": 18,
-      "habitat": "land"
-    },
-    {
-      "id": "as-tropical",
-      "continent": "Asia",
-      "kind": "palm",
-      "anchor": [
-        103,
-        9
-      ],
-      "radius": [
-        18,
-        13
-      ],
-      "count": 26,
-      "habitat": "land"
-    },
-    {
-      "id": "as-steppe",
-      "continent": "Asia",
-      "kind": "grass",
-      "anchor": [
-        94,
-        44
-      ],
-      "radius": [
-        28,
-        8
-      ],
-      "count": 22,
-      "habitat": "land"
-    },
-    {
-      "id": "as-himalaya",
-      "continent": "Asia",
-      "kind": "mountain",
-      "anchor": [
-        84,
-        29
-      ],
-      "radius": [
-        14,
-        2
-      ],
-      "count": 14,
-      "habitat": "land"
-    },
-    {
-      "id": "as-volcano",
-      "continent": "Asia",
-      "kind": "volcano",
-      "anchor": [
-        139,
-        36
-      ],
-      "radius": [
-        4,
-        7
-      ],
-      "count": 4,
-      "habitat": "land"
-    },
-    {
-      "id": "na-boreal",
-      "continent": "North America",
-      "kind": "pine",
-      "anchor": [
-        -109,
-        57
-      ],
-      "radius": [
-        38,
-        10
-      ],
-      "count": 32,
-      "habitat": "land"
-    },
-    {
-      "id": "na-plains",
-      "continent": "North America",
-      "kind": "grass",
-      "anchor": [
-        -101,
-        43
-      ],
-      "radius": [
-        13,
-        9
-      ],
-      "count": 24,
-      "habitat": "land"
-    },
-    {
-      "id": "na-woods",
-      "continent": "North America",
-      "kind": "oak",
-      "anchor": [
-        -82,
-        39
-      ],
-      "radius": [
-        11,
-        9
-      ],
-      "count": 18,
-      "habitat": "land"
-    },
-    {
-      "id": "na-desert",
-      "continent": "North America",
-      "kind": "cactus",
-      "anchor": [
-        -110,
-        31
-      ],
-      "radius": [
-        9,
-        8
-      ],
-      "count": 16,
-      "habitat": "land"
-    },
-    {
-      "id": "na-rockies",
-      "continent": "North America",
-      "kind": "mountain",
-      "anchor": [
-        -113,
-        45
-      ],
-      "radius": [
-        8,
-        17
-      ],
-      "count": 16,
-      "habitat": "land"
-    },
-    {
-      "id": "sa-amazon",
-      "continent": "South America",
-      "kind": "palm",
-      "anchor": [
-        -63,
-        -6
-      ],
-      "radius": [
-        14,
-        10
-      ],
-      "count": 36,
-      "habitat": "land"
-    },
-    {
-      "id": "sa-andes",
-      "continent": "South America",
-      "kind": "mountain",
-      "anchor": [
-        -72,
-        -20
-      ],
-      "radius": [
-        5,
-        23
-      ],
-      "count": 18,
-      "habitat": "land"
-    },
-    {
-      "id": "sa-pampas",
-      "continent": "South America",
-      "kind": "grass",
-      "anchor": [
-        -62,
-        -35
-      ],
-      "radius": [
-        9,
-        11
-      ],
-      "count": 20,
-      "habitat": "land"
-    },
-    {
-      "id": "sa-patagonia",
-      "continent": "South America",
-      "kind": "mountain",
-      "anchor": [
-        -72,
-        -47
-      ],
-      "radius": [
-        2,
-        6
-      ],
-      "count": 7,
-      "habitat": "land"
-    },
-    {
-      "id": "oc-eucalyptus",
-      "continent": "Oceania",
-      "kind": "eucalyptus",
-      "anchor": [
-        147,
-        -29
-      ],
-      "radius": [
-        7,
-        11
-      ],
-      "count": 22,
-      "habitat": "land"
-    },
-    {
-      "id": "oc-outback",
-      "continent": "Oceania",
-      "kind": "red-rock",
-      "anchor": [
-        132,
-        -25
-      ],
-      "radius": [
-        14,
-        8
-      ],
-      "count": 12,
-      "habitat": "land"
-    },
-    {
-      "id": "oc-grass",
-      "continent": "Oceania",
-      "kind": "grass",
-      "anchor": [
-        134,
-        -24
-      ],
-      "radius": [
-        17,
-        11
-      ],
-      "count": 18,
-      "habitat": "land"
-    },
-    {
-      "id": "oc-nz-fern",
-      "continent": "Oceania",
-      "kind": "fern",
-      "anchor": [
-        173,
-        -40.5
-      ],
-      "radius": [
-        4,
-        5
-      ],
-      "count": 10,
-      "habitat": "land"
-    },
-    {
-      "id": "oc-nz-alps",
-      "continent": "Oceania",
-      "kind": "mountain",
-      "anchor": [
-        170.5,
-        -43.5
-      ],
-      "radius": [
-        2,
-        1.6
-      ],
-      "count": 4,
-      "habitat": "land"
-    },
-    {
-      "id": "oc-islands",
-      "continent": "Oceania",
-      "kind": "palm",
-      "anchor": [
-        144,
-        -6
-      ],
-      "radius": [
-        13,
-        4
-      ],
-      "count": 12,
-      "habitat": "land"
-    },
-    {
-      "id": "an-mountains",
-      "continent": "Antarctica",
-      "kind": "glacier",
-      "anchor": [
-        20,
-        -77
-      ],
-      "radius": [
-        150,
-        5
-      ],
-      "count": 20,
-      "habitat": "land"
-    },
-    {
-      "id": "an-ice",
-      "continent": "Antarctica",
-      "kind": "iceberg",
-      "anchor": [
-        10,
-        -68
-      ],
-      "radius": [
-        155,
-        6
-      ],
-      "count": 20,
-      "habitat": "coastal-ice"
-    }
-  ],
-  "animals": [
-    {
-      "id": "deer-0",
-      "kind": "deer",
-      "continent": "Europe",
-      "anchor": [
-        -4.5,
-        57.2
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "deer-1",
-      "kind": "deer",
-      "continent": "Europe",
-      "anchor": [
-        20.5,
-        52.8
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "deer-2",
-      "kind": "deer",
-      "continent": "Europe",
-      "anchor": [
-        8,
-        48.3
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "fox-0",
-      "kind": "fox",
-      "continent": "Europe",
-      "anchor": [
-        1,
-        47.5
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "fox-1",
-      "kind": "fox",
-      "continent": "Europe",
-      "anchor": [
-        15,
-        51
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "elephant-0",
-      "kind": "elephant",
-      "continent": "Africa",
-      "anchor": [
-        37,
-        0
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "elephant-1",
-      "kind": "elephant",
-      "continent": "Africa",
-      "anchor": [
-        25,
-        -19
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "zebra-0",
-      "kind": "zebra",
-      "continent": "Africa",
-      "anchor": [
-        35,
-        -3
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "zebra-1",
-      "kind": "zebra",
-      "continent": "Africa",
-      "anchor": [
-        29,
-        -22
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "panda-0",
-      "kind": "panda",
-      "continent": "Asia",
-      "anchor": [
-        103.3,
-        30.8
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "panda-1",
-      "kind": "panda",
-      "continent": "Asia",
-      "anchor": [
-        106.5,
-        33.3
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "tiger-0",
-      "kind": "tiger",
-      "continent": "Asia",
-      "anchor": [
-        80,
-        23
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "tiger-1",
-      "kind": "tiger",
-      "continent": "Asia",
-      "anchor": [
-        88,
-        26.6
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "bison-0",
-      "kind": "bison",
-      "continent": "North America",
-      "anchor": [
-        -110.5,
-        44.6
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "bison-1",
-      "kind": "bison",
-      "continent": "North America",
-      "anchor": [
-        -104,
-        44
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "moose-0",
-      "kind": "moose",
-      "continent": "North America",
-      "anchor": [
-        -101,
-        54.5
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "moose-1",
-      "kind": "moose",
-      "continent": "North America",
-      "anchor": [
-        -149,
-        63
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "jaguar-0",
-      "kind": "jaguar",
-      "continent": "South America",
-      "anchor": [
-        -62,
-        -5
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "jaguar-1",
-      "kind": "jaguar",
-      "continent": "South America",
-      "anchor": [
-        -57,
-        -16
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "capybara-0",
-      "kind": "capybara",
-      "continent": "South America",
-      "anchor": [
-        -56,
-        -17
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "capybara-1",
-      "kind": "capybara",
-      "continent": "South America",
-      "anchor": [
-        -65,
-        -12
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "kangaroo-0",
-      "kind": "kangaroo",
-      "continent": "Oceania",
-      "anchor": [
-        133,
-        -25
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "kangaroo-1",
-      "kind": "kangaroo",
-      "continent": "Oceania",
-      "anchor": [
-        140,
-        -29
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "kiwi-0",
-      "kind": "kiwi",
-      "continent": "Oceania",
-      "anchor": [
-        175.6,
-        -39
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "kiwi-1",
-      "kind": "kiwi",
-      "continent": "Oceania",
-      "anchor": [
-        172.2,
-        -42.2
-      ],
-      "habitat": "land"
-    },
-    {
-      "id": "penguin-0",
-      "kind": "penguin",
-      "continent": "Antarctica",
-      "anchor": [
-        -57,
-        -64.4
-      ],
-      "habitat": "coastal-ice"
-    },
-    {
-      "id": "penguin-1",
-      "kind": "penguin",
-      "continent": "Antarctica",
-      "anchor": [
-        62.8,
-        -67.4
-      ],
-      "habitat": "coastal-ice"
-    },
-    {
-      "id": "penguin-2",
-      "kind": "penguin",
-      "continent": "Antarctica",
-      "anchor": [
-        166.5,
-        -77.5
-      ],
-      "habitat": "coastal-ice"
-    },
-    {
-      "id": "seal-0",
-      "kind": "seal",
-      "continent": "Antarctica",
-      "anchor": [
-        -61,
-        -65
-      ],
-      "habitat": "coastal-ice"
-    },
-    {
-      "id": "seal-1",
-      "kind": "seal",
-      "continent": "Antarctica",
-      "anchor": [
-        11,
-        -70.5
-      ],
-      "habitat": "coastal-ice"
-    },
-    {
-      "id": "seal-2",
-      "kind": "seal",
-      "continent": "Antarctica",
-      "anchor": [
-        166.8,
-        -77.6
-      ],
-      "habitat": "coastal-ice"
-    }
-  ]
+  {
+   "id": "eu-boreal",
+   "continent": "Europe",
+   "kind": "pine",
+   "anchor": [
+    21,
+    62
+   ],
+   "radius": [
+    14,
+    7
+   ],
+   "count": 24,
+   "habitat": "land"
+  },
+  {
+   "id": "eu-med",
+   "continent": "Europe",
+   "kind": "olive",
+   "anchor": [
+    10,
+    40
+   ],
+   "radius": [
+    16,
+    3
+   ],
+   "count": 12,
+   "habitat": "land"
+  },
+  {
+   "id": "eu-alps",
+   "continent": "Europe",
+   "kind": "mountain",
+   "anchor": [
+    10,
+    46.5
+   ],
+   "radius": [
+    5,
+    1.3
+   ],
+   "count": 7,
+   "habitat": "land"
+  },
+  {
+   "id": "eu-pyrenees",
+   "continent": "Europe",
+   "kind": "mountain",
+   "anchor": [
+    0,
+    42.6
+   ],
+   "radius": [
+    2.5,
+    0.8
+   ],
+   "count": 3,
+   "habitat": "land"
+  },
+  {
+   "id": "af-savanna",
+   "continent": "Africa",
+   "kind": "acacia",
+   "anchor": [
+    29,
+    -10
+   ],
+   "radius": [
+    14,
+    23
+   ],
+   "count": 34,
+   "habitat": "land"
+  },
+  {
+   "id": "af-rainforest",
+   "continent": "Africa",
+   "kind": "palm",
+   "anchor": [
+    20,
+    0
+   ],
+   "radius": [
+    12,
+    7
+   ],
+   "count": 22,
+   "habitat": "land"
+  },
+  {
+   "id": "af-sahara",
+   "continent": "Africa",
+   "kind": "dune",
+   "anchor": [
+    13,
+    24
+   ],
+   "radius": [
+    24,
+    7
+   ],
+   "count": 16,
+   "habitat": "land"
+  },
+  {
+   "id": "af-baobab",
+   "continent": "Africa",
+   "kind": "baobab",
+   "anchor": [
+    46,
+    -20
+   ],
+   "radius": [
+    2.5,
+    5
+   ],
+   "count": 6,
+   "habitat": "land"
+  },
+  {
+   "id": "af-highlands",
+   "continent": "Africa",
+   "kind": "mountain",
+   "anchor": [
+    37,
+    2
+   ],
+   "radius": [
+    3,
+    11
+   ],
+   "count": 8,
+   "habitat": "land"
+  },
+  {
+   "id": "as-taiga",
+   "continent": "Asia",
+   "kind": "pine",
+   "anchor": [
+    100,
+    59
+   ],
+   "radius": [
+    55,
+    10
+   ],
+   "count": 40,
+   "habitat": "land"
+  },
+  {
+   "id": "as-bamboo",
+   "continent": "Asia",
+   "kind": "bamboo",
+   "anchor": [
+    106,
+    30
+   ],
+   "radius": [
+    7,
+    6
+   ],
+   "count": 18,
+   "habitat": "land"
+  },
+  {
+   "id": "as-tropical",
+   "continent": "Asia",
+   "kind": "palm",
+   "anchor": [
+    103,
+    9
+   ],
+   "radius": [
+    18,
+    13
+   ],
+   "count": 26,
+   "habitat": "land"
+  },
+  {
+   "id": "as-steppe",
+   "continent": "Asia",
+   "kind": "grass",
+   "anchor": [
+    94,
+    44
+   ],
+   "radius": [
+    28,
+    8
+   ],
+   "count": 22,
+   "habitat": "land"
+  },
+  {
+   "id": "as-himalaya",
+   "continent": "Asia",
+   "kind": "mountain",
+   "anchor": [
+    84,
+    29
+   ],
+   "radius": [
+    14,
+    2
+   ],
+   "count": 14,
+   "habitat": "land"
+  },
+  {
+   "id": "as-volcano",
+   "continent": "Asia",
+   "kind": "volcano",
+   "anchor": [
+    139,
+    36
+   ],
+   "radius": [
+    4,
+    7
+   ],
+   "count": 4,
+   "habitat": "land"
+  },
+  {
+   "id": "na-boreal",
+   "continent": "North America",
+   "kind": "pine",
+   "anchor": [
+    -109,
+    57
+   ],
+   "radius": [
+    38,
+    10
+   ],
+   "count": 32,
+   "habitat": "land"
+  },
+  {
+   "id": "na-plains",
+   "continent": "North America",
+   "kind": "grass",
+   "anchor": [
+    -101,
+    43
+   ],
+   "radius": [
+    13,
+    9
+   ],
+   "count": 24,
+   "habitat": "land"
+  },
+  {
+   "id": "na-woods",
+   "continent": "North America",
+   "kind": "oak",
+   "anchor": [
+    -82,
+    39
+   ],
+   "radius": [
+    11,
+    9
+   ],
+   "count": 18,
+   "habitat": "land"
+  },
+  {
+   "id": "na-desert",
+   "continent": "North America",
+   "kind": "cactus",
+   "anchor": [
+    -110,
+    31
+   ],
+   "radius": [
+    9,
+    8
+   ],
+   "count": 16,
+   "habitat": "land"
+  },
+  {
+   "id": "na-rockies",
+   "continent": "North America",
+   "kind": "mountain",
+   "anchor": [
+    -113,
+    45
+   ],
+   "radius": [
+    8,
+    17
+   ],
+   "count": 16,
+   "habitat": "land"
+  },
+  {
+   "id": "sa-amazon",
+   "continent": "South America",
+   "kind": "palm",
+   "anchor": [
+    -63,
+    -6
+   ],
+   "radius": [
+    14,
+    10
+   ],
+   "count": 36,
+   "habitat": "land"
+  },
+  {
+   "id": "sa-andes",
+   "continent": "South America",
+   "kind": "mountain",
+   "anchor": [
+    -72,
+    -20
+   ],
+   "radius": [
+    5,
+    23
+   ],
+   "count": 18,
+   "habitat": "land"
+  },
+  {
+   "id": "sa-pampas",
+   "continent": "South America",
+   "kind": "grass",
+   "anchor": [
+    -62,
+    -35
+   ],
+   "radius": [
+    9,
+    11
+   ],
+   "count": 20,
+   "habitat": "land"
+  },
+  {
+   "id": "sa-patagonia",
+   "continent": "South America",
+   "kind": "mountain",
+   "anchor": [
+    -72,
+    -47
+   ],
+   "radius": [
+    2,
+    6
+   ],
+   "count": 7,
+   "habitat": "land"
+  },
+  {
+   "id": "oc-eucalyptus",
+   "continent": "Oceania",
+   "kind": "eucalyptus",
+   "anchor": [
+    147,
+    -29
+   ],
+   "radius": [
+    7,
+    11
+   ],
+   "count": 22,
+   "habitat": "land"
+  },
+  {
+   "id": "oc-outback",
+   "continent": "Oceania",
+   "kind": "red-rock",
+   "anchor": [
+    132,
+    -25
+   ],
+   "radius": [
+    14,
+    8
+   ],
+   "count": 12,
+   "habitat": "land"
+  },
+  {
+   "id": "oc-grass",
+   "continent": "Oceania",
+   "kind": "grass",
+   "anchor": [
+    134,
+    -24
+   ],
+   "radius": [
+    17,
+    11
+   ],
+   "count": 18,
+   "habitat": "land"
+  },
+  {
+   "id": "oc-nz-fern",
+   "continent": "Oceania",
+   "kind": "fern",
+   "anchor": [
+    173,
+    -40.5
+   ],
+   "radius": [
+    4,
+    5
+   ],
+   "count": 10,
+   "habitat": "land"
+  },
+  {
+   "id": "oc-nz-alps",
+   "continent": "Oceania",
+   "kind": "mountain",
+   "anchor": [
+    170.5,
+    -43.5
+   ],
+   "radius": [
+    2,
+    1.6
+   ],
+   "count": 4,
+   "habitat": "land"
+  },
+  {
+   "id": "oc-islands",
+   "continent": "Oceania",
+   "kind": "palm",
+   "anchor": [
+    144,
+    -6
+   ],
+   "radius": [
+    13,
+    4
+   ],
+   "count": 12,
+   "habitat": "land"
+  },
+  {
+   "id": "an-mountains",
+   "continent": "Antarctica",
+   "kind": "glacier",
+   "anchor": [
+    20,
+    -77
+   ],
+   "radius": [
+    150,
+    5
+   ],
+   "count": 20,
+   "habitat": "land"
+  },
+  {
+   "id": "an-ice",
+   "continent": "Antarctica",
+   "kind": "iceberg",
+   "anchor": [
+    10,
+    -68
+   ],
+   "radius": [
+    155,
+    6
+   ],
+   "count": 20,
+   "habitat": "coastal-ice"
+  }
+ ],
+ "animals": [
+  {
+   "id": "deer-0",
+   "kind": "deer",
+   "continent": "Europe",
+   "anchor": [
+    -4.5,
+    57.2
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "deer-1",
+   "kind": "deer",
+   "continent": "Europe",
+   "anchor": [
+    20.5,
+    52.8
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "deer-2",
+   "kind": "deer",
+   "continent": "Europe",
+   "anchor": [
+    8,
+    48.3
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "fox-0",
+   "kind": "fox",
+   "continent": "Europe",
+   "anchor": [
+    1,
+    47.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "fox-1",
+   "kind": "fox",
+   "continent": "Europe",
+   "anchor": [
+    15,
+    51
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "elephant-0",
+   "kind": "elephant",
+   "continent": "Africa",
+   "anchor": [
+    37,
+    0
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "elephant-1",
+   "kind": "elephant",
+   "continent": "Africa",
+   "anchor": [
+    25,
+    -19
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "zebra-0",
+   "kind": "zebra",
+   "continent": "Africa",
+   "anchor": [
+    35,
+    -3
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "zebra-1",
+   "kind": "zebra",
+   "continent": "Africa",
+   "anchor": [
+    29,
+    -22
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "panda-0",
+   "kind": "panda",
+   "continent": "Asia",
+   "anchor": [
+    103.3,
+    30.8
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "panda-1",
+   "kind": "panda",
+   "continent": "Asia",
+   "anchor": [
+    106.5,
+    33.3
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "tiger-0",
+   "kind": "tiger",
+   "continent": "Asia",
+   "anchor": [
+    80,
+    23
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "tiger-1",
+   "kind": "tiger",
+   "continent": "Asia",
+   "anchor": [
+    88,
+    26.6
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "bison-0",
+   "kind": "bison",
+   "continent": "North America",
+   "anchor": [
+    -110.5,
+    44.6
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "bison-1",
+   "kind": "bison",
+   "continent": "North America",
+   "anchor": [
+    -104,
+    44
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "moose-0",
+   "kind": "moose",
+   "continent": "North America",
+   "anchor": [
+    -101,
+    54.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "moose-1",
+   "kind": "moose",
+   "continent": "North America",
+   "anchor": [
+    -149,
+    63
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "jaguar-0",
+   "kind": "jaguar",
+   "continent": "South America",
+   "anchor": [
+    -62,
+    -5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "jaguar-1",
+   "kind": "jaguar",
+   "continent": "South America",
+   "anchor": [
+    -57,
+    -16
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "capybara-0",
+   "kind": "capybara",
+   "continent": "South America",
+   "anchor": [
+    -56,
+    -17
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "capybara-1",
+   "kind": "capybara",
+   "continent": "South America",
+   "anchor": [
+    -65,
+    -12
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "kangaroo-0",
+   "kind": "kangaroo",
+   "continent": "Oceania",
+   "anchor": [
+    133,
+    -25
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "kangaroo-1",
+   "kind": "kangaroo",
+   "continent": "Oceania",
+   "anchor": [
+    140,
+    -29
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "kiwi-0",
+   "kind": "kiwi",
+   "continent": "Oceania",
+   "anchor": [
+    175.6,
+    -39
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "kiwi-1",
+   "kind": "kiwi",
+   "continent": "Oceania",
+   "anchor": [
+    172.2,
+    -42.2
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "penguin-0",
+   "kind": "penguin",
+   "continent": "Antarctica",
+   "anchor": [
+    -57,
+    -64.4
+   ],
+   "habitat": "coastal-ice"
+  },
+  {
+   "id": "penguin-1",
+   "kind": "penguin",
+   "continent": "Antarctica",
+   "anchor": [
+    62.8,
+    -67.4
+   ],
+   "habitat": "coastal-ice"
+  },
+  {
+   "id": "penguin-2",
+   "kind": "penguin",
+   "continent": "Antarctica",
+   "anchor": [
+    166.5,
+    -77.5
+   ],
+   "habitat": "coastal-ice"
+  },
+  {
+   "id": "seal-0",
+   "kind": "seal",
+   "continent": "Antarctica",
+   "anchor": [
+    -61,
+    -65
+   ],
+   "habitat": "coastal-ice"
+  },
+  {
+   "id": "seal-1",
+   "kind": "seal",
+   "continent": "Antarctica",
+   "anchor": [
+    11,
+    -70.5
+   ],
+   "habitat": "coastal-ice"
+  },
+  {
+   "id": "seal-2",
+   "kind": "seal",
+   "continent": "Antarctica",
+   "anchor": [
+    166.8,
+    -77.6
+   ],
+   "habitat": "coastal-ice"
+  },
+  {
+   "id": "brown-bear-0",
+   "kind": "brown-bear",
+   "continent": "Europe",
+   "anchor": [
+    25.5,
+    45.8
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "brown-bear-1",
+   "kind": "brown-bear",
+   "continent": "Europe",
+   "anchor": [
+    15,
+    62.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "brown-bear-2",
+   "kind": "brown-bear",
+   "continent": "Europe",
+   "anchor": [
+    29.5,
+    63.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "wild-boar-0",
+   "kind": "wild-boar",
+   "continent": "Europe",
+   "anchor": [
+    8.2,
+    48.2
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "wild-boar-1",
+   "kind": "wild-boar",
+   "continent": "Europe",
+   "anchor": [
+    -4.5,
+    39.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "wild-boar-2",
+   "kind": "wild-boar",
+   "continent": "Europe",
+   "anchor": [
+    22,
+    52.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "lion-0",
+   "kind": "lion",
+   "continent": "Africa",
+   "anchor": [
+    34.8,
+    -2.3
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "lion-1",
+   "kind": "lion",
+   "continent": "Africa",
+   "anchor": [
+    31.5,
+    -23.8
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "lion-2",
+   "kind": "lion",
+   "continent": "Africa",
+   "anchor": [
+    23,
+    -19.3
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "giraffe-0",
+   "kind": "giraffe",
+   "continent": "Africa",
+   "anchor": [
+    35.1,
+    -1.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "giraffe-1",
+   "kind": "giraffe",
+   "continent": "Africa",
+   "anchor": [
+    16,
+    -18.9
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "giraffe-2",
+   "kind": "giraffe",
+   "continent": "Africa",
+   "anchor": [
+    31.7,
+    -24.8
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "rhinoceros-0",
+   "kind": "rhinoceros",
+   "continent": "Africa",
+   "anchor": [
+    31.6,
+    -25.0
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "rhinoceros-1",
+   "kind": "rhinoceros",
+   "continent": "Africa",
+   "anchor": [
+    32.0,
+    -28.2
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "rhinoceros-2",
+   "kind": "rhinoceros",
+   "continent": "Africa",
+   "anchor": [
+    15.5,
+    -19.2
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "camel-0",
+   "kind": "camel",
+   "continent": "Asia",
+   "anchor": [
+    103.5,
+    43.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "camel-1",
+   "kind": "camel",
+   "continent": "Asia",
+   "anchor": [
+    100,
+    44.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "orangutan-0",
+   "kind": "orangutan",
+   "continent": "Asia",
+   "anchor": [
+    113.9,
+    1.0
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "orangutan-1",
+   "kind": "orangutan",
+   "continent": "Asia",
+   "anchor": [
+    98.0,
+    3.8
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "snow-leopard-0",
+   "kind": "snow-leopard",
+   "continent": "Asia",
+   "anchor": [
+    84.0,
+    28.7
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "snow-leopard-1",
+   "kind": "snow-leopard",
+   "continent": "Asia",
+   "anchor": [
+    77.0,
+    41.8
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "snow-leopard-2",
+   "kind": "snow-leopard",
+   "continent": "Asia",
+   "anchor": [
+    91.5,
+    47.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "wolf-0",
+   "kind": "wolf",
+   "continent": "North America",
+   "anchor": [
+    -110.4,
+    44.9
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "wolf-1",
+   "kind": "wolf",
+   "continent": "North America",
+   "anchor": [
+    -92.5,
+    47.9
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "wolf-2",
+   "kind": "wolf",
+   "continent": "North America",
+   "anchor": [
+    -117,
+    62
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "alligator-0",
+   "kind": "alligator",
+   "continent": "North America",
+   "anchor": [
+    -80.9,
+    25.4
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "alligator-1",
+   "kind": "alligator",
+   "continent": "North America",
+   "anchor": [
+    -91.8,
+    30.0
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "alligator-2",
+   "kind": "alligator",
+   "continent": "North America",
+   "anchor": [
+    -82.3,
+    30.8
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "guanaco-0",
+   "kind": "guanaco",
+   "continent": "South America",
+   "anchor": [
+    -72.9,
+    -51.0
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "guanaco-1",
+   "kind": "guanaco",
+   "continent": "South America",
+   "anchor": [
+    -69.5,
+    -45.0
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "guanaco-2",
+   "kind": "guanaco",
+   "continent": "South America",
+   "anchor": [
+    -75.5,
+    -15.3
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "toucan-0",
+   "kind": "toucan",
+   "continent": "South America",
+   "anchor": [
+    -60.0,
+    -3.1
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "toucan-1",
+   "kind": "toucan",
+   "continent": "South America",
+   "anchor": [
+    -67.0,
+    -7.0
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "toucan-2",
+   "kind": "toucan",
+   "continent": "South America",
+   "anchor": [
+    -53.0,
+    -10.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "koala-0",
+   "kind": "koala",
+   "continent": "Oceania",
+   "anchor": [
+    152.8,
+    -27.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "koala-1",
+   "kind": "koala",
+   "continent": "Oceania",
+   "anchor": [
+    150.5,
+    -31.0
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "koala-2",
+   "kind": "koala",
+   "continent": "Oceania",
+   "anchor": [
+    145.0,
+    -38.0
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "emu-0",
+   "kind": "emu",
+   "continent": "Oceania",
+   "anchor": [
+    138.0,
+    -28.0
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "emu-1",
+   "kind": "emu",
+   "continent": "Oceania",
+   "anchor": [
+    121.0,
+    -30.5
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "emu-2",
+   "kind": "emu",
+   "continent": "Oceania",
+   "anchor": [
+    146.0,
+    -33.0
+   ],
+   "habitat": "land"
+  },
+  {
+   "id": "orca-0",
+   "kind": "orca",
+   "continent": "Antarctica",
+   "anchor": [
+    170.0,
+    -75.5
+   ],
+   "habitat": "coastal-sea"
+  },
+  {
+   "id": "orca-1",
+   "kind": "orca",
+   "continent": "Antarctica",
+   "anchor": [
+    -63.0,
+    -64.5
+   ],
+   "habitat": "coastal-sea"
+  }
+ ]
 }
