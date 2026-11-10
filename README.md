@@ -11,7 +11,9 @@ Zooming in (1×–32×) turns the globe into the continent **game board** from t
 - Countries take slightly different greens, with pale borders.
 - Each continent's own plants, landforms and animals fade in as icons: oaks, bears, boars, deer and foxes in Europe; acacias, baobabs, lions, giraffes, rhinos, elephants and zebras in Africa; bamboo, pandas, tigers, camels, orangutans and snow leopards in Asia; and so on, with 29 species in all. Snow-capped mountains sit on real ranges.
 
-It is the same sphere throughout, with no switch to a flat map. On web, a view can be opened directly, e.g. `/?lon=10&lat=47&zoom=2.6`.
+It is the same sphere throughout, with no switch to a flat map.
+
+Zooming further into **Portugal** brings in a few buildings at its real cities (a castle at Lisbon, church towns, houses), plus trees and boats. Zooming into **Lisbon** grows an isometric city scene out of its location: the castle on its hill, the Sé, the Rua Augusta arch over Praça do Comércio, pastel houses, a tram street, Belém Tower in the Tagus. You can pan around it. Try `/?lon=-8.3&lat=39.6&zoom=5.6` (Portugal) or `/?lon=-9.1365&lat=38.71&zoom=7` (Lisbon). Deep zoom is only allowed where such detail exists. Rebuild the city scenes with `.venv/bin/python scripts/art/build_capitals.py`. On web, a view can be opened directly, e.g. `/?lon=10&lat=47&zoom=2.6`.
 
 Development still prioritizes **Earth → continent → country → capital visuals** before game controls and saved progress. Country detail (Malta), capital streets and buildings, the pin/name chip, the title header and the bottom card are upcoming work.
 

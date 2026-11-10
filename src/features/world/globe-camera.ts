@@ -1,21 +1,71 @@
 export type GlobeCamera = { longitude: number; latitude: number; zoom: number };
 export type GlobeViewport = { width: number; height: number };
-// 32x: continent scale (~20 km per terrain pixel at 2.6) with room to look closer.
-// Country packs (Malta) will raise this.
+// 32x: continent scale (~20 km per terrain pixel at 2.6) with room to look closer. Countries and
+// capitals with detail allow more (COVERAGE).
 export const MAX_GLOBE_ZOOM = 5;
+
+/** Zoom tiers beyond the continent board (ART_CONTRACT.md): a country's buildings, then its capital. */
+export const COUNTRY_ZOOM = { in: 4.4, full: 5.0, max: 6.4 };
+export const CAPITAL_ZOOM = { in: 6.3, full: 7.0 };
+/** How far (degrees) the camera centre may be from a capital at capital zoom. */
+export const CAPITAL_REACH = 1.5;
+/** How far (degrees) outside a covered region the centre is pulled back rather than zoomed out. */
+const PULL_BACK = 2.5;
+
+/** Countries with detail: their bounds (west, south, east, north) and capital. Matches capitals.json. */
+export const COVERAGE = [
+  { id: 'lisbon', country: 'Portugal', longitude: -9.1365, latitude: 38.71, bounds: [-10.0, 36.8, -6.0, 42.2] },
+] as const;
+
+/** The deepest zoom detail allows at a location. */
+export function maxZoomAt(longitude: number, latitude: number) {
+  'worklet';
+  let max = MAX_GLOBE_ZOOM;
+  for (const region of COVERAGE) {
+    const [west, south, east, north] = region.bounds;
+    if (longitude >= west && longitude <= east && latitude >= south && latitude <= north)
+      max = Math.max(max, COUNTRY_ZOOM.max);
+    if (
+      Math.abs(longitude - region.longitude) <= CAPITAL_REACH &&
+      Math.abs(latitude - region.latitude) <= CAPITAL_REACH
+    )
+      max = Math.max(max, CAPITAL_ZOOM.full);
+  }
+  return max;
+}
 
 export function globeRadius(viewport: GlobeViewport) {
   'worklet';
   return Math.min(viewport.width, viewport.height) * 0.41;
 }
 
-export function constrainGlobe(camera: GlobeCamera): GlobeCamera {
+export function constrainGlobe(camera: GlobeCamera, coverage = true): GlobeCamera {
   'worklet';
-  return {
-    longitude: ((((camera.longitude + 180) % 360) + 360) % 360) - 180,
-    latitude: Math.max(-80, Math.min(80, camera.latitude)),
-    zoom: Math.max(0, Math.min(MAX_GLOBE_ZOOM, camera.zoom)),
-  };
+  let longitude = ((((camera.longitude + 180) % 360) + 360) % 360) - 180;
+  let latitude = Math.max(-80, Math.min(80, camera.latitude));
+  let zoom = Math.max(0, Math.min(CAPITAL_ZOOM.full, camera.zoom));
+  if (coverage && zoom > maxZoomAt(longitude, latitude)) {
+    // Deep zoom only over covered places: pull a nearby centre back inside, else zoom out.
+    let best: [number, number] | null = null;
+    let bestDistance = PULL_BACK * PULL_BACK;
+    for (const region of COVERAGE) {
+      const capital = zoom > COUNTRY_ZOOM.max;
+      const west = capital ? region.longitude - CAPITAL_REACH : region.bounds[0];
+      const east = capital ? region.longitude + CAPITAL_REACH : region.bounds[2];
+      const south = capital ? region.latitude - CAPITAL_REACH : region.bounds[1];
+      const north = capital ? region.latitude + CAPITAL_REACH : region.bounds[3];
+      const lon = Math.max(west, Math.min(east, longitude));
+      const lat = Math.max(south, Math.min(north, latitude));
+      const distance = (lon - longitude) ** 2 + (lat - latitude) ** 2;
+      if (distance <= bestDistance) {
+        best = [lon, lat];
+        bestDistance = distance;
+      }
+    }
+    if (best) [longitude, latitude] = best;
+    else zoom = maxZoomAt(longitude, latitude);
+  }
+  return { longitude, latitude, zoom };
 }
 
 export const OPENING_CAMERA: GlobeCamera = { longitude: -15, latitude: 20, zoom: 0 };
@@ -105,17 +155,25 @@ export function zoomGlobe(
 ) {
   'worklet';
   const anchor = globeLocation(x, y, camera, viewport);
-  let next = constrainGlobe({ ...camera, zoom });
-  if (!anchor) return next;
+  // Detail under the fingers counts too, so pinching on Lisbon reaches the capital.
+  const limit = Math.max(
+    maxZoomAt(camera.longitude, camera.latitude),
+    anchor ? maxZoomAt(anchor.longitude, anchor.latitude) : 0
+  );
+  let next = constrainGlobe({ ...camera, zoom: Math.min(zoom, limit) }, false);
+  if (!anchor) return constrainGlobe(next);
   // Keep the chosen surface location under the pointer as the sphere grows.
   for (let step = 0; step < 5; step++) {
     const point = globeLocation(x, y, next, viewport);
     if (!point) break;
-    next = constrainGlobe({
-      ...next,
-      longitude: next.longitude + anchor.longitude - point.longitude,
-      latitude: next.latitude + anchor.latitude - point.latitude,
-    });
+    next = constrainGlobe(
+      {
+        ...next,
+        longitude: next.longitude + anchor.longitude - point.longitude,
+        latitude: next.latitude + anchor.latitude - point.latitude,
+      },
+      false
+    );
   }
-  return next;
+  return constrainGlobe(next);
 }

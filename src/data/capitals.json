@@ -1,0 +1,11 @@
+[
+  {
+    "id": "lisbon",
+    "name": "Lisbon",
+    "country": "Portugal",
+    "longitude": -9.1365,
+    "latitude": 38.71,
+    "width": 720,
+    "height": 520
+  }
+]

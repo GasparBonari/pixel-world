@@ -34,6 +34,13 @@ SCENERY = ROOT / "scripts" / "geography" / "scenery.json"
 GLOBE = ROOT / "assets" / "world" / "globe.png"
 BOARD = ROOT / "assets" / "world" / "board.png"
 COUNTRIES = ROOT / ".cache" / "geography" / "countries-50m.source"
+PLACES = ROOT / ".cache" / "geography" / "places-10m.source"
+PLACES_LOCK = ROOT / "scripts" / "art" / "phase3-sources.lock.json"
+# Countries with a country tier: their mainland bounds (west, south, east, north) and capital.
+# Must match COVERAGE in src/features/world/globe-camera.ts.
+COUNTRY_TIER = [
+    {"adm0": "PRT", "bounds": (-10.0, 36.8, -6.0, 42.2), "capital": "Lisbon"},
+]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
 GRID = 0.25  # degrees per placement-grid cell
@@ -44,6 +51,7 @@ VARIANTS = {
     "mountain": 3, "hill": 2, "oak": 3, "pine": 2, "olive": 2, "acacia": 2, "baobab": 1,
     "palm": 2, "bamboo": 1, "eucalyptus": 2, "fern": 1, "grass": 2, "cactus": 1, "dune": 1,
     "red-rock": 1, "volcano": 1, "glacier": 2, "iceberg": 2,
+    "castle": 1, "church": 1, "house": 2, "boat": 1,
     **{animal: 1 for animal in sprites.FAUNA},
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
@@ -119,11 +127,12 @@ def main():
 
     icons, placed = [], []
 
-    def add(kind, lon, lat, seed, group=None):
+    def add(kind, lon, lat, seed, group=None, tier=0):
         offsets = GROUPS[group] if group else ((0, 0),)
         for i, (dx, dy) in enumerate(offsets):
-            icons.append([frame_index(kind, seed + i), round(lon, 4), round(lat, 4), dx, dy])
-        placed.append((lon, lat))
+            icons.append([frame_index(kind, seed + i), round(lon, 4), round(lat, 4), dx, dy, tier])
+        if tier == 0:
+            placed.append((lon, lat))
 
     # 1. Animals, first, so plants keep clear of them: the curated anchors, then a few more of
     #    each species near those anchors, on suitable ground and spread apart.
@@ -211,6 +220,57 @@ def main():
         spacing = 420 if kind in LANDFORMS else 300
         for lon, lat in spread(candidates, count, spacing, sum(map(ord, region["id"])), placed, 170):
             add(kind, lon, lat, int(h01(lon * 5, lat * 5) * 9), GROUPING.get(kind))
+
+    # 4. Country tier (fades in at country zoom): the capital as a castle among houses, towns as
+    #    churches with houses, smaller cities as churches or house pairs, a few trees and boats.
+    places_raw = PLACES.read_bytes()
+    if sha256(places_raw).hexdigest() != json.loads(PLACES_LOCK.read_text())["places-10m"]:
+        raise ValueError("places-10m checksum mismatch")
+    places = [f["properties"] for f in json.loads(places_raw)["features"]]
+
+    def building(kind, lon, lat, dx, dy, seed=0):
+        icons.append([frame_index(kind, seed), round(lon, 4), round(lat, 4), dx, dy, 1])
+
+    for spec in COUNTRY_TIER:
+        w, s_, e, n = spec["bounds"]
+        cities = sorted(
+            (p for p in places if p["adm0_a3"] == spec["adm0"] and w <= p["longitude"] <= e
+             and s_ <= p["latitude"] <= n),
+            key=lambda p: -p["pop_max"])
+        towns = []
+        for city in cities:
+            here = (city["longitude"], city["latitude"])
+            if any(great_circle_km(here, t) < 75 for t in towns) or len(towns) >= 9:
+                continue
+            towns.append(here)
+            lon, lat = here
+            rank = len(towns) - 1
+            if city["name"] == spec["capital"]:
+                building("house", lon, lat, -9, -2, 0)
+                building("house", lon, lat, 10, -1, 1)
+                building("castle", lon, lat, 0, 0)
+            elif rank <= 2:
+                building("house", lon, lat, -8, 1, rank)
+                building("church", lon, lat, 0, 0)
+                building("house", lon, lat, 8, 2, rank + 1)
+            elif rank % 2:
+                building("church", lon, lat, 0, 0)
+            else:
+                building("house", lon, lat, -5, -1, rank)
+                building("house", lon, lat, 5, 1, rank + 1)
+        trees, boats = [], []
+        for y in range(int((90 - n) / GRID), int((90 - s_) / GRID)):
+            for x in range(int((w + 180) / GRID), int((e + 180) / GRID)):
+                lon, lat = cell_center(x, y)
+                if continent_at(x, y) and is_land(x, y):
+                    trees.append((lon, lat))
+                elif not is_land(x, y) and near_land(x, y, 3):
+                    boats.append((lon, lat))
+        for lon, lat in spread(trees, 7, 70, 51, towns, 45):
+            kind = "pine" if lat > 40.5 else "olive" if lat < 38.8 else "oak"
+            building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+        for lon, lat in spread(boats, 2, 150, 53):
+            building("boat", lon, lat, 0, 0)
 
     icons.sort(key=lambda i: (-i[2] + i[4] * 0.01, i[1]))
 
