@@ -1251,6 +1251,89 @@ def orca(seed=0):
     return s.image()
 
 
+
+def windmill(seed=0):
+    """La Mancha windmill: whitewashed round tower, dark conical cap, four lattice sails."""
+    s = Sprite(23, 26)
+    white = ([hex_rgb("#C9CCC6"), hex_rgb("#EDEDE6"), hex_rgb("#F8F8F2"), hex_rgb("#FFFFFF")], hex_rgb("#4E4A44"))
+    cap, wood = ramp("#3E3A38"), ramp("#8A6240")
+    ground_shadow(s, 11.5, 24.4, 5)
+    for y in range(10, 25):
+        for x in range(8, 16):
+            tone = 2 if x < 10 else 0 if x > 13 else 1
+            s.put(x, y, white[0][tone], white[1])
+    dots(s, [(11, 22), (12, 22), (11, 23), (12, 23), (11, 24), (12, 24)], hex_rgb("#4A3426"), white[1])
+    dots(s, [(10, 15), (13, 17)], hex_rgb("#34405A"), white[1])
+    for y in range(6, 10):
+        half = (y - 5) * 1.2
+        for x in range(int(11.5 - half), int(11.5 + half) + 1):
+            s.put(x, y, cap[0][1 if x < 12 else 0], cap[1])
+    hub = (11, 8)
+    for ex, ey in ((1, 0), (22, 1), (3, 17), (21, 16)):  # the X of sails
+        line(s, hub[0], hub[1], ex, ey, wood[0][1], wood[1])
+        for k in (0.45, 0.7, 0.95):
+            x, y = hub[0] + (ex - hub[0]) * k, hub[1] + (ey - hub[1]) * k
+            s.put(x, y - 1, wood[0][2], wood[1])
+            s.put(x + 1, y, wood[0][2], wood[1])
+    s.put(hub[0], hub[1], INK, cap[1])
+    return s.image()
+
+
+def mont_saint_michel(seed=0):
+    """Mont-Saint-Michel: a granite island ringed by ramparts, houses climbing to the abbey and its spire."""
+    s = Sprite(27, 30)
+    rock, wall = ramp("#9A8F7E"), ramp("#CFC6B0", "#4A3E30")
+    roofs, sand = ramp("#5E6878"), hex_rgb("#E2D2A8")
+    for x in range(1, 26):  # the tidal flats
+        s.put(x, 28, sand, sand)
+        if 3 < x < 23:
+            s.put(x, 29, hex_rgb("#A8DDEB"), hex_rgb("#A8DDEB"))
+    blob(s, 13.5, 24.0, 11.5, 5.0, rock, clip=lambda x, y: y <= 27)  # the rock
+    for x in range(3, 25):  # ramparts with towers
+        for y in (24, 25, 26, 27):
+            if y >= 24 + (0 if 5 < x < 22 else 1):
+                s.put(x, y, wall[0][2 if x < 13 else 1], wall[1])
+        if x % 5 == 0:
+            for y in (22, 23):
+                s.put(x, y, wall[0][2], wall[1])
+    for x0, y0, w, h in ((6, 19, 4, 4), (11, 18, 3, 5), (16, 19, 4, 4)):  # houses on the slope
+        for y in range(y0, y0 + h):
+            for x in range(x0, x0 + w):
+                s.put(x, y, roofs[0][2] if y == y0 else wall[0][1 if x < x0 + w - 1 else 0], wall[1])
+    for y in range(10, 19):  # the abbey church
+        for x in range(10, 18):
+            tone = 2 if x < 13 else 1 if x < 16 else 0
+            s.put(x, y, roofs[0][tone] if y < 12 else wall[0][tone], wall[1])
+    for y in range(1, 10):  # the spire with Saint Michael in gold
+        w = max(0, (y - 1) // 3)
+        for x in range(13 - w, 15 + w):
+            s.put(x, y, roofs[0][2 if x < 14 else 0], roofs[1])
+    s.put(14, 0, hex_rgb("#F2C14E"), roofs[1])
+    return s.image()
+
+
+def vineyard(seed=0):
+    """A vineyard: neat rows of vines on warm soil, a few dark grapes."""
+    s = Sprite(25, 14)
+    soil, leaves = hex_rgb("#C49A6C"), ramp("#6FA845", "#2E4A22")
+    for y in range(2, 13):
+        for x in range(1, 24):
+            skew = (12 - y) * 0.6
+            if 1 + skew * 0.3 <= x <= 23 - skew * 0.3:
+                row = (x + y) % 4
+                if row in (0, 1, 2):
+                    s.put(x, y, leaves[0][3 if row == 0 else 2 if row == 1 else 1], leaves[1])
+                    if h01(seed, x, y) < 0.08:
+                        s.put(x, y, hex_rgb("#5A2A5E"), leaves[1])
+                else:
+                    s.put(x, y, soil if row == 2 else shade(soil, -0.12), hex_rgb("#7A5A3A"))
+    return s.image()
+
+
+def shade(color, amount):
+    target = 255 if amount > 0 else 0
+    return tuple(int(c + (target - c) * abs(amount)) for c in color)
+
 FAUNA = {
     "deer": deer, "fox": fox, "elephant": elephant, "zebra": zebra, "panda": panda,
     "tiger": tiger, "bison": bison, "moose": moose, "jaguar": jaguar, "capybara": capybara,
@@ -1264,6 +1347,7 @@ FLORA = {
     "oak": tree, "pine": pine, "olive": olive, "acacia": acacia, "baobab": baobab, "palm": palm,
     "bamboo": bamboo, "eucalyptus": eucalyptus, "fern": fern, "grass": grass, "cactus": cactus,
     "dune": dune, "red-rock": red_rock, "volcano": volcano, "glacier": glacier, "iceberg": iceberg,
+    "windmill": windmill, "mont-saint-michel": mont_saint_michel, "vineyard": vineyard,
 }
 
 

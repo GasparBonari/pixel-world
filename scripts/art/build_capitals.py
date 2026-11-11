@@ -22,6 +22,7 @@ import sprites
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "assets" / "world" / "capitals"
 DATA = ROOT / "src" / "data" / "capitals.json"
+IMAGES = ROOT / "src" / "data" / "capital-images.ts"
 WIDTH, HEIGHT = 720, 520
 CENTER_TILE = 40
 
@@ -106,315 +107,422 @@ def ground_color(kind, x, y, seed=0):
     return C["grass"]
 
 
-# ---------------------------------------------------------------- landmarks --
+# ---------------------------------------------------------- Lisbon, Madrid --
+# Landmarks are built in true isometric 3D in scripts/art/landmarks_iberia.py.
 
-STONE_OUTLINE = rgb("#4A3E30")
+import landmarks_iberia as lb
+import landmarks_paris as lp
 
-
-def stone_box(scene, i, j, wi, wj, height, elevation, color, crenels=True, cover=None):
-    own = cover if cover is not None else set()
-    box = Box(scene, i, j, wi, wj, height, elevation)
-    box.walls(color, own, windows=False)
-    box.flat_top(shade(color, 0.12), own, crenels=crenels)
-    if cover is None:
-        iso.outline(scene, own, STONE_OUTLINE)
-    return box
+TAGUS = (rgb("#3E86C0"), rgb("#2E6DAF"), rgb("#5A9AD0"))
+LISBON_WALLS = [rgb(c) for c in ("#F4D35E", "#F2A6A0", "#F6F0E4", "#9CC3E0", "#E9B872", "#F2C9A0",
+                                 "#A8D5BA", "#F6F0E4", "#E8A27A", "#F4D35E")]
+MADRID_WALLS = [rgb(c) for c in ("#B4553C", "#E3B66B", "#EEE1C6", "#E59A7A", "#F2EEE4", "#C96A4A",
+                                 "#D9A66E", "#B4553C", "#EEE1C6")]
 
 
-def castle(scene, i, j, elev):
-    """São Jorge: crenellated curtain walls, four corner towers, a keep flying Portugal's flag."""
-    stone = C["stone"]
-    size = 9
-    parts = []
-    # Back walls and towers first, front ones last (depth order inside the landmark).
-    parts.append((i + j, lambda s: stone_box(s, i, j, size, 1, 14, elev, stone)))
-    parts.append((i + j, lambda s: stone_box(s, i, j, 1, size, 14, elev, stone)))
-    parts.append((i + j + 1, lambda s: stone_box(s, i - 1, j - 1, 3, 3, 26, elev, stone)))
-    parts.append((i + j + size, lambda s: stone_box(s, i + size - 2, j - 1, 3, 3, 26, elev, stone)))
-    parts.append((i + j + size, lambda s: stone_box(s, i - 1, j + size - 2, 3, 3, 26, elev, stone)))
-    parts.append((i + j + size + 2, lambda s: keep(s, i + 3, j + 3, elev)))
-    parts.append((i + j + 2 * size - 1, lambda s: stone_box(s, i + size - 1, j, 1, size, 12, elev, stone)))
-    parts.append((i + j + 2 * size - 1, lambda s: stone_box(s, i, j + size - 1, size, 1, 12, elev, stone)))
-    parts.append((i + j + 2 * size, lambda s: stone_box(s, i + size - 2, j + size - 2, 3, 3, 24, elev, stone)))
-    for depth, draw in parts:
-        scene.add(depth, draw)
+def rowboat(seed):
+    s = sprites.Sprite(11, 6)
+    for x in range(1, 10):
+        s.put(x, 3, sprites.C["hull_lt"], sprites.C["hull_ol"])
+        if 2 <= x <= 8:
+            s.put(x, 4, sprites.C["hull"], sprites.C["hull_ol"])
+    s.put(5, 2, rgb("#E2434E"), sprites.C["hull_ol"])
+    s.put(5, 1, rgb("#F2C9A0"), sprites.C["hull_ol"])
+    s.put(2, 2, sprites.C["bark"], sprites.C["bark"])
+    s.put(8, 2, sprites.C["bark"], sprites.C["bark"])
+    return s.image()
 
 
-def keep(scene, i, j, elev):
-    box = stone_box(scene, i, j, 3, 3, 34, elev, shade(C["stone"], 0.05))
-    x, y = box.up(box.T)
-    for dy in range(4, 14):
-        scene.put(x, y - dy, rgb("#3A3530"))
-    for dy in range(9, 14):  # Portuguese flag: green at the hoist, red in the fly
-        scene.put(x + 1, y - dy, rgb("#2E7D32"))
-        for dx in range(2, 6):
-            scene.put(x + dx, y - dy, rgb("#D32F2F"))
+def new_scene():
+    ox = WIDTH / 2
+    oy = HEIGHT / 2 - CENTER_TILE * 2 * 4
+    return iso.Scene(WIDTH, HEIGHT, (ox, oy))
 
 
-def cathedral(scene, i, j):
-    """Sé de Lisboa: a stone nave under a tiled roof, two crenellated towers and a rose window."""
-    def nave(s):
-        cover = set()
-        box = Box(s, i, j, 3, 5, 24)
-        box.walls(C["limestone"], cover, windows=False)
-        box.gable_roof(C["roof"], C["limestone"], cover)
-        iso.outline(s, cover, STONE_OUTLINE)
-
-    def towers(s):
-        for ti in (i - 0.75, i + 2.25):
-            stone_box(s, ti, j + 4, 1.6, 2.2, 50, 0, C["limestone"])
-        # Rose window and portal on the façade between the towers.
-        x, y = s.screen(i + 1.5, j + 6)
-        for dx in range(-3, 4):
-            for dy in range(-3, 4):
-                if dx * dx + dy * dy <= 10:
-                    s.put(x + dx, y - 30 + dy, rgb("#3F4A6B") if (dx + dy) % 2 else rgb("#C9A0E0"))
-        for dy in range(0, 9):
-            for dx in range(-2, 3):
-                if dy < 7 or abs(dx) < 2:
-                    s.put(x + dx, y - dy - 1, rgb("#4A3426"))
-
-    scene.add(i + j + 5, nave)
-    scene.add(i + j + 7, towers)
+def visible_tiles(scene, margin=50):
+    for i in range(-20, 120):
+        for j in range(-20, 120):
+            x, y = scene.screen(i, j)
+            if -16 < x < WIDTH + 16 and -margin < y < HEIGHT + 8:
+                yield i, j
 
 
-def belem_tower(scene, i, j):
-    """Torre de Belém: a limestone bastion in the water, corner turrets, and a tall tower."""
-    def draw(s):
-        cover = set()
-        base = Box(s, i, j, 5, 4, 12)
-        base.walls(C["limestone"], cover, windows=False)
-        base.flat_top(shade(C["limestone"], 0.1), cover, crenels=True)
-        iso.outline(s, cover, STONE_OUTLINE)
-        tower = stone_box(s, i + 0.5, j + 0.5, 2.5, 2.5, 42, 0, C["limestone"])
-        # Arched windows with balconies on the tower's lit face.
-        x, y = s.screen(i + 0.5, j + 3)
-        for level in (16, 26, 34):
-            for dx in (4, 8):
-                for dy in range(0, 4):
-                    s.put(x + dx, y - level - dy + dx // 2, rgb("#3F4A5E"))
-        for ci, cj in ((i, j + 4), (i + 5, j + 4), (i + 5, j)):  # domed corner turrets
-            tx, ty = s.screen(ci, cj, 12)
-            for dy in range(0, 7):
-                for dx in range(-2, 3):
-                    s.put(tx + dx, ty - dy, C["limestone"] if dx < 1 else shade(C["limestone"], -0.2))
-            for dx in range(-2, 3):
-                s.put(tx + dx, ty - 7 - (2 - abs(dx)), shade(C["limestone"], -0.1))
-    scene.add(i + j + 9, draw)
+def paint_ground(scene, kinds, elev, water, wall_stone):
+    wall = iso.stone_wall(wall_stone)
+    for (i, j) in sorted(kinds, key=lambda t: (t[0] + t[1], t[0])):
+        kind, e = kinds[(i, j)], elev.get((i, j), 0)
 
+        def color(x, y, k=kind):
+            if k == "water":
+                if h01(x // 3, y, 9) < 0.02:
+                    return rgb("#E4F4FA")
+                return water[1] if h01(x // 6, y // 2, 4) < 0.3 else water[0]
+            if k == "quay":
+                return rgb("#D8CDB2") if (x + y) % 6 else rgb("#B3A68C")
+            if k == "gravel":
+                return shade(rgb("#E6DAB8"), -0.08) if h01(x, y, 6) < 0.15 else rgb("#E6DAB8")
+            return ground_color("pave" if k in ("lot", "court") else k, x, y)
+        iso.ground_tile(scene, i, j, color, e, wall if e else None)
 
-def arch(scene, i, j):
-    """Arco da Rua Augusta: a tall triumphal arch with a deep vault, columns and a statue group."""
-    def draw(s):
-        cover = set()
-        box = Box(s, i, j, 6, 1.5, 40)
-        box.walls(C["limestone"], cover, windows=False)
-        box.flat_top(shade(C["limestone"], 0.1), cover)
-        iso.outline(s, cover, STONE_OUTLINE)
-        lx, ly = box.L
-        bx, by = box.B
-        for u in range(int(bx - lx)):
-            x, foot = lx + u, ly + u * 0.5
-            centre = (bx - lx) / 2
-            span = abs(u - centre)
-            if span <= 8:  # the vault: dark, round-headed
-                top = 22 + int(math.sqrt(max(0, 64 - span * span)))
-                for v in range(1, top):
-                    s.put(x, foot - v, rgb("#3A3026") if v < top - 1 else shade(C["limestone"], -0.3))
-            elif span in (11, 15, 19):  # columns
-                for v in range(1, 28):
-                    s.put(x, foot - v, shade(C["limestone"], 0.2))
-        stone_box(s, i + 2, j, 2, 1.5, 9, 40, shade(C["limestone"], -0.05), crenels=False)
-        tx, ty = s.screen(i + 3, j + 0.75, 49)
-        for v in range(0, 7):  # the statue group's central figure
-            for dx in (-1, 0, 1):
-                if v < 5 or dx == 0:
-                    s.put(tx + dx, ty - v, rgb("#8C8478") if dx else rgb("#A69E90"))
-    scene.add(i + j + 7, draw)
-
-
-def tram(scene, i, j, along_i=True):
-    """Lisbon's yellow tram: yellow body, white roof, a band of windows, trolley pole."""
-    def draw(s):
-        cover = set()
-        wi, wj = (3, 1.2) if along_i else (1.2, 3)
-        box = Box(s, i, j, wi, wj, 12)
-        box.walls(C["yellow"], cover, windows=False)
-        box.flat_top(rgb("#F4F0E6"), cover)
-        for face_start, face_end in ((box.L, box.B), (box.B, box.R)):
-            steps = int(abs(face_end[0] - face_start[0]))
-            for k in range(1, steps - 1):
-                if k % 3 == 0:
-                    continue
-                x = face_start[0] + (face_end[0] - face_start[0]) * k / steps
-                y = face_start[1] + (face_end[1] - face_start[1]) * k / steps
-                for dy in (6, 7, 8):
-                    s.put(x, y - dy, rgb("#34405A") if dy != 8 else rgb("#8FB4D8"))
-                s.put(x, y - 1, rgb("#8A3A26"))
-        top = box.up(box.T)
-        iso.line(s, (top[0] + 6, top[1] + 3), (top[0] + 12, top[1] - 6), rgb("#2E2A28"))
-        iso.outline(s, cover, rgb("#3A2A22"))
-    scene.add(i + j + 3, draw)
-
-
-# -------------------------------------------------------------------- scene --
 
 def lisbon():
+    scene = new_scene()
+    # The Tagus lies beyond a shoreline along the i axis (lower left); Alfama climbs to the castle
+    # (upper right); the Baixa grid runs north from Praça do Comércio on the waterfront.
+    shore = lambda i: 62 + 2 * math.sin(i / 9)
+    hill = (52, 18)
+    tram_path = [(46, 36), (50, 37), (53, 34), (54, 30), (54, 27), (53, 25)]
+
+    def near_tram(i, j):
+        return any(math.hypot(i - (a[0] + (b[0] - a[0]) * t), j - (a[1] + (b[1] - a[1]) * t)) < 1.0
+                   for a, b in zip(tram_path, tram_path[1:]) for t in (k / 8 for k in range(9)))
+
+    kinds, elev = {}, {}
+    for i, j in visible_tiles(scene):
+        hill_r = math.hypot(i - hill[0], (j - hill[1]) * 1.1)
+        if j > shore(i) + 0.5:
+            kind = "water"
+        elif j > shore(i) - 1.5:
+            kind = "quay"
+        elif 33 <= i <= 45 and 49 <= j:
+            kind = "calcada"  # Praça do Comércio, open to the river
+        elif hill_r < 9.5:
+            kind = "grass"
+        elif 35 <= i <= 43 and 19 <= j <= 23:
+            kind = "calcada"  # Rossio, at the top of the Baixa
+        elif near_tram(i, j) or (38 <= i <= 39 and 24 <= j < 47) or (j in (27, 32, 37, 42) and 26 <= i <= 48) \
+                or (i in (32, 45) and 24 <= j <= 46):
+            kind = "cobble"  # Tram 28's street, Rua Augusta and the Baixa's grid of streets
+        elif i > 48 and (abs((i - 48) - (j - 34) * 0.9) < 0.7 or abs((i - 60) + (j - 40)) < 0.7):
+            kind = "cobble"  # Alfama's winding lanes
+        else:
+            kind = "lot"
+        kinds[(i, j)] = kind
+        elev[(i, j)] = 14 if hill_r < 9.5 else 0
+
+    reserved = set()
+
+    def reserve(i, j, wi, wj, ground="pave"):
+        for a in range(int(i), int(math.ceil(i + wi))):
+            for b in range(int(j), int(math.ceil(j + wj))):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == "lot":
+                    kinds[(a, b)] = ground
+
+    lb.castelo_sao_jorge(scene, hill[0] - 5, hill[1] - 4, 14)
+    lb.se_lisboa(scene, 50, 40)
+    reserve(49, 39, 7, 11)
+    lb.arco_rua_augusta(scene, 35.5, 46.5)
+    reserve(35, 46, 8, 3)
+    for k in range(3):  # yellow Pombaline arcades: west side facing the square, north beside the arch
+        lb.lisbon_house(scene, 30.5, 49 + k * 3.5, 2.5, 3.5, 3, rgb("#F2C14E"), k, arcade=True)
+    for a0 in (30.5, 43.0):
+        lb.lisbon_house(scene, a0, 46, 4.5 if a0 > 40 else 5, 2.5, 3, rgb("#F2C14E"), 7, arcade=True)
+    reserve(30, 45, 19, 15)
+    lb.torre_belem(scene, 27, shore(27) + 3)
+    for (a, b, along) in ((47, 35.5, False), (57.2, 30, True)):
+        lb.tram_28(scene, a, b, along_j=along)
+
+    paint_ground(scene, kinds, elev, TAGUS, lb.CASTLE["dark"])
+
+    # Houses: uniform Pombaline blocks in the Baixa, irregular pastel and azulejo houses in Alfama.
+    for li in range(-12, 110, 3):
+        for lj in range(-12, 110, 3):
+            baixa = 26 <= li <= 48 and 22 <= lj <= 46
+            for wi, wj in (((3, 3), (3, 2)) if baixa else ((3, 2), (2, 3), (2, 2))):
+                cells = [(a, b) for a in range(li, li + wi) for b in range(lj, lj + wj)]
+                if all(kinds.get(c) == "lot" and c not in reserved for c in cells):
+                    reserved.update(cells)
+                    seed = int(h01(li, lj, 7) * 1000)
+                    floors = 4 if baixa else 2 + int(h01(seed, 9) * 2)
+                    wall = LISBON_WALLS[int(h01(seed, 5) * len(LISBON_WALLS))]
+                    lb.lisbon_house(scene, li, lj, wi, wj, floors, wall, seed,
+                                    tiles=not baixa and h01(seed, 11) < 0.18)
+                    break
+                if kinds.get((li, lj)) == "lot" and (li, lj) not in reserved and h01(li, lj, 13) < 0.6:
+                    for a in range(li, li + 2):
+                        for b in range(lj, lj + 2):
+                            if kinds.get((a, b)) == "lot" and (a, b) not in reserved:
+                                kinds[(a, b)] = "garden"
+
+    jacaranda = [round_tree(n, "#A98BD8", "#3E2A5E") for n in range(3)]
+    green = [round_tree(n) for n in range(3)]
+    pines = [umbrella_pine(n) for n in range(2)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i + 0.5, j + 0.5, elev[(i, j)])
+        pick = None
+        if kind == "grass" and elev[(i, j)] and h01(i, j, 21) < 0.16:
+            pick = pines[(i + j) % 2]
+        elif kind == "quay" and i % 4 == 0:
+            pick = green[i % 3]
+        elif kind == "calcada" and (i in (33, 45)) and j % 3 == 0:
+            pick = jacaranda[j % 3]
+        elif kind in ("lot", "garden") and (i, j) not in reserved and h01(i, j, 22) < 0.4:
+            pick = (jacaranda if h01(i, j, 23) < 0.45 else green)[(i * 7 + j) % 3]
+        if pick is not None:
+            scene.add(i + j + 1.5, lambda s, img=pick, x=x, y=y: s.sprite(img, x, y + 6))
+    boat = sprites.sailboat(0)
+    for i0, dj in ((14, 6), (44, 8), (58, 5), (70, 9), (30, 12)):
+        x, y = scene.screen(i0, shore(i0) + dj)
+        scene.add(i0 + shore(i0) + dj, lambda s, x=x, y=y: s.sprite(boat, x, y))
+
+    scene.paint_objects()
+    return scene.img.convert("RGB")
+
+
+def madrid():
+    scene = new_scene()
+    river = lambda i, j: j > 76 + 2 * math.sin(i / 7) and i < 44  # the Manzanares, in the corner
+    lake = lambda i, j: math.hypot((i - 78) * 0.8, j - 53) < 4.2
+    retiro = lambda i, j: i >= 64 and j >= 47
+    squares = [((22, 43), 6.5), ((56, 42), 4.5), ((68, 44), 3.2), ((78, 44), 3.5)]  # Armería, Sol, Cibeles, Alcalá
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        if river(i, j):
+            kind = "water"
+        elif river(i, j - 1.5):
+            kind = "quay"
+        elif lake(i, j):
+            kind = "water"
+        elif retiro(i, j):
+            ring = abs(math.hypot((i - 78) * 0.8, j - 53) - 5.5) < 0.9
+            kind = "gravel" if ring or (i - 64) % 9 == 0 or (j - 47) % 11 == 0 else "grass"
+        elif any(math.hypot(i - c[0], j - c[1]) < r for c, r in squares):
+            kind = "pave"
+        elif (j in (44, 45) and 28 <= i <= 90) or (abs((i - 60) + (j - 40)) < 1.1 and i >= 56 and j <= 40):
+            kind = "cobble"  # Calle Mayor and Calle de Alcalá; the Gran Vía climbing north-east
+        else:
+            kind = "lot"
+        kinds[(i, j)] = kind
+
+    reserved = set()
+
+    def reserve(i, j, wi, wj, ground="court"):
+        for a in range(int(i), int(math.ceil(i + wi))):
+            for b in range(int(j), int(math.ceil(j + wj))):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == "lot":
+                    kinds[(a, b)] = ground
+
+    lb.palacio_real(scene, 14, 27)
+    reserve(13, 26, 18, 11)
+    lb.almudena(scene, 16.5, 47)
+    reserve(14, 45, 13, 17)  # with the open square before it
+    reserve(14, 37, 16, 9)  # Plaza de la Armería
+    lb.plaza_mayor(scene, 36, 48)
+    reserve(34, 46, 15, 15, ground="pave")  # the streets around the square keep it in view
+    lb.casa_correos(scene, 52, 34.5)
+    reserve(52, 34, 9, 5)
+    lb.metropolis(scene, 63, 35)
+    reserve(60, 33, 5, 4)
+    lb.cibeles(scene, 68, 44.5)
+    lb.puerta_alcala(scene, 74, 43.2)
+    reserve(73, 42, 10, 4)
+    lb.palacio_cristal(scene, 66, 55)
+    reserve(66, 55, 7, 5)
+    lb.alfonso_xii(scene, 81, 48.5)
+    for i0 in (24,):
+        start = 76 + 2 * math.sin(i0 / 7) - 1.5
+        lp.stone_bridge(scene, i0, start, 9)
+
+    paint_ground(scene, kinds, {}, TAGUS, lb.GRANITE["dark"])
+
+    for li in range(-12, 110, 3):
+        for lj in range(-12, 110, 3):
+            for wi, wj in ((3, 3), (3, 2), (2, 3)):
+                cells = [(a, b) for a in range(li, li + wi) for b in range(lj, lj + wj)]
+                if all(kinds.get(c) == "lot" and c not in reserved for c in cells):
+                    reserved.update(cells)
+                    seed = int(h01(li, lj, 27) * 1000)
+                    wall = MADRID_WALLS[int(h01(seed, 25) * len(MADRID_WALLS))]
+                    lb.madrid_house(scene, li, lj, wi, wj, 4 + int(h01(seed, 29) * 2), wall, seed,
+                                    mansard_roof=h01(seed, 26) < 0.75, corner_dome=h01(seed, 28) < 0.07)
+                    break
+
+    green = [round_tree(n) for n in range(3)]
+    dark = [round_tree(n, "#4E9A3E", "#1E3A22") for n in range(2)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i + 0.5, j + 0.5)
+        pick = None
+        if kind == "grass" and h01(i, j, 31) < 0.42 and (i, j) not in reserved:
+            pick = (dark if h01(i, j, 32) < 0.45 else green)[int(h01(i, j, 33) * 2)]
+        elif kind == "quay" and i % 3 == 0:
+            pick = green[i % 3]
+        elif kind == "cobble" and (i + j) % 5 == 0 and h01(i, j, 34) < 0.5:
+            pick = green[(i + j) % 3]  # plane trees along the avenues
+        if pick is not None:
+            scene.add(i + j + 1.5, lambda s, img=pick, x=x, y=y: s.sprite(img, x, y + 6))
+    boat = rowboat(0)
+    for a, b in ((77, 52), (80, 54), (76, 55)):
+        x, y = scene.screen(a, b)
+        scene.add(a + b, lambda s, x=x, y=y: s.sprite(boat, x, y))
+
+    scene.paint_objects()
+    return scene.img.convert("RGB")
+
+
+# ------------------------------------------------------------------- Paris --
+# Landmarks are built in true isometric 3D in scripts/art/landmarks_paris.py.
+
+import landmarks_paris as lp
+
+SEINE_WATER = (rgb("#3E7FB8"), rgb("#2E6DAF"), rgb("#5A9AD0"))
+
+
+def bateau(seed):
+    """Bateau-mouche: a long, low river boat with a glazed cabin and a white hull stripe."""
+    s = sprites.Sprite(23, 9)
+    sprites.ground_shadow(s, 11.5, 7.6, 10, 0.8)
+    for x in range(1, 22):
+        s.put(x, 5, rgb("#F6F4EE"), rgb("#3A3632"))
+        s.put(x, 6, rgb("#2E3A4E") if 2 < x < 21 else rgb("#F6F4EE"), rgb("#3A3632"))
+        if 4 <= x <= 18:
+            for y in (3, 4):
+                glass = x % 3 != 0
+                s.put(x, y, (rgb("#BFE6F2") if y == 3 else rgb("#93CDE2")) if glass else rgb("#F6F4EE"), rgb("#3A3632"))
+    for x in range(5, 18, 4):
+        s.put(x, 2, rgb("#E2434E"), rgb("#3A3632"))
+    return s.image()
+
+
+def paris():
     ox = WIDTH / 2
     oy = HEIGHT / 2 - CENTER_TILE * 2 * 4
     scene = iso.Scene(WIDTH, HEIGHT, (ox, oy))
 
-    def river(sx, sy):
-        return sy > 121 - 0.42 * sx + 2 * math.sin(sx / 6)
+    # The Seine runs along the i axis (so bridges cross it squarely along j): the Right Bank lies at
+    # smaller j (upper right), the Left Bank at larger j (lower left). Upstream is smaller i.
+    def river_j(i):
+        return 44 + 2.5 * math.sin((i - 20) / 14)
 
-    street = [(-50, 124), (-34, 110), (-18, 96), (-4, 86), (6, 76), (12, 66), (18, 56), (22, 48)]
+    def half_width(i):
+        return 2.8 + (4.2 if 17 <= i <= 31 else 0)  # wider around the Île de la Cité
 
-    def near_street(sx, sy):
-        best = 99
-        for (ax, ay), (bx, by) in zip(street, street[1:]):
-            dx, dy = bx - ax, by - ay
-            t = max(0, min(1, ((sx - ax) * dx + (sy - ay) * dy) / (dx * dx + dy * dy)))
-            best = min(best, math.hypot(sx - ax - t * dx, (sy - ay - t * dy) * 0.5))
-        return best
-
-    hill = (26, 36)  # castle hill centre (sx, sy)
-    plaza_i, plaza_j = tile_of(-10, 104)
-    plaza_i, plaza_j = int(plaza_i), int(plaza_j)
+    island = lambda i, j: 18.5 <= i <= 30.5 and abs(j - river_j(i)) <= 5.2
+    montmartre = (34, 8)
+    bridges = [(33, False), (47, False), (61, True), (73, False)]
+    streets_i = [14, 22, 51, 62]  # boulevards running along i (at these j)
+    streets_j = [20, 33, 52, 66, 84]  # boulevards running along j (at these i)
 
     kinds, elev = {}, {}
-    for i in range(-20, 110):
-        for j in range(-20, 110):
-            sx, sy = to_s(i, j)
+    for i in range(-20, 120):
+        for j in range(-20, 120):
             x, y = scene.screen(i, j)
-            if not (-16 < x < WIDTH + 16 and -40 < y < HEIGHT + 8):
+            if not (-16 < x < WIDTH + 16 and -50 < y < HEIGHT + 8):
                 continue
-            hill_r = math.hypot((sx - hill[0]) * 0.55, sy - hill[1])
-            if river(sx, sy):
-                kind = "shallow" if not river(sx, sy - 3) else "water"
-            elif river(sx, sy + 3):
-                kind = "quay"
-            elif plaza_i - 4 <= i <= plaza_i + 4 and plaza_j - 4 <= j <= plaza_j + 4:
-                kind = "calcada"
-            elif i >= plaza_i - 4 and j >= plaza_j - 4 and abs((i - plaza_i) - (j - plaza_j)) <= 4:
-                kind = "calcada"  # the square opens onto the Tagus
-            elif near_street(sx, sy) < 2.6:
-                kind = "cobble"
-            elif hill_r < 13:
-                kind = "grass"
-            else:
+            d = abs(j + 0.5 - river_j(i + 0.5))
+            hw = half_width(i)
+            hill = math.hypot((i - montmartre[0]) * 0.8, (j - montmartre[1]) * 0.8)
+            if island(i, j):
                 kind = "pave"
+            elif d <= hw:
+                kind = "water"
+            elif d <= hw + 1.2:
+                kind = "quay"
+            elif d <= hw + 2.4 or (j > river_j(i) and d <= hw + 8.5):
+                kind = "promenade"  # Left Bank kept open so its tall blocks never hide the river
+            elif hill < 7:
+                kind = "grass"
+            elif 49 <= i <= 58 and 26 <= j <= 38:
+                kind = "gravel"  # the Tuileries
+            elif 66 <= i <= 81 and 54 <= j <= 64:
+                kind = "grass"  # the Champ de Mars
+            elif any(abs(j - s) <= 0.7 for s in streets_i) or any(abs(i - s) <= 0.7 for s in streets_j) \
+                    or (58 <= i <= 64 and 30 <= j <= 32):
+                kind = "cobble"  # boulevards and the Champs-Élysées
+            else:
+                kind = "lot"
             kinds[(i, j)] = kind
-            elev[(i, j)] = 12 if hill_r < 13 and kind == "grass" else 0
-
-    # Lots: houses on a jittered grid; about one lot in eight becomes a small garden.
-    lots, gardens = [], []
-    for li in range(-10, 100, 4):
-        for lj in range(-10, 100, 4):
-            i = li + int(h01(li, lj, 1) * 2)
-            j = lj + int(h01(li, lj, 2) * 2)
-            wi = 2 + int(h01(li, lj, 3) * 2)
-            wj = 2 + int(h01(li, lj, 4) * 2)
-            cells = [(a, b) for a in range(i, i + wi) for b in range(j, j + wj)]
-            if any(kinds.get(c) != "pave" for c in cells):
-                continue
-            x, y = scene.screen(i, j)
-            if not (-60 < x < WIDTH + 60 and -10 < y < HEIGHT + 60):
-                continue
-            (gardens if h01(i, j, 8) < 0.12 else lots).append((i, j, wi, wj))
-    for i, j, wi, wj in gardens:
-        for a in range(i, i + wi):
-            for b in range(j, j + wj):
-                kinds[(a, b)] = "grass"
-
-    # Ground pass, back to front.
-    wall = iso.stone_wall(C["stone"])
-    for (i, j) in sorted(kinds, key=lambda t: (t[0] + t[1], t[0])):
-        kind = kinds[(i, j)]
-        e = elev[(i, j)]
-        iso.ground_tile(scene, i, j, lambda x, y, k=kind: ground_color(k, x, y), e, wall if e else None)
-
-    # Tram rails along the street.
-    pts = [scene.screen(*tile_of(sx, sy)) for sx, sy in street]
-    pts = [(x, y + 4) for x, y in pts]
-    for offset in (-2, 2):
-        for (ax, ay), (bx, by) in zip(pts, pts[1:]):
-            length = math.hypot(bx - ax, by - ay)
-            nx, ny = -(by - ay) / length * offset, (bx - ax) / length * offset
-            iso.line(scene, (ax + nx, ay + ny), (bx + nx, by + ny), C["rail"])
+            elev[(i, j)] = 14 if hill < 7 and kind == "grass" else 0
 
     reserved = set()
 
-    def reserve(i, j, wi, wj, pad=0):
-        cells = {(a, b) for a in range(int(i) - pad, int(i + wi) + pad) for b in range(int(j) - pad, int(j + wj) + pad)}
-        if cells & reserved:
-            return False
-        reserved.update(cells)
-        return True
+    def reserve(i, j, wi, wj, ground="pave"):
+        for a in range(int(i), int(math.ceil(i + wi))):
+            for b in range(int(j), int(math.ceil(j + wj))):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == "lot":
+                    kinds[(a, b)] = ground
 
     # Landmarks.
-    ci, cj = tile_of(hill[0], hill[1])
-    castle(scene, int(ci) - 4, int(cj) - 4, 12)
-    reserve(int(ci) - 6, int(cj) - 6, 13, 13)
-    si, sj = tile_of(4, 66)
-    cathedral(scene, int(si) + 2, int(sj) - 3)
-    reserve(int(si) + 1, int(sj) - 4, 5, 9)
-    bi, bj = tile_of(34, 116)
-    belem_tower(scene, int(bi), int(bj))
-    reserve(int(bi), int(bj), 5, 4)
-    arch(scene, plaza_i - 2, plaza_j - 6)
-    reserve(plaza_i - 5, plaza_j - 7, 11, 13)
-    for n in range(3):  # the yellow arcades around Praça do Comércio
-        house_i, house_j = plaza_i - 7, plaza_j - 4 + n * 3
-        scene.add(house_i + house_j + 4, lambda s, a=house_i, b=house_j, n=n:
-                  iso.house(s, a, b, 2, 3, 2, C["yellow"], C["roof"], n))
-        house_i2, house_j2 = plaza_i - 4 + n * 3, plaza_j - 9
-        scene.add(house_i2 + house_j2 + 4, lambda s, a=house_i2, b=house_j2, n=n:
-                  iso.house(s, a, b, 3, 2, 2, C["yellow"], C["roof"], n + 5))
-    for i, j in ((int(t[0]), int(t[1])) for t in (tile_of(-30, 108), tile_of(10, 74))):
-        tram(scene, i, j, along_i=False)
+    lp.notre_dame(scene, 21.5, 37.0)
+    reserve(21, 37, 5, 10)
+    lp.louvre(scene, 34, 23)
+    reserve(33, 22, 16, 15)
+    lp.obelisk(scene, 59.5, 34.5)
+    reserve(58, 33, 3, 3)
+    lp.arc_de_triomphe(scene, 64.0, 28.5)
+    reserve(59, 23, 18, 17)  # Place de l'Étoile: the Arc stands in a wide open circle
+    lp.sacre_coeur(scene, montmartre[0] - 2, montmartre[1] - 2, 14)
+    lp.eiffel_tower(scene, 73.5, 58.5)
+    for i0, gilded in bridges:
+        rj = river_j(i0)
+        start = rj - half_width(i0) - 1.4
+        lp.stone_bridge(scene, i0, start, 2 * half_width(i0) + 2.8, gilded=gilded)
+        reserve(i0, start, 2, 2 * half_width(i0) + 2.8, ground="cobble")
 
-    # Houses, leaving streets, the plaza and landmarks clear.
-    for i, j, wi, wj in lots:
-        if not reserve(i, j, wi, wj, 0):
-            continue
-        sx, sy = to_s(i + wi, j + wj)
-        seed = int(h01(i, j, 7) * 1000)
-        alfama = sx > 4 and sy < 96
-        floors = 2 + int(h01(seed, 9) * (2 if alfama else 3))
-        wall = FACADES[int(h01(seed, 5) * len(FACADES))]
-        roof = ROOFS[int(h01(seed, 6) * len(ROOFS))]
-        scene.add(i + wi + j + wj, lambda s, i=i, j=j, wi=wi, wj=wj, f=floors, w=wall, r=roof, sd=seed:
-                  iso.house(s, i, j, wi, wj, f, w, r, sd))
+    # Ground, back to front.
+    wall = iso.stone_wall(lp.STONE["dark"])
+    for (i, j) in sorted(kinds, key=lambda t: (t[0] + t[1], t[0])):
+        kind, e = kinds[(i, j)], elev[(i, j)]
 
-    # Trees: green and jacaranda in the gaps, umbrella pines on the castle hill, a row on the quay.
-    jacaranda = [round_tree(n, "#A98BD8", "#3E2A5E") for n in range(3)]
-    blossom = [round_tree(n, "#F2A6C8", "#6E2A4A") for n in range(2)]
+        def color(x, y, k=kind):
+            if k == "water":
+                if h01(x // 3, y, 9) < 0.02:
+                    return rgb("#E4F4FA")
+                return SEINE_WATER[1] if h01(x // 6, y // 2, 4) < 0.3 else SEINE_WATER[0]
+            if k == "quay":
+                return lp.STONE["mid"] if (x + y) % 6 else lp.STONE["line"]
+            if k == "gravel":
+                return shade(rgb("#E6DAB8"), -0.08) if h01(x, y, 6) < 0.15 else rgb("#E6DAB8")
+            if k == "promenade":
+                return ground_color("pave", x, y)
+            return ground_color("pave" if k == "lot" else k, x, y)
+        iso.ground_tile(scene, i, j, color, e, wall if e else None)
+    # The Tuileries' round pond.
+    cx, cy = scene.screen(53.5, 32.5)
+    for dy in range(-6, 7):
+        for dx in range(-12, 13):
+            r = (dx / 12) ** 2 + (dy / 6) ** 2
+            if r <= 1:
+                scene.put(cx + dx, cy + dy, lp.STONE["mid"] if r > 0.78 else SEINE_WATER[2] if (dx + dy) % 5 else rgb("#E4F4FA"))
+
+    # Haussmann blocks fill the remaining lots as continuous street walls.
+    for li in range(-12, 110, 4):
+        for lj in range(-12, 110, 4):
+            for wi, wj in ((3, 3), (3, 2), (2, 3), (2, 2)):
+                cells = [(a, b) for a in range(li, li + wi) for b in range(lj, lj + wj)]
+                if all(kinds.get(c) == "lot" and c not in reserved for c in cells):
+                    reserved.update(cells)
+                    seed = int(h01(li, lj, 47) * 1000)
+                    lp.haussmann(scene, li, lj, wi, wj, seed, floors=4 + int(h01(seed, 3) * 2))
+                    break
+
+    # Trees: rows along the quays, boulevards and in the gardens; rowing the Tuileries' allées.
     green = [round_tree(n) for n in range(3)]
-    pines = [umbrella_pine(n) for n in range(2)]
+    chestnut = [round_tree(n, "#4E9A3E", "#1E3A22") for n in range(2)]
     for (i, j), kind in kinds.items():
-        if kind != "grass" or (i, j) in reserved:
-            continue
         x, y = scene.screen(i + 0.5, j + 0.5, elev[(i, j)])
-        r = h01(i, j, 11)
-        if elev[(i, j)] and r < 0.18:
-            img = pines[int(r * 100) % 2]
-        elif not elev[(i, j)] and r < 0.45:
-            pick = h01(i, j, 12)
-            img = jacaranda[int(pick * 3)] if pick < 0.35 else blossom[int(pick * 2) % 2] if pick < 0.5 else green[int(pick * 3) % 3]
-        else:
-            continue
-        scene.add(i + j + 1.5, lambda s, img=img, x=x, y=y: s.sprite(img, x, y + 6))
-    for (i, j), kind in kinds.items():
-        if kind == "quay" and (i - j) % 5 == 0:
-            x, y = scene.screen(i + 0.5, j + 0.5)
-            scene.add(i + j + 1.5, lambda s, x=x, y=y, n=i: s.sprite(green[n % 3], x, y + 6))
+        pick = None
+        if kind == "promenade" and (i % 3 == 0) and (abs(j - river_j(i)) < half_width(i) + 2.6
+                                                      or j % 3 == 0) and (i, j) not in reserved:
+            pick = green[i % 3]
+        elif kind == "gravel" and (i % 3 == 0) and (j % 3 == 0):
+            pick = chestnut[(i + j) % 2]
+        elif kind == "grass" and elev[(i, j)] and h01(i, j, 61) < 0.25:
+            pick = green[(i + j) % 3]
+        elif kind == "grass" and not elev[(i, j)] and (i in (66, 67, 80, 81) or j in (54, 64)) and (i + j) % 2 == 0:
+            pick = chestnut[(i + j) % 2]  # the Champ de Mars' tree-lined edges
+        if pick is not None:
+            scene.add(i + j + 1.5, lambda s, img=pick, x=x, y=y: s.sprite(img, x, y + 6))
 
-    boat = sprites.sailboat(0)
-    for sx, sy in ((-22, 140), (12, 128), (-44, 150), (38, 108)):
-        i, j = tile_of(sx, sy)
-        if kinds.get((int(i), int(j))) == "water":
-            x, y = scene.screen(i, j)
-            scene.add(i + j, lambda s, x=x, y=y: s.sprite(boat, x, y))
+    boat = bateau(0)
+    for i0 in (12, 40, 55, 68, 84):
+        rj = river_j(i0)
+        if kinds.get((i0, int(rj))) == "water":
+            x, y = scene.screen(i0, rj)
+            scene.add(i0 + rj, lambda s, x=x, y=y: s.sprite(boat, x, y))
 
     scene.paint_objects()
     return scene.img.convert("RGB")
@@ -423,6 +531,10 @@ def lisbon():
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
+    {"id": "madrid", "name": "Madrid", "country": "Spain", "longitude": -3.7038, "latitude": 40.4168,
+     "render": madrid},
+    {"id": "paris", "name": "Paris", "country": "France", "longitude": 2.3522, "latitude": 48.8566,
+     "render": paris},
 ]
 
 
@@ -437,6 +549,11 @@ def main():
             "width": image.width, "height": image.height})
         print(capital["name"], image.size, path.stat().st_size, "bytes")
     DATA.write_text(json.dumps(entries, indent=2) + "\n")
+    # Metro only bundles literal require() paths, so the image index is generated code.
+    lines = ["// Generated by scripts/art/build_capitals.py. Do not edit.", "export const CAPITAL_IMAGES = {"]
+    lines += [f"  {e['id']}: require('@/assets/world/capitals/{e['id']}.png')," for e in entries]
+    lines += ["} as const;", ""]
+    IMAGES.write_text("\n".join(lines))
 
 
 if __name__ == "__main__":

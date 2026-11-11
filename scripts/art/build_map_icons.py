@@ -39,7 +39,13 @@ PLACES_LOCK = ROOT / "scripts" / "art" / "phase3-sources.lock.json"
 # Countries with a country tier: their mainland bounds (west, south, east, north) and capital.
 # Must match COVERAGE in src/features/world/globe-camera.ts.
 COUNTRY_TIER = [
-    {"adm0": "PRT", "bounds": (-10.0, 36.8, -6.0, 42.2), "capital": "Lisbon"},
+    {"adm0": "PRT", "bounds": (-10.0, 36.8, -6.0, 42.2), "capital": "Lisbon", "cities": 9},
+    {"adm0": "ESP", "bounds": (-9.4, 35.9, 3.4, 43.8), "capital": "Madrid", "cities": 12,
+     # The windmills of La Mancha at Consuegra and Campo de Criptana.
+     "landmarks": [("windmill", -3.6085, 39.4566), ("windmill", -3.1235, 39.4049)]},
+    {"adm0": "FRA", "bounds": (-5.2, 41.3, 9.6, 51.1), "capital": "Paris", "cities": 12,
+     # Mont-Saint-Michel on its tidal island, and the vineyards of Saint-Émilion near Bordeaux.
+     "landmarks": [("mont-saint-michel", -1.5115, 48.6361), ("vineyard", -0.155, 44.894)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -51,7 +57,7 @@ VARIANTS = {
     "mountain": 3, "hill": 2, "oak": 3, "pine": 2, "olive": 2, "acacia": 2, "baobab": 1,
     "palm": 2, "bamboo": 1, "eucalyptus": 2, "fern": 1, "grass": 2, "cactus": 1, "dune": 1,
     "red-rock": 1, "volcano": 1, "glacier": 2, "iceberg": 2,
-    "castle": 1, "church": 1, "house": 2, "boat": 1,
+    "castle": 1, "church": 1, "house": 2, "boat": 1, "windmill": 1, "mont-saint-michel": 1, "vineyard": 1,
     **{animal: 1 for animal in sprites.FAUNA},
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
@@ -108,12 +114,20 @@ def main():
     width, height = int(360 / GRID), int(180 / GRID)
     land = Image.open(GLOBE).getchannel("R").resize((width, height), Image.BOX).load()
     # Continent of each cell, from the board texture's country index (Natural Earth CONTINENT).
-    continents = [f["properties"]["CONTINENT"] for f in json.loads(COUNTRIES.read_bytes())["features"]]
+    country_features = json.loads(COUNTRIES.read_bytes())["features"]
+    continents = [f["properties"]["CONTINENT"] for f in country_features]
+    codes = [f["properties"]["ADM0_A3"] for f in country_features]
     country = Image.open(BOARD).getchannel("R").resize((width, height), Image.NEAREST).load()
 
     def continent_at(x, y):
         index = country[x % width, y]
         return continents[index - 1] if index else None
+
+    def country_code(x, y):
+        if not 0 <= y < height:
+            return None
+        index = country[x % width, y]
+        return codes[index - 1] if index else None
 
     def cell_center(x, y):
         return -180 + (x + 0.5) * GRID, 90 - (y + 0.5) * GRID
@@ -240,7 +254,7 @@ def main():
         towns = []
         for city in cities:
             here = (city["longitude"], city["latitude"])
-            if any(great_circle_km(here, t) < 75 for t in towns) or len(towns) >= 9:
+            if any(great_circle_km(here, t) < 75 for t in towns) or len(towns) >= spec["cities"]:
                 continue
             towns.append(here)
             lon, lat = here
@@ -258,15 +272,25 @@ def main():
             else:
                 building("house", lon, lat, -5, -1, rank)
                 building("house", lon, lat, 5, 1, rank + 1)
+        for kind, lon, lat in spec.get("landmarks", []):
+            building(kind, lon, lat, 0, 0)
+            towns.append((lon, lat))
         trees, boats = [], []
         for y in range(int((90 - n) / GRID), int((90 - s_) / GRID)):
             for x in range(int((w + 180) / GRID), int((e + 180) / GRID)):
                 lon, lat = cell_center(x, y)
-                if continent_at(x, y) and is_land(x, y):
+                if not (w <= lon <= e and s_ <= lat <= n):
+                    continue  # grid rounding can reach half a cell outside the bounds
+                if is_land(x, y) and country_code(x, y) == spec["adm0"]:
                     trees.append((lon, lat))
-                elif not is_land(x, y) and near_land(x, y, 3):
+                elif not is_land(x, y) and any(country_code(x + dx, y + dy) == spec["adm0"]
+                                               for dx in (-3, 0, 3) for dy in (-3, 0, 3)):
                     boats.append((lon, lat))
-        for lon, lat in spread(trees, 7, 70, 51, towns, 45):
+        for lon, lat in spread(trees, 7 if spec["adm0"] == "PRT" else 12, 70, 51, towns, 45):
+            if lat > 47.5 and spec["adm0"] == "FRA":
+                kind = "oak"  # northern France: broadleaf woods
+                building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+                continue
             kind = "pine" if lat > 40.5 else "olive" if lat < 38.8 else "oak"
             building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
         for lon, lat in spread(boats, 2, 150, 53):

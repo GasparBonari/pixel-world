@@ -19,6 +19,7 @@ import {
 import { useAnimatedReaction, useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { CAPITAL_IMAGES } from '@/data/capital-images';
 import capitals from '@/data/capitals.json';
 import { CountryLabels } from './CountryLabels';
 import {
@@ -31,7 +32,7 @@ import {
 } from './globe-camera';
 import { CELLS_ACROSS, globeShader } from './globe-shader';
 import { CapitalLayer } from './CapitalLayer';
-import { clampToCapital } from './capitals';
+import { clampToCapitals } from './capitals';
 import { MapIcons } from './MapIcons';
 import { MapStatus } from './MapStatus';
 import { MapSurface } from './MapSurface';
@@ -42,9 +43,8 @@ const TEXTURES = {
   globe: require('@/assets/world/globe.png'),
   board: require('@/assets/world/board.png'),
   icons: require('@/assets/world/map-icons.png'),
-  lisbon: require('@/assets/world/capitals/lisbon.png'),
+  ...CAPITAL_IMAGES,
 };
-const LISBON = capitals.find((capital) => capital.id === 'lisbon')!;
 type Textures = Record<keyof typeof TEXTURES, SkImage>;
 let textures: Promise<Textures> | undefined;
 
@@ -103,14 +103,14 @@ function GlobeScene({
   const zoom = useCallback(
     (delta: number, x: number, y: number) => {
       const next = zoomGlobe(camera.get(), camera.get().zoom + delta, x, y, viewport);
-      camera.set(clampToCapital(next, LISBON, viewport, iconScale));
+      camera.set(clampToCapitals(next, capitals, viewport, iconScale));
     },
     [camera, viewport, iconScale]
   );
   const rotate = useCallback(
     (dx: number, dy: number) => {
       const next = rotateGlobe(camera.get(), dx, dy, viewport);
-      camera.set(clampToCapital(next, LISBON, viewport, iconScale));
+      camera.set(clampToCapitals(next, capitals, viewport, iconScale));
     },
     [camera, viewport, iconScale]
   );
@@ -129,9 +129,9 @@ function GlobeScene({
     minDistance: 6,
     onUpdate: (event) => {
       camera.set(
-        clampToCapital(
+        clampToCapitals(
           rotateGlobe(camera.get(), event.changeX, event.changeY, viewport),
-          LISBON,
+          capitals,
           viewport,
           iconScale
         )
@@ -141,7 +141,7 @@ function GlobeScene({
   const pinch = usePinchGesture({
     onUpdate: (event) => {
       camera.set(
-        clampToCapital(
+        clampToCapitals(
           zoomGlobe(
             camera.get(),
             camera.get().zoom + Math.log2(event.scaleChange),
@@ -149,7 +149,7 @@ function GlobeScene({
             event.focalY,
             viewport
           ),
-          LISBON,
+          capitals,
           viewport,
           iconScale
         )
@@ -190,13 +190,16 @@ function GlobeScene({
           </Fill>
           <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={0} />
           <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={1} />
-          <CapitalLayer
-            image={images.lisbon}
-            scene={LISBON}
-            camera={camera}
-            viewport={viewport}
-            iconScale={iconScale}
-          />
+          {capitals.map((scene) => (
+            <CapitalLayer
+              key={scene.id}
+              image={images[scene.id as keyof typeof CAPITAL_IMAGES]}
+              scene={scene}
+              camera={camera}
+              viewport={viewport}
+              iconScale={iconScale}
+            />
+          ))}
         </Canvas>
       </MapSurface>
       <CountryLabels viewport={viewport} camera={camera} snapshot={snapshot} />

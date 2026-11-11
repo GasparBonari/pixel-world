@@ -15,6 +15,8 @@ const PULL_BACK = 2.5;
 /** Countries with detail: their bounds (west, south, east, north) and capital. Matches capitals.json. */
 export const COVERAGE = [
   { id: 'lisbon', country: 'Portugal', longitude: -9.1365, latitude: 38.71, bounds: [-10.0, 36.8, -6.0, 42.2] },
+  { id: 'madrid', country: 'Spain', longitude: -3.7038, latitude: 40.4168, bounds: [-9.4, 35.9, 3.4, 43.8] },
+  { id: 'paris', country: 'France', longitude: 2.3522, latitude: 48.8566, bounds: [-5.2, 41.3, 9.6, 51.1] },
 ] as const;
 
 /** The deepest zoom detail allows at a location. */

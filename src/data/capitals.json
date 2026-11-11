@@ -7,5 +7,23 @@
     "latitude": 38.71,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "madrid",
+    "name": "Madrid",
+    "country": "Spain",
+    "longitude": -3.7038,
+    "latitude": 40.4168,
+    "width": 720,
+    "height": 520
+  },
+  {
+    "id": "paris",
+    "name": "Paris",
+    "country": "France",
+    "longitude": 2.3522,
+    "latitude": 48.8566,
+    "width": 720,
+    "height": 520
   }
 ]

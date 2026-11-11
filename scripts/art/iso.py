@@ -232,9 +232,9 @@ class Box:
                         cover.update({(int(x), int(y - dy)), (int(x + 1), int(y - dy))})
 
 
-def house(scene, i, j, wi, wj, floors, wall, roof, seed, elevation=0, tiles=None):
+def house(scene, i, j, wi, wj, floors, wall, roof, seed, elevation=0, tiles=None, rise=None):
     box = Box(scene, i, j, wi, wj, floors * 9 + 2, elevation)
     cover = set()
     box.walls(wall, cover, seed=seed, tiles=tiles)
-    box.gable_roof(roof, wall, cover)
+    box.gable_roof(roof, wall, cover, rise=rise)
     outline(scene, cover, sprites.hex_rgb("#3A2A22"))

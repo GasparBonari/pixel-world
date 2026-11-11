@@ -61,3 +61,24 @@ export function clampToCapital(
   }
   return dx || dy ? rotateGlobe(camera, dx, dy, viewport) : camera;
 }
+
+/** Clamp to whichever capital the camera is visiting (the nearest one within reach). */
+export function clampToCapitals(
+  camera: GlobeCamera,
+  scenes: readonly CapitalScene[],
+  viewport: GlobeViewport,
+  iconScale: number
+) {
+  'worklet';
+  if (camera.zoom < CAPITAL_ZOOM.in) return camera;
+  let nearest: CapitalScene | null = null;
+  let best = Infinity;
+  for (const scene of scenes) {
+    const distance = Math.hypot(scene.longitude - camera.longitude, scene.latitude - camera.latitude);
+    if (distance < best) {
+      best = distance;
+      nearest = scene;
+    }
+  }
+  return nearest ? clampToCapital(camera, nearest, viewport, iconScale) : camera;
+}
