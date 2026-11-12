@@ -66,6 +66,9 @@ COUNTRY_TIER = [
      "trees": 7,
      # The medieval ecclesiastical complex on its limestone outcrop in Tipperary.
      "landmarks": [("rock-of-cashel", -7.8902, 52.5200)]},
+    {"adm0": "ITA", "bounds": (6.6, 35.4, 18.6, 47.1), "capital": "Rome", "cities": 9,
+     "trees": 7,
+     "landmarks": [("leaning-tower-pisa", 10.3966, 43.7230)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -84,6 +87,7 @@ VARIANTS = {
     "gravensteen": 1,
     "stonehenge": 1,
     "rock-of-cashel": 1,
+    "leaning-tower-pisa": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -313,7 +317,20 @@ def main():
                 elif not is_land(x, y) and any(country_code(x + dx, y + dy) == spec["adm0"]
                                                for dx in (-3, 0, 3) for dy in (-3, 0, 3)):
                     boats.append((lon, lat))
-        for lon, lat in spread(trees, spec.get("trees", 7 if spec["adm0"] == "PRT" else 12), 70, 51, towns, 45):
+        # Italy spans Alpine forests and Mediterranean islands: distribute its seven trees
+        # across three latitude bands rather than letting one seeded cluster fill the north.
+        tree_sites = spread(trees, spec.get("trees", 7 if spec["adm0"] == "PRT" else 12), 70, 51, towns, 45)
+        if spec["adm0"] == "ITA":
+            tree_sites = []
+            for south, north, count in ((44, 48, 2), (40, 44, 2), (35, 40, 3)):
+                candidates = [t for t in trees if south <= t[1] < north
+                              and all(great_circle_km(t, other) >= 70 for other in tree_sites)]
+                tree_sites += spread(candidates, count, 70, 51, towns, 45)
+        for lon, lat in tree_sites:
+            if spec["adm0"] == "ITA":
+                kind = "pine" if lat >= 44 else "oak" if lat >= 40 else "olive"
+                building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+                continue
             if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL"):
                 kind = "pine" if (spec["adm0"] == "DEU" and lat > 53 or spec["adm0"] == "GBR" and lat > 56) else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))

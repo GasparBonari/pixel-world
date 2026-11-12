@@ -8,4 +8,5 @@ export const CAPITAL_IMAGES = {
   brussels: require('@/assets/world/capitals/brussels.png'),
   london: require('@/assets/world/capitals/london.png'),
   dublin: require('@/assets/world/capitals/dublin.png'),
+  rome: require('@/assets/world/capitals/rome.png'),
 } as const;

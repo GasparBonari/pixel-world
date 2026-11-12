@@ -70,5 +70,14 @@
     "latitude": 53.3498,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "rome",
+    "name": "Rome",
+    "country": "Italy",
+    "longitude": 12.4964,
+    "latitude": 41.9028,
+    "width": 720,
+    "height": 520
   }
 ]

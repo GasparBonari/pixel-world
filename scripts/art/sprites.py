@@ -1538,6 +1538,35 @@ def rock_of_cashel(seed=0):
     return scene.img
 
 
+def leaning_tower_pisa(seed=0):
+    """White-marble campanile: leaning cylinder, six open galleries and narrower bell chamber."""
+    import iso
+    from landmarks_italy import cylinder, MARBLE, STONE
+    from landmarks_iberia import arch_opening
+
+    scene = iso.Scene(39, 58, (16, 50))
+    shadow = Sprite(39, 58)
+    ground_shadow(shadow, 20, 53, 13, 2)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    def arcade(u, v, lit):
+        c = u % 4.5
+        if arch_opening(c, v, 2.25, 1.3, 2.2, STONE['deep']):
+            return STONE['deep']
+        return MARBLE['hi' if lit else 'mid'] if c < .8 else None
+    # Each successive ring translates along the lean, without resampling pixels.
+    cylinder(scene, 0, 0, 1.02, 1.02, 0, 6, MARBLE, arcade)
+    for level in range(6):
+        z = 6 + level * 5
+        di = z * .012
+        cylinder(scene, di, -di, 1.05, 1.05, z, 1.2, MARBLE)
+        cylinder(scene, di, -di, .94, .94, z + 1.2, 3.8, MARBLE, arcade)
+    cylinder(scene, .45, -.45, 1.03, 1.03, 36, 1.5, MARBLE)
+    cylinder(scene, .47, -.47, .72, .72, 37.5, 5, MARBLE, arcade)
+    cylinder(scene, .51, -.51, .8, .8, 42.5, 1.3, MARBLE)
+    return scene.img
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1563,6 +1592,7 @@ ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
     "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge, "rock-of-cashel": rock_of_cashel,
+    "leaning-tower-pisa": leaning_tower_pisa,
     **FLORA, **FAUNA,
 }
 

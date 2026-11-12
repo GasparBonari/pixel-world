@@ -1114,6 +1114,115 @@ def dublin():
     return scene.img.convert('RGB')
 
 
+def rome():
+    import landmarks_italy as it
+
+    scene = new_scene()
+    def at(x, y):
+        return tile_of((x - WIDTH / 2) / 8, (y - scene.oy) / 4)
+
+    # Compressed Tiber bends follow i/j axes. Vatican and Castel are on its west bank;
+    # the ancient and baroque centre lies to the east. St Peter's is in Vatican City.
+    river = [at(x, y) for x, y in ((130, -80), (390, 50), (190, 150),
+                                  (290, 200), (30, 330), (370, 500), (210, 580))]
+    def river_distance(i, j):
+        best = float('inf')
+        for (a, b), (c, d) in zip(river, river[1:]):
+            t = max(0, min(1, ((i - a) * (c - a) + (j - b) * (d - b)) / ((c - a) ** 2 + (d - b) ** 2)))
+            best = min(best, math.hypot(i - a - t * (c - a), j - b - t * (d - b)))
+        return best
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i + .5, j + .5)
+        distance = river_distance(i + .5, j + .5)
+        if distance < 1.45:
+            kind = 'water'
+        elif distance < 2.35:
+            kind = 'quay'
+        elif distance < 4:
+            kind = 'promenade'
+        elif (510 < x < 700 and y < 80) or (70 < x < 175 and 350 < y < 500):
+            # Villa Borghese to the northeast; Janiculum gardens southwest of the Vatican.
+            kind = 'gravel' if i % 8 == 0 or j % 8 == 0 else 'grass'
+        elif 590 < x < 710 and y > 420:
+            kind = 'gravel'  # Colosseum archaeological grounds
+        elif i % 9 == 0 or j % 11 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected = set(), []
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i + wi)):
+            for b in range(math.floor(j), math.ceil(j + wj)):
+                reserved.add((a, b))
+                if (a, b) in kinds and kinds[(a, b)] not in ('water', 'quay'):
+                    kinds[(a, b)] = 'pave'
+
+    def landmark(builder, x, y, wi, wj):
+        ci, cj = at(x, y)
+        i, j = ci - wi / 2, cj - wj / 2
+        builder(scene, i, j)
+        reserve(i - .5, j - .5, wi + 1, wj + 2)
+        study = iso.Scene(WIDTH + 200, HEIGHT + 200, (scene.ox + 100, scene.oy + 100))
+        builder(study, i, j)
+        study.paint_objects()
+        bounds = tuple(v - 100 for v in study.img.convert('RGB').getbbox())
+        left, top, right, bottom = bounds
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, bounds)
+        protected.append((left - 3, top - 3, right + 3, bottom + 4))
+
+    # Ground anchors preserve every site's real longitude/latitude ordering.
+    landmark(it.st_peters, 108, 190, 12, 13)
+    landmark(it.castel_santangelo, 260, 125, 8, 7)
+    landmark(it.spanish_steps, 460, 120, 9, 9)
+    landmark(it.trevi, 600, 245, 10, 8)
+    landmark(it.navona, 280, 290, 10, 11)
+    landmark(it.pantheon, 365, 410, 9, 9)
+    landmark(it.vittoriano, 510, 440, 13, 7)
+    landmark(it.colosseum, 650, 480, 10.4, 7.4)
+    paint_ground(scene, {cell: 'pave' if kind == 'promenade' else kind for cell, kind in kinds.items()},
+                 {}, (rgb('#568C7D'), rgb('#3D7369')), it.STONE['dark'])
+
+    # Stone crossings perpendicular to the i-axis reaches; no river hidden by houses.
+    for x, y in ((282, 173), (190, 382)):
+        i, j = at(x, y)
+        lp.stone_bridge(scene, i, j, 7, width=1.5)
+
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li + 3) for b in range(lj, lj + 3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 149) * 10000)
+            floors = 2 + seed % 3
+            x, y = scene.screen(li + wi / 2, lj + wj / 2)
+            half = (wi + wj) * 4 + 5
+            top, bottom = y - floors * 11 - 20, y + (wi + wj) * 2 + 8
+            if any(x + half > l and x - half < r and bottom > t and top < b for l, t, r, b in protected):
+                continue
+            if river_distance(li + wi / 2, lj + wj / 2) < 6:
+                continue
+            it.palazzo(scene, li, lj, wi, wj, floors, seed)
+            reserved.update(cells)
+
+    pines = [umbrella_pine(n) for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i + .5, j + .5)
+        if (i, j) in reserved or any(l - 14 < x < r + 14 and t - 2 < y < b + 26 for l, t, r, b in protected):
+            continue
+        if kind == 'grass' and h01(i, j, 151) < .13 or kind == 'promenade' and (i + j) % 8 == 0:
+            scene.add(i + j + 1.5, lambda s, x=x, y=y, tree=pines[(i + j) % 3]: s.sprite(tree, x, y + 4))
+    for x, y in ((340, 25), (231, 129), (89, 300), (278, 454)):
+        i, j = at(x, y)
+        scene.add(i + j, lambda s, x=x, y=y: s.sprite(rowboat(0), x, y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -1131,6 +1240,8 @@ CAPITALS = [
      "render": london},
     {"id": "dublin", "name": "Dublin", "country": "Ireland", "longitude": -6.2603, "latitude": 53.3498,
      "render": dublin},
+    {"id": "rome", "name": "Rome", "country": "Italy", "longitude": 12.4964, "latitude": 41.9028,
+     "render": rome},
 ]
 
 
