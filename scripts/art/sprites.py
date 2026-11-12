@@ -1633,6 +1633,56 @@ def gripsholm(seed=0):
     return scene.img
 
 
+def borgund(seed=0):
+    """Borgund Stave Church: tarred timber, overlapping shingle roofs and dragon ridges."""
+    import iso
+    from landmarks_norway import block, TIMBER, GRANITE
+    from landmarks_iberia import palette_of
+    from landmarks_paris import P, seg, poly, corners
+
+    scene = iso.Scene(59, 72, (29, 45))
+    shadow = Sprite(59, 72)
+    ground_shadow(shadow, 29, 68, 24, 2)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    roof = palette_of(hex_rgb('#665044'))
+    def shingle_roof(i,j,wi,wj,z,rise):
+        top,right,bottom,left=corners(scene,i,j,wi,wj,z)
+        rear,front=P(scene,i+wi/2,j,z+rise),P(scene,i+wi/2,j+wj,z+rise)
+        for pts,key in (([top,left,front,rear],'lit'),([rear,front,bottom,right],'dark')):
+            poly(scene,pts,lambda x,y,key=key:roof['line'] if int(y)%3==0
+                 else roof['hi'] if (int(x)+int(y)//3*2)%7==0 else roof[key])
+        poly(scene,[left,bottom,front],lambda x,y:TIMBER['lit'] if int(x)%4 else TIMBER['line'])
+        for a,b in ((left,front),(front,bottom),(rear,front)):
+            seg(scene,a,b,TIMBER['hi'])
+    def timber(u,v,lit):
+        if int(u)%4==0:return TIMBER['line' if lit else 'deep']
+        if int(v) in (1,9,17):return TIMBER['hi' if lit else 'mid']
+        return None
+    block(scene,0,0,2.8,3.2,2,GRANITE)
+    block(scene,.1,.1,2.6,3,11,TIMBER,timber,z=2)
+    shingle_roof(-.05,-.05,2.9,3.3,13,8)
+    block(scene,.5,.4,1.8,2.4,9,TIMBER,timber,z=17)
+    shingle_roof(.35,.25,2.1,2.7,26,9)
+    block(scene,.9,1.05,1,1.1,6,TIMBER,timber,z=32)
+    shingle_roof(.75,.9,1.3,1.4,38,8)
+    # Small projecting apse, shingled cap and the carved portal under the gallery eaves.
+    block(scene,2.45,.65,.55,1,9,TIMBER,timber,z=2)
+    shingle_roof(2.4,.6,.65,1.1,11,6)
+    block(scene,.95,3.13,.9,.15,9,TIMBER,
+          lambda u,v,lit:TIMBER['outline'] if lit and 1<u<6 and v<7 else TIMBER['hi'],z=2)
+    # Curved dragon necks are filled wooden silhouettes, with snout and an open jaw.
+    for ci,cj,z,direction in ((1.4,-.05,21,-1),(1.4,3.25,21,1),(1.4,.25,35,-1),(1.4,2.95,35,1)):
+        points=[(ci,cj,z),(ci,cj+direction*.25,z+2),(ci,cj+direction*.35,z+6),
+                (ci,cj+direction*.65,z+7),(ci,cj+direction*.72,z+5),
+                (ci,cj+direction*.45,z+5),(ci,cj+direction*.4,z+1)]
+        poly(scene,[P(scene,*p) for p in points],lambda x,y:TIMBER['hi'])
+        seg(scene,P(scene,ci,cj+direction*.35,z+6),P(scene,ci,cj+direction*.68,z+6),TIMBER['deep'])
+    seg(scene,P(scene,1.4,1.6,46),P(scene,1.4,1.6,52),TIMBER['hi'])
+    seg(scene,P(scene,1.12,1.6,49),P(scene,1.68,1.6,49),TIMBER['hi'])
+    return scene.img
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1658,7 +1708,7 @@ ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
     "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge, "rock-of-cashel": rock_of_cashel,
-    "leaning-tower-pisa": leaning_tower_pisa, "kronborg": kronborg, "gripsholm": gripsholm,
+    "leaning-tower-pisa": leaning_tower_pisa, "kronborg": kronborg, "gripsholm": gripsholm, "borgund": borgund,
     **FLORA, **FAUNA,
 }
 

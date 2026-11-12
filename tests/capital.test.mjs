@@ -489,7 +489,7 @@ test('Copenhagen: focal arrival and pan edges keep its scene; Jutland and Bornho
   assert.equal(maxZoomAt(9.9166, 57.0337), COUNTRY_ZOOM.max); // Aalborg
   assert.equal(maxZoomAt(8.45, 55.467), COUNTRY_ZOOM.max); // Esbjerg
   assert.equal(maxZoomAt(14.7, 55.1), COUNTRY_ZOOM.max); // Bornholm
-  assert.equal(maxZoomAt(24.9384, 60.1699), MAX_GLOBE_ZOOM); // Helsinki stays uncovered.
+  assert.equal(maxZoomAt(21.0122, 52.2297), MAX_GLOBE_ZOOM); // Warsaw stays outside covered bounds.
   let current = { longitude: 12.1, latitude: 55.9, zoom: 5 };
   const focal = globePoint(copenhagen.longitude, copenhagen.latitude, current, view);
   for (let step = 0; step < 8; step++)
@@ -553,7 +553,7 @@ test('Stockholm: focal arrival and pan edges keep its scene; northern Sweden and
   assert.equal(maxZoomAt(20.24, 63.83), COUNTRY_ZOOM.max); // Umeå
   assert.equal(maxZoomAt(20.225, 67.855), COUNTRY_ZOOM.max); // Kiruna
   assert.equal(maxZoomAt(18.3, 57.6), COUNTRY_ZOOM.max); // Gotland
-  assert.equal(maxZoomAt(24.9384, 60.1699), MAX_GLOBE_ZOOM); // Helsinki remains uncovered.
+  assert.equal(maxZoomAt(21.0122, 52.2297), MAX_GLOBE_ZOOM); // Warsaw remains outside covered bounds.
   let current = { longitude: 17.7, latitude: 59.6, zoom: 5 };
   const focal = globePoint(stockholm.longitude, stockholm.latitude, current, view);
   for (let step = 0; step < 8; step++)
@@ -573,6 +573,59 @@ test('Stockholm: focal arrival and pan edges keep its scene; northern Sweden and
     assert.ok(Math.abs(stopped.longitude - current.longitude) < 1e-9);
     assert.ok(Math.abs(stopped.latitude - current.latitude) < 1e-9);
   }
+});
+
+test('Norway marks Oslo first, nine spaced cities and Borgund inside its mainland bounds', () => {
+  const norway = COVERAGE.find((c) => c.id === 'oslo');
+  assert.deepEqual(norway.bounds, [4.5, 57.8, 31.3, 71.3]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1] - lon) < .001 && Math.abs(i[2] - lat) < .001);
+  // Pinned Natural Earth city anchors: Oslo, Bergen, Stavanger, Trondheim, Skien,
+  // Kristiansand, Tromsø, Ålesund and Bodø, in population/spacing selection order.
+  const cities = [[10.748, 59.9186], [5.3245, 60.391], [5.68, 58.97],
+    [10.4167, 63.4167], [9.6, 59.2], [8, 58.1666], [18.992, 69.6351],
+    [6.388, 62.5454], [14.4293, 67.2764]];
+  for (const [rank, [lon, lat]] of cities.entries()) {
+    assert.deepEqual(at(lon, lat).map((i) => icons.names[i[0]]).sort(), rank === 0
+      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
+        : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const [otherLon, otherLat] of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
+        + Math.cos(lat * rad) * Math.cos(otherLat * rad) * Math.cos((lon - otherLon) * rad));
+      assert.ok(km >= 75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+  assert.equal(at(7.8124, 61.0473).filter((i) => icons.names[i[0]] === 'borgund').length, 1);
+  const decorations = [[7.8124, 61.0473], [20.875, 69.375], [12.375, 65.375],
+    [13.875, 64.875], [11.875, 63.375], [8.375, 62.375], [7.375, 60.125],
+    [7.125, 59.125], [17.125, 69.875], [4.875, 58.625]];
+  const norwayIcons = cities.concat(decorations).flatMap(([lon, lat]) => at(lon, lat));
+  assert.equal(norwayIcons.length, 28);
+  const [w, s, e, n] = norway.bounds;
+  for (const [, lon, lat] of norwayIcons) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
+  assert.deepEqual(norwayIcons.filter((i) => ['pine', 'oak'].includes(icons.names[i[0]]))
+    .map((i) => icons.names[i[0]]).sort(), ['oak', 'pine', 'pine', 'pine', 'pine', 'pine', 'pine']);
+  assert.equal(norwayIcons.filter((i) => icons.names[i[0]] === 'boat').length, 2);
+});
+
+test('Oslo has a capital scene while western and Arctic Norway retain country zoom', () => {
+  const oslo = scenes.find((s) => s.id === 'oslo');
+  assert.equal(oslo.country, 'Norway');
+  assert.deepEqual([oslo.width, oslo.height], [720, 520]);
+  assert.equal(maxZoomAt(oslo.longitude, oslo.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(5.3245, 60.391), COUNTRY_ZOOM.max); // Bergen
+  assert.equal(maxZoomAt(18.992, 69.6351), COUNTRY_ZOOM.max); // Tromsø
+  assert.equal(maxZoomAt(25.784, 71.17), COUNTRY_ZOOM.max); // Nordkapp
+  assert.equal(maxZoomAt(31.104, 70.371), COUNTRY_ZOOM.max); // Vardø
+  let current = { longitude: 10.4, latitude: 60.2, zoom: 5 };
+  const focal = globePoint(oslo.longitude, oslo.latitude, current, view);
+  for (let step = 0; step < 8; step++)
+    current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, view);
+  assert.equal(current.zoom, CAPITAL_ZOOM.full);
+  assert.equal(current.capitalId, 'oslo');
+  const after = globePoint(oslo.longitude, oslo.latitude, current, view);
+  assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
 });
 
 test('capital panning reaches actual scene edges and zooms out gradually at phone and desktop scales', () => {

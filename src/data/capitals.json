@@ -97,5 +97,14 @@
     "latitude": 59.3293,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "oslo",
+    "name": "Oslo",
+    "country": "Norway",
+    "longitude": 10.7522,
+    "latitude": 59.9139,
+    "width": 720,
+    "height": 520
   }
 ]
