@@ -528,6 +528,128 @@ def paris():
     return scene.img.convert("RGB")
 
 
+# ------------------------------------------------------------------ Berlin --
+
+import landmarks_berlin as be
+
+
+def berlin():
+    scene = new_scene()
+    # A north-up illustration, with distances compressed. The Spree runs north-west to south-east
+    # along +i; its southern arm encloses Museum Island. Tiergarten stays west of the Gate.
+    # Screen-space anchors make the real cardinal relationships explicit (see the coordinate table
+    # in DEVELOPMENT_PLAN.md). Buildings themselves always use the 16×8 isometric tile axes.
+    def at(x, y):
+        return tile_of((x - WIDTH / 2) / 8, (y - scene.oy) / 4)
+
+    def river(i, j):
+        return abs(j - 25) < 2 or (37 <= i <= 52 and abs(j - 38) < 1.4) \
+            or (abs(i - 37) < 1.3 and 25 <= j <= 38) \
+            or (abs(i - 52) < 1.3 and 25 <= j <= 38)
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i + .5, j + .5)
+        island = 38.3 < i < 50.7 and 27 < j < 36.6
+        if river(i + .5, j + .5):
+            kind = "water"
+        elif any(river(i + .5 + di, j + .5 + dj) for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+            kind = "quay"
+        elif any(river(i + .5 + di, j + .5 + dj) for di, dj in ((2, 0), (-2, 0), (0, 2), (0, -2))):
+            kind = "promenade"
+        elif x < 228 and y > 310:
+            kind = "gravel" if abs(y - 352) < 5 or abs((x - 113) + (y - 410) * .7) < 4 else "grass"
+        elif island:
+            kind = "grass" if j > 33 else "pave"  # Lustgarten, beside the cathedral
+        elif (235 < x < 480 and abs(y - (355 - (x - 260) * .38)) < 6) \
+                or (abs(x - 349) < 5 and 310 < y < 510) \
+                or i % 12 in (0, 1) or j % 12 == 0:
+            kind = "cobble"  # Unter den Linden, Friedrichstraße and the surrounding streets
+        else:
+            kind = "lot"
+        kinds[(i, j)] = kind
+
+    reserved = set()
+    protected = []
+
+    def reserve(i, j, wi, wj, ground="pave"):
+        for a in range(math.floor(i), math.ceil(i + wi)):
+            for b in range(math.floor(j), math.ceil(j + wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == "lot":
+                    kinds[(a, b)] = ground
+
+    def landmark(builder, x, y, wi, wj, height, forecourt=4):
+        ci, cj = at(x, y)
+        i, j = ci - wi / 2, cj - wj / 2
+        builder(scene, i, j)
+        reserve(i - 1, j - 1, wi + 2, wj + 1 + forecourt)
+        # Also protect its projected silhouette from the roofs of houses just south of it.
+        half = (wi + wj) * 4 + 9
+        protected.append((x - half, y - height, x + half, y + (wi + wj) * 2 + 12))
+
+    landmark(be.reichstag, 237, 275, 10, 6, 75)
+    landmark(be.brandenburg_gate, 267, 345, 8.2, 2, 70, forecourt=6)
+    landmark(be.berlin_cathedral, 469, 237, 7.4, 6.2, 85)
+    landmark(be.rotes_rathaus, 572, 293, 7, 5, 95)
+    landmark(be.konzerthaus, 389, 440, 8.5, 5.2, 70, forecourt=6)
+    for builder, x, y, height in ((be.victory_column, 113, 410, 93), (be.tv_tower, 600, 191, 165)):
+        i, j = at(x, y)
+        builder(scene, i, j)
+        reserve(i - 2, j - 2, 5, 7)
+        protected.append((x - 23, y - height, x + 23, y + 22))
+
+    # Open cobbled forecourts keep the Gate, Gendarmenmarkt and Alexanderplatz readable.
+    for x, y, wi, wj in ((284, 369, 5, 6), (406, 473, 8, 6), (610, 219, 4, 6)):
+        i, j = at(x, y)
+        reserve(i - wi / 2, j - wj / 2, wi, wj)
+    for i, j, length in ((24, 22, 6), (46, 22, 6), (56, 22, 6), (43, 36, 4)):
+        lp.stone_bridge(scene, i, j, length, width=1.4)
+        reserve(i - 1, j - 1, 3, length + 3, "cobble")
+
+    water = (rgb("#3E7D9C"), rgb("#336B8B"), rgb("#71AEC1"))
+    paint_ground(scene, kinds, {}, water, be.SAND["dark"])
+
+    for li in range(-12, 110, 4):
+        for lj in range(-12, 110, 4):
+            for wi, wj in ((3, 3), (3, 2), (2, 3)):
+                cells = [(a, b) for a in range(li, li + wi) for b in range(lj, lj + wj)]
+                if not all(kinds.get(c) == "lot" and c not in reserved for c in cells):
+                    continue
+                seed = int(h01(li, lj, 79) * 1000)
+                floors = 3 + seed % 2
+                x, y = scene.screen(li + wi / 2, lj + wj / 2)
+                half, top, bottom = (wi + wj) * 4 + 2, y - floors * 9 - 19, y + (wi + wj) * 2
+                if any(x + half > l and x - half < r and bottom > t and top < b for l, t, r, b in protected):
+                    reserve(li, lj, wi, wj)
+                    continue
+                be.berlin_house(scene, li, lj, wi, wj, floors, seed)
+                reserved.update(cells)
+                break
+
+    green = [round_tree(n, "#659D4F", "#27432C") for n in range(3)]
+    lindens = [round_tree(n, "#83AF59", "#31482D") for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i + .5, j + .5)
+        if any(l - 5 < x < r + 5 and t < y < b + 10 for l, t, r, b in protected):
+            continue
+        pick = None
+        if kind == "grass" and h01(i, j, 81) < .35 and (i, j) not in reserved:
+            pick = green[(i + j) % 3]
+        elif kind == "promenade" and (i + j) % 3 == 0 and (i, j) not in reserved:
+            pick = lindens[(i + j) % 3]
+        elif kind == "cobble" and 300 < x < 430 and abs(y - (355 - (x - 260) * .38)) < 4 and i % 3 == 0:
+            pick = lindens[i % 3]
+        if pick is not None:
+            scene.add(i + j + 1.5, lambda s, img=pick, x=x, y=y: s.sprite(img, x, y + 5))
+    for i in (14, 31, 42, 62, 70):
+        x, y = scene.screen(i, 25)
+        scene.add(i + 25, lambda s, x=x, y=y: s.sprite(bateau(0), x, y))
+
+    scene.paint_objects()
+    return scene.img.convert("RGB")
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -535,6 +657,8 @@ CAPITALS = [
      "render": madrid},
     {"id": "paris", "name": "Paris", "country": "France", "longitude": 2.3522, "latitude": 48.8566,
      "render": paris},
+    {"id": "berlin", "name": "Berlin", "country": "Germany", "longitude": 13.4050, "latitude": 52.5200,
+     "render": berlin},
 ]
 
 
@@ -544,7 +668,11 @@ def main():
     for capital in CAPITALS:
         image = capital["render"]()
         path = OUT / f"{capital['id']}.png"
-        image.save(path, optimize=True)
+        # Expo may be watching during art iteration: publish complete PNGs, never an empty file
+        # while Pillow is still encoding it.
+        temporary = path.with_suffix(".tmp")
+        image.save(temporary, format="PNG", optimize=True)
+        temporary.replace(path)
         entries.append({k: v for k, v in capital.items() if k != "render"} | {
             "width": image.width, "height": image.height})
         print(capital["name"], image.size, path.stat().st_size, "bytes")

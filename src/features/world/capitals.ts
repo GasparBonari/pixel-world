@@ -1,7 +1,8 @@
 import {
   CAPITAL_ZOOM,
+  constrainGlobe,
+  globeLocation,
   globePoint,
-  rotateGlobe,
   type GlobeCamera,
   type GlobeViewport,
 } from './globe-camera';
@@ -59,7 +60,22 @@ export function clampToCapital(
     if (rect.y > 0) dy = -rect.y;
     else if (rect.y + rect.height < viewport.height) dy = viewport.height - rect.y - rect.height;
   }
-  return dx || dy ? rotateGlobe(camera, dx, dy, viewport) : camera;
+  if (!dx && !dy) return camera;
+  const x = rect.x + rect.width / 2 + dx;
+  const y = rect.y + rect.height / 2 + dy;
+  let next = camera;
+  // Match the globe projection, as focal zoom does: a screen delta is not a longitude delta,
+  // especially this far north. A single rotateGlobe correction leaves a gap at the scene edge.
+  for (let step = 0; step < 5; step++) {
+    const point = globeLocation(x, y, next, viewport);
+    if (!point) break;
+    next = constrainGlobe({
+      ...next,
+      longitude: next.longitude + scene.longitude - point.longitude,
+      latitude: next.latitude + scene.latitude - point.latitude,
+    });
+  }
+  return next;
 }
 
 /** Clamp to whichever capital the camera is visiting (the nearest one within reach). */

@@ -25,5 +25,14 @@
     "latitude": 48.8566,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "berlin",
+    "name": "Berlin",
+    "country": "Germany",
+    "longitude": 13.405,
+    "latitude": 52.52,
+    "width": 720,
+    "height": 520
   }
 ]

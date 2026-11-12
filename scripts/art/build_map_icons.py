@@ -46,6 +46,10 @@ COUNTRY_TIER = [
     {"adm0": "FRA", "bounds": (-5.2, 41.3, 9.6, 51.1), "capital": "Paris", "cities": 12,
      # Mont-Saint-Michel on its tidal island, and the vineyards of Saint-Émilion near Bordeaux.
      "landmarks": [("mont-saint-michel", -1.5115, 48.6361), ("vineyard", -0.155, 44.894)]},
+    {"adm0": "DEU", "bounds": (5.8, 47.2, 15.1, 55.1), "capital": "Berlin", "cities": 9,
+     "trees": 7,
+     # Neuschwanstein, above Hohenschwangau in the Bavarian Alps.
+     "landmarks": [("neuschwanstein", 10.7492, 47.5576)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -59,6 +63,7 @@ VARIANTS = {
     "red-rock": 1, "volcano": 1, "glacier": 2, "iceberg": 2,
     "castle": 1, "church": 1, "house": 2, "boat": 1, "windmill": 1, "mont-saint-michel": 1, "vineyard": 1,
     **{animal: 1 for animal in sprites.FAUNA},
+    "neuschwanstein": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -286,7 +291,11 @@ def main():
                 elif not is_land(x, y) and any(country_code(x + dx, y + dy) == spec["adm0"]
                                                for dx in (-3, 0, 3) for dy in (-3, 0, 3)):
                     boats.append((lon, lat))
-        for lon, lat in spread(trees, 7 if spec["adm0"] == "PRT" else 12, 70, 51, towns, 45):
+        for lon, lat in spread(trees, spec.get("trees", 7 if spec["adm0"] == "PRT" else 12), 70, 51, towns, 45):
+            if spec["adm0"] == "DEU":
+                kind = "pine" if lat > 53 else "oak"
+                building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+                continue
             if lat > 47.5 and spec["adm0"] == "FRA":
                 kind = "oak"  # northern France: broadleaf woods
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))

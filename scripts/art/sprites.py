@@ -1330,6 +1330,48 @@ def vineyard(seed=0):
     return s.image()
 
 
+def neuschwanstein(seed=0):
+    """Neuschwanstein: pale Romanesque palace on a rocky ridge, square keep and conical turrets."""
+    s = Sprite(31, 33)
+    wall, roof = ramp("#E5DFCC", "#514B3D"), ramp("#596B83", "#2D3548")
+    rock = ramp("#9B9588", "#49483E")
+    ground_shadow(s, 15.5, 31, 13, 1)
+    blob(s, 15, 29, 13, 4, rock, clip=lambda x, y: y <= 31)
+    # Main Palas: lit west face and shaded east return, arcaded windows and string courses.
+    for y in range(13, 29):
+        for x in range(8, 24):
+            tone = 2 if x < 17 else 1 if x < 21 else 0
+            color = wall[0][tone]
+            if y in (19, 25):
+                color = wall[0][0]
+            elif x % 4 in (1, 2) and y % 6 in (2, 3, 4):
+                color = C["window"]
+            s.put(x, y, color, wall[1])
+    for y in range(8, 14):
+        for x in range(7 + (13 - y) // 2, 25 - (13 - y) // 2):
+            s.put(x, y, roof[0][2 if x < 17 else 0] if y % 3 else roof[0][1], roof[1])
+    # Tall square tower and the large western round turret have different silhouettes.
+    for x0, top, bottom, width in ((4, 9, 29, 5), (22, 6, 27, 5), (11, 7, 14, 3)):
+        for y in range(top, bottom):
+            for x in range(x0, x0 + width):
+                color = wall[0][2 if x < x0 + 2 else 0]
+                if y % 7 in (3, 4) and x == x0 + width // 2:
+                    color = C["window"]
+                s.put(x, y, color, wall[1])
+        for dy in range(6):
+            half = (5 - dy) * (width / 2) / 5
+            for x in range(math.ceil(x0 + width / 2 - half), math.floor(x0 + width / 2 + half) + 1):
+                s.put(x, top - dy, roof[0][2 if x < x0 + width / 2 else 0], roof[1])
+    # Rectangular south-west keep: battlemented crown, paired Romanesque windows.
+    for y in range(13, 27):
+        for x in range(15, 20):
+            s.put(x, y, C["window"] if y % 6 in (3, 4) and x in (16, 18)
+                  else wall[0][2 if x < 18 else 0], wall[1])
+    for x in (15, 17, 19):
+        s.put(x, 12, wall[0][3], wall[1])
+    return s.image()
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1353,14 +1395,15 @@ FLORA = {
 
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
-    "church": church, "house": house, "boat": sailboat, "pin": pin, **FLORA, **FAUNA,
+    "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
+    **FLORA, **FAUNA,
 }
 
 
 def preview(path, scale=5):
     """Rows: buildings and landmarks, flora and landforms, fauna."""
     rows = [
-        ["tree", "pine", "mountain", "hill", "castle", "church", "house", "boat", "pin"],
+        ["tree", "pine", "mountain", "hill", "castle", "church", "house", "boat", "pin", "neuschwanstein"],
         list(FLORA),
         list(FAUNA)[:14],
         list(FAUNA)[14:],
