@@ -52,5 +52,14 @@
     "latitude": 50.8503,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "london",
+    "name": "London",
+    "country": "United Kingdom",
+    "longitude": -0.1276,
+    "latitude": 51.5072,
+    "width": 720,
+    "height": 520
   }
 ]

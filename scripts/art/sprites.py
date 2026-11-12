@@ -1461,6 +1461,42 @@ def gravensteen(seed=0):
     return s.image()
 
 
+def stonehenge(seed=0):
+    """Surviving sarsen ring, three complete inner trilithons and fallen stones on grass."""
+    import iso
+
+    s = Sprite(39, 32)
+    ground_shadow(s, 19, 29, 16, 2)
+    stone = [hex_rgb(c) for c in ("#615B4D", "#97927D", "#BDB69B", "#E0D7B8")]
+    outline = hex_rgb("#454338")
+    def block(x, foot, width, height, depth=2):
+        # Upright stones are volumes: lit front, shaded return and a pale upper face.
+        for pts, tone in (([(x, foot - height), (x + width, foot - height),
+                           (x + width, foot), (x, foot)], 2),
+                          ([(x + width, foot - height), (x + width + depth, foot - height - 1),
+                            (x + width + depth, foot - 1), (x + width, foot)], 1),
+                          ([(x, foot - height), (x + depth, foot - height - 2),
+                            (x + width + depth, foot - height - 2), (x + width, foot - height)], 3)):
+            for a, b in iso.polygon_pixels(pts):
+                colour = stone[max(0, tone - 1)] if h01(a, b, seed) < .09 else stone[tone]
+                s.put(a, b, colour, outline)
+    # Three complete trilithons, separated enough that the openings survive at icon size.
+    # The incomplete outer ring and low fallen sarsens keep the present-day ruin silhouette.
+    block(16, 12, 2, 7, 1)
+    for x, foot, height, gap in ((5, 16, 9, 5), (23, 16, 8, 5)):
+        block(x, foot, 2, height, 1)
+        block(x + gap + 2, foot, 2, height, 1)
+        block(x - 1, foot - height, gap + 5, 2, 1)
+    block(2, 24, 3, 8, 1)
+    block(33, 24, 2, 7, 1)
+    block(13, 27, 3, 13, 1)
+    block(23, 27, 3, 13, 1)
+    block(12, 14, 15, 3, 1)
+    block(6, 28, 4, 2, 2)
+    block(29, 28, 6, 2, 1)
+    return s.image()
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1485,7 +1521,7 @@ FLORA = {
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
-    "kinderdijk": kinderdijk, "gravensteen": gravensteen,
+    "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge,
     **FLORA, **FAUNA,
 }
 

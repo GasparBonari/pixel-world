@@ -899,6 +899,120 @@ def brussels():
     return scene.img.convert("RGB")
 
 
+# ------------------------------------------------------------------ London --
+
+import landmarks_london as lon
+
+THAMES = (rgb("#527F89"), rgb("#3D6575"), rgb("#9BBAB9"))
+LONDON_PLANE = ("#779B51", "#2D4932")
+
+
+def london():
+    scene = new_scene()
+    def at(x, y):
+        return tile_of((x - WIDTH / 2) / 8, (y - scene.oy) / 4)
+
+    # A compressed north-up Thames S-bend. Every reach follows i or j, allowing
+    # square crossings; the west/north bank holds Westminster and the City.
+    river = [at(x, y) for x, y in ((610, 550), (410, 450), (490, 410),
+                                  (330, 330), (492.5, 248.75), (790, 397.5))]
+    def river_distance(i, j):
+        best = float("inf")
+        for (a, b), (c, d) in zip(river, river[1:]):
+            t = max(0, min(1, ((i - a) * (c - a) + (j - b) * (d - b)) / ((c - a) ** 2 + (d - b) ** 2)))
+            best = min(best, math.hypot(i - a - t * (c - a), j - b - t * (d - b)))
+        return best
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i + .5, j + .5)
+        distance = river_distance(i + .5, j + .5)
+        if distance < 1.65:
+            kind = "water"
+        elif distance < 2.6:
+            kind = "quay"
+        elif distance < 5:
+            kind = "promenade"
+        elif (40 < x < 190 and 175 < y < 290) or (130 < x < 210 and 285 < y < 365):
+            # Green Park and St James's Park, north/east of Buckingham Palace.
+            kind = "gravel" if i % 6 == 0 or j % 6 == 0 else "grass"
+        elif i % 10 == 0 or j % 10 == 0:
+            kind = "cobble"
+        else:
+            kind = "lot"
+        kinds[(i, j)] = kind
+
+    reserved, protected = set(), []
+    def reserve(i, j, wi, wj, ground="pave"):
+        for a in range(math.floor(i), math.ceil(i + wi)):
+            for b in range(math.floor(j), math.ceil(j + wj)):
+                reserved.add((a, b))
+                if (a, b) in kinds and kinds[(a, b)] not in ("water", "quay"):
+                    kinds[(a, b)] = ground
+
+    def landmark(builder, x, y, wi, wj, front=2, ground="pave"):
+        ci, cj = at(x, y)
+        i, j = ci - wi / 2, cj - wj / 2
+        builder(scene, i, j)
+        reserve(i - .7, j - .7, wi + 1.4, wj + front + 1.4, ground)
+        # Measure the actual projected silhouette, including flags, spires and flying
+        # buttresses; foreground terraces and trees must never cover any part of it.
+        study = iso.Scene(WIDTH + 200, HEIGHT + 200, (scene.ox + 100, scene.oy + 100))
+        builder(study, i, j)
+        study.paint_objects()
+        bounds = study.img.convert("RGB").getbbox()
+        left, top, right, bottom = (n - 100 for n in bounds)
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, bounds)
+        protected.append((left - 5, top - 4, right + 5, bottom + 6))
+
+    landmark(lon.st_pauls, 480, 145, 10, 5.5, front=3)
+    landmark(lon.trafalgar, 145, 230, 8, 8, front=1, ground="quay")
+    landmark(lon.tower_of_london, 600, 210, 8.5, 7, front=3)
+    landmark(lon.buckingham_palace, 105, 340, 13, 6.5, front=3)
+    landmark(lon.london_eye, 445, 330, 8, 8, front=1)
+    landmark(lon.parliament, 415, 465, 5, 15, front=3)
+    landmark(lon.westminster_abbey, 250, 400, 9, 5.5, front=2)
+    # Tower Bridge crosses the east reach squarely along j, on its real SE side of the Tower.
+    landmark(lon.tower_bridge, 635, 320, 2.8, 15, front=1)
+
+    # Westminster Bridge: a stone span across the western i-axis reach, north of Parliament.
+    bi, bj = at(430, 380)
+    lp.stone_bridge(scene, bi - .8, bj - 4.3, 8.6, width=1.6, deck=7)
+    reserve(bi - 1, bj - 5, 2, 10)
+    paint_ground(scene, kinds, {}, THAMES, lon.STONE["dark"])
+
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li + 3) for b in range(lj, lj + 3)]
+            if not all(kinds.get(c) == "lot" and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 121) * 10000)
+            floors = 2 + seed % 2
+            x, y = scene.screen(li + wi / 2, lj + wj / 2)
+            half = (wi + wj) * 4 + 4
+            top, bottom = y - floors * 11 - 21, y + (wi + wj) * 2
+            if any(x + half > l and x - half < r and bottom > t and top < b for l, t, r, b in protected):
+                continue
+            if river_distance(li + wi / 2, lj + wj / 2) < 7:
+                continue  # deep open embankments keep the water visible below the roofs
+            lon.terrace(scene, li, lj, wi, wj, floors, seed)
+            reserved.update(cells)
+
+    planes = [round_tree(n, *LONDON_PLANE) for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i + .5, j + .5)
+        if (i, j) in reserved or any(l - 8 < x < r + 8 and t - 2 < y < b + 22 for l, t, r, b in protected):
+            continue
+        if kind == "grass" and h01(i, j, 123) < .18 or kind == "promenade" and (i + j) % 7 == 0:
+            scene.add(i + j + 1.5, lambda s, x=x, y=y, tree=planes[(i + j) % 3]: s.sprite(tree, x, y + 4))
+    for x, y in ((450, 430), (374, 352), (472, 259), (550, 277.5), (710, 357.5)):
+        i, j = at(x, y)
+        scene.add(i + j, lambda s, x=x, y=y: s.sprite(bateau(0), x, y))
+    scene.paint_objects()
+    return scene.img.convert("RGB")
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -912,6 +1026,8 @@ CAPITALS = [
      "render": amsterdam},
     {"id": "brussels", "name": "Brussels", "country": "Belgium", "longitude": 4.3517, "latitude": 50.8503,
      "render": brussels},
+    {"id": "london", "name": "London", "country": "United Kingdom", "longitude": -0.1276, "latitude": 51.5072,
+     "render": london},
 ]
 
 

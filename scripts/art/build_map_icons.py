@@ -58,6 +58,10 @@ COUNTRY_TIER = [
      "trees": 7,
      # Gravensteen, the medieval Counts' castle beside the Leie in Ghent.
      "landmarks": [("gravensteen", 3.7206, 51.0572)]},
+    {"adm0": "GBR", "bounds": (-8.3, 49.8, 2.0, 60.9), "capital": "London", "cities": 9,
+     "trees": 7,
+     # Stonehenge's surviving sarsen ring, on Salisbury Plain.
+     "landmarks": [("stonehenge", -1.8262, 51.1789)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -74,6 +78,7 @@ VARIANTS = {
     "neuschwanstein": 1,
     "kinderdijk": 1,
     "gravensteen": 1,
+    "stonehenge": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -304,8 +309,8 @@ def main():
                                                for dx in (-3, 0, 3) for dy in (-3, 0, 3)):
                     boats.append((lon, lat))
         for lon, lat in spread(trees, spec.get("trees", 7 if spec["adm0"] == "PRT" else 12), 70, 51, towns, 45):
-            if spec["adm0"] in ("DEU", "NLD", "BEL"):
-                kind = "pine" if spec["adm0"] == "DEU" and lat > 53 else "oak"
+            if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR"):
+                kind = "pine" if (spec["adm0"] == "DEU" and lat > 53 or spec["adm0"] == "GBR" and lat > 56) else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if lat > 47.5 and spec["adm0"] == "FRA":
