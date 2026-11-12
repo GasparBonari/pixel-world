@@ -306,7 +306,7 @@ test('London: focal zoom reaches its scene while Scotland and Northern Ireland k
   assert.deepEqual([london.width, london.height], [720, 520]);
   assert.equal(maxZoomAt(-.1276, 51.5072), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(-4.2527, 55.8764), COUNTRY_ZOOM.max); // Glasgow
-  assert.equal(maxZoomAt(-5.96, 54.6), COUNTRY_ZOOM.max); // Belfast
+  assert.equal(maxZoomAt(-7.3086, 54.9975), COUNTRY_ZOOM.max); // Derry, outside Dublin's capital reach
   assert.equal(maxZoomAt(12.5, 41.9), MAX_GLOBE_ZOOM); // Rome stays uncovered
   let arriving = { longitude: -.6, latitude: 51.8, zoom: 5 };
   const focal = globePoint(london.longitude, london.latitude, arriving, view);
@@ -336,4 +336,51 @@ test('overlapping Brussels/Amsterdam visits keep one capital until zooming back 
     const nextVisit = constrainGlobe({ ...country, longitude: other.longitude, latitude: other.latitude, zoom: 7 });
     assert.equal(camera.activeCapital(nextVisit).id, other.id);
   }
+});
+
+test('Ireland marks Dublin first, spaced cities and the Rock of Cashel within its bounds', () => {
+  const ireland = COVERAGE.find((c) => c.id === 'dublin');
+  assert.deepEqual(ireland.bounds, [-10.8, 51.35, -5.9, 55.5]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1] - lon) < .001 && Math.abs(i[2] - lat) < .001);
+  // Pinned Natural Earth coordinates, in capital-first population order.
+  const cities = [[-6.2509, 53.335], [-8.4958, 51.8986], [-8.623, 52.6647],
+    [-7.1119, 52.2583], [-9.7167, 52.2667], [-8.4833, 54.2671], [-6.9667, 54.25]];
+  const decorations = [[-7.8902, 52.52], [-7.875, 54.625], [-9.625, 54.125], [-6.375, 53.875],
+    [-8.375, 53.375], [-6.625, 52.625], [-10.375, 52.125], [-9.375, 51.875],
+    [-10.125, 53.125], [-6.125, 52.625]];
+  const [w, s, e, n] = ireland.bounds;
+  for (const [rank, [lon, lat]] of cities.entries()) {
+    const kinds = at(lon, lat).map((i) => icons.names[i[0]]).sort();
+    assert.deepEqual(kinds, rank === 0 ? ['castle', 'house', 'house'] : rank <= 2
+      ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const [otherLon, otherLat] of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
+        + Math.cos(lat * rad) * Math.cos(otherLat * rad) * Math.cos((lon - otherLon) * rad));
+      assert.ok(km >= 75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+  const all = [...cities, ...decorations].flatMap(([lon, lat]) => at(lon, lat));
+  assert.equal(all.length, 25);
+  for (const [, lon, lat] of all) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
+  assert.equal(at(-7.8902, 52.52).filter((i) => icons.names[i[0]] === 'rock-of-cashel').length, 1);
+  assert.equal(at(-9.0488, 53.2724).length, 0, 'Galway respects the spacing from Limerick');
+  assert.equal(at(-6.3478, 53.7193).length, 0, 'Drogheda respects the spacing from Dublin');
+});
+
+test('Dublin: focal zoom arrives at its scene while Cork retains country detail', () => {
+  const dublin = scenes.find((s) => s.id === 'dublin');
+  assert.deepEqual([dublin.width, dublin.height], [720, 520]);
+  assert.equal(maxZoomAt(-6.2603, 53.3498), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(-8.4958, 51.8986), COUNTRY_ZOOM.max);
+  assert.equal(maxZoomAt(12.5, 41.9), MAX_GLOBE_ZOOM); // Rome remains uncovered.
+  let arriving = { longitude: -6.7, latitude: 53.1, zoom: 5 };
+  const focal = globePoint(dublin.longitude, dublin.latitude, arriving, view);
+  for (let step = 0; step < 8; step++)
+    arriving = zoomGlobe(arriving, arriving.zoom + .3, focal.x, focal.y, view);
+  assert.equal(arriving.zoom, CAPITAL_ZOOM.full);
+  assert.equal(arriving.capitalId, 'dublin');
+  const after = globePoint(dublin.longitude, dublin.latitude, arriving, view);
+  assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
 });

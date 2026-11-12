@@ -1013,6 +1013,107 @@ def london():
     return scene.img.convert("RGB")
 
 
+def dublin():
+    import landmarks_ireland as irl
+
+    scene = new_scene()
+    def at(x, y):
+        return tile_of((x - WIDTH / 2) / 8, (y - scene.oy) / 4)
+
+    # Compressed north-up Liffey: i/j reaches, with Four Courts and Custom House
+    # on the north bank and Ha'penny Bridge squarely across the central i reach.
+    river = [at(x, y) for x, y in ((-80, 175), (180, 305), (350, 220),
+                                  (470, 280), (620, 205), (800, 295))]
+    def river_distance(i, j):
+        best = float('inf')
+        for (a, b), (c, d) in zip(river, river[1:]):
+            t = max(0, min(1, ((i - a) * (c - a) + (j - b) * (d - b)) / ((c - a) ** 2 + (d - b) ** 2)))
+            best = min(best, math.hypot(i - a - t * (c - a), j - b - t * (d - b)))
+        return best
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i + .5, j + .5)
+        distance = river_distance(i + .5, j + .5)
+        if distance < 1.7:
+            kind = 'water'
+        elif distance < 2.7:
+            kind = 'quay'
+        elif distance < 4.4:
+            kind = 'promenade'
+        elif (450 < x < 650 and 405 < y < 510) or (50 < x < 160 and 415 < y < 510):
+            # St Stephen's Green southeast of the Castle, and St Patrick's Park.
+            kind = 'gravel' if i % 7 == 0 or j % 7 == 0 else 'grass'
+        elif i % 10 == 0 or j % 10 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected = set(), []
+    def reserve(i, j, wi, wj, ground='pave'):
+        for a in range(math.floor(i), math.ceil(i + wi)):
+            for b in range(math.floor(j), math.ceil(j + wj)):
+                reserved.add((a, b))
+                if (a, b) in kinds and kinds[(a, b)] not in ('water', 'quay'):
+                    kinds[(a, b)] = ground
+
+    def landmark(builder, x, y, wi, wj, front=2, ground='pave'):
+        ci, cj = at(x, y)
+        i, j = ci - wi / 2, cj - wj / 2
+        builder(scene, i, j)
+        reserve(i - .8, j - .8, wi + 1.6, wj + front + 1.6, ground)
+        study = iso.Scene(WIDTH + 200, HEIGHT + 200, (scene.ox + 100, scene.oy + 100))
+        builder(study, i, j)
+        study.paint_objects()
+        bounds = study.img.convert('RGB').getbbox()
+        left, top, right, bottom = (n - 100 for n in bounds)
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, bounds)
+        protected.append((left - 5, top - 4, right + 5, bottom + 6))
+
+    # Anchor centres retain the real sites' east/west and north/south ordering.
+    landmark(irl.gpo, 400, 95, 12, 5, front=3)
+    landmark(irl.custom_house, 600, 150, 14, 5, front=3)
+    landmark(irl.four_courts, 150, 235, 12, 5, front=3)
+    landmark(irl.hapenny_bridge, 365, 227.5, 2.2, 8.5, front=1)
+    landmark(irl.christ_church, 105, 355, 11, 5, front=2)
+    landmark(irl.dublin_castle, 310, 395, 13.8, 8, front=2)
+    landmark(irl.trinity, 535, 330, 11, 8.8, front=2)
+    landmark(irl.st_patricks, 228, 478, 14.2, 6, front=2, ground='gravel')
+    paint_ground(scene, kinds, {}, (rgb('#447F87'), rgb('#346573')), irl.STONE['dark'])
+
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li + 3) for b in range(lj, lj + 3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 137) * 10000)
+            floors = 2 + seed % 2
+            x, y = scene.screen(li + wi / 2, lj + wj / 2)
+            half = (wi + wj) * 4 + 5
+            top, bottom = y - floors * 12 - 22, y + (wi + wj) * 2 + 8
+            if any(x + half > l and x - half < r and bottom > t and top < b for l, t, r, b in protected):
+                continue
+            if river_distance(li + wi / 2, lj + wj / 2) < 7:
+                continue
+            irl.georgian_house(scene, li, lj, wi, wj, floors, seed)
+            reserved.update(cells)
+
+    trees = [round_tree(n, '#63954C', '#284B32') for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i + .5, j + .5)
+        if (i, j) in reserved or any(l - 8 < x < r + 8 and t - 2 < y < b + 22 for l, t, r, b in protected):
+            continue
+        if kind == 'grass' and h01(i, j, 139) < .17 or kind == 'promenade' and (i + j) % 7 == 0:
+            scene.add(i + j + 1.5, lambda s, x=x, y=y, tree=trees[(i + j) % 3]: s.sprite(tree, x, y + 4))
+    for x, y in ((50, 240), (250, 270), (440, 265), (565, 232.5), (690, 240)):
+        i, j = at(x, y)
+        scene.add(i + j, lambda s, x=x, y=y: s.sprite(rowboat(0), x, y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -1028,6 +1129,8 @@ CAPITALS = [
      "render": brussels},
     {"id": "london", "name": "London", "country": "United Kingdom", "longitude": -0.1276, "latitude": 51.5072,
      "render": london},
+    {"id": "dublin", "name": "Dublin", "country": "Ireland", "longitude": -6.2603, "latitude": 53.3498,
+     "render": dublin},
 ]
 
 

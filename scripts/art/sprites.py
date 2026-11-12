@@ -1497,6 +1497,47 @@ def stonehenge(seed=0):
     return s.image()
 
 
+def rock_of_cashel(seed=0):
+    """Roofless Gothic cathedral, crossing tower, round tower and Cormac's Chapel on limestone."""
+    import iso
+    from landmarks_ireland import block, STONE, GRANITE, gothic_windows
+    from landmarks_paris import P, poly
+    from landmarks_amsterdam import octagon
+    from landmarks_iberia import hip_roof
+
+    scene = iso.Scene(59, 54, (29, 24))
+    shadow = Sprite(59, 54)
+    ground_shadow(shadow, 29, 49.5, 25, 2.5)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    top = [P(scene, -1.1, -.5), P(scene, 3.1, -.5), P(scene, 3.3, 2.4), P(scene, -.9, 2.5)]
+    for points, color in (([top[3], top[2], (top[2][0] - 2, top[2][1] + 6),
+                           (top[3][0] + 2, top[3][1] + 5)], '#8C9878'),
+                          ([top[2], top[1], (top[1][0] - 2, top[1][1] + 5),
+                           (top[2][0] - 2, top[2][1] + 6)], '#616F5C'), (top, '#8EAE61')):
+        poly(scene, points, lambda x, y, color=color: hex_rgb(color) if h01(x, y, seed) > .15 else hex_rgb('#A6B782'))
+    # North round tower is slender and capped, unlike the square open crossing tower.
+    octagon(scene, -.65, .1, .27, 0, 16, STONE)
+    octagon(scene, -.65, .1, .32, 16, 4, GRANITE, roof=True)
+    # Roofless nave and choir: low walls expose the grass-floored interior.
+    for a, b, w, d in ((-.2, .2, 3, .18), (-.2, .2, .2, 1.4), (2.6, .2, .2, 1.4)):
+        block(scene, a, b, w, d, 10, STONE, gothic_windows(STONE, 10, 6))
+    # Broken Gothic end gable, as a thick i/z volume with a pointed traceried light.
+    block(scene, 2.5, .2, .25, 1.5, 13, STONE, gothic_windows(STONE, 13, 10))
+    poly(scene, [P(scene, 2.75, .2, 13), P(scene, 2.75, 1.7, 13), P(scene, 2.75, .95, 19)], lambda x, y: GRANITE['dark'])
+    block(scene, .7, .2, .9, .9, 17, STONE, gothic_windows(STONE, 17, 6, belfry=True))
+    for a, b in ((.65, .15), (1.45, .15), (.65, .95), (1.45, .95)):
+        block(scene, a, b, .22, .22, 2, STONE, z=17)
+    block(scene, -.2, 1.5, 3, .18, 8, STONE, gothic_windows(STONE, 8, 6))
+    # Small Cormac's Chapel on the south: warm sandstone and a steep stone roof.
+    chapel = {**GRANITE, 'lit': hex_rgb('#C1AC83'), 'dark': hex_rgb('#8D8064')}
+    block(scene, .3, 1.9, 1.7, .6, 7, chapel, gothic_windows(chapel, 7, 5))
+    hip_roof(scene, .3, 1.9, 1.7, .6, 7, 5, roof=GRANITE)
+    block(scene, 1.7, 1.85, .35, .35, 12, chapel)
+    hip_roof(scene, 1.7, 1.85, .35, .35, 12, 3, roof=GRANITE)
+    return scene.img
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1521,7 +1562,7 @@ FLORA = {
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
-    "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge,
+    "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge, "rock-of-cashel": rock_of_cashel,
     **FLORA, **FAUNA,
 }
 

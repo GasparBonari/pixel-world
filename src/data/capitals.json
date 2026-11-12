@@ -61,5 +61,14 @@
     "latitude": 51.5072,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "dublin",
+    "name": "Dublin",
+    "country": "Ireland",
+    "longitude": -6.2603,
+    "latitude": 53.3498,
+    "width": 720,
+    "height": 520
   }
 ]
