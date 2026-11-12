@@ -88,5 +88,14 @@
     "latitude": 55.6761,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "stockholm",
+    "name": "Stockholm",
+    "country": "Sweden",
+    "longitude": 18.0686,
+    "latitude": 59.3293,
+    "width": 720,
+    "height": 520
   }
 ]

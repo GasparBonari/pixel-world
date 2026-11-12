@@ -1598,6 +1598,41 @@ def kronborg(seed=0):
     return scene.img
 
 
+def gripsholm(seed=0):
+    """Gripsholm's four round brick towers, copper caps, courtyard and Mälaren shore."""
+    import iso
+    from landmarks_sweden import block, windows, spire, cylinder, BRICK, STONE, COPPER, IRON, WATER
+    from landmarks_iberia import hip_roof
+    from landmarks_paris import P, poly
+
+    scene = iso.Scene(67, 72, (33, 39))
+    shadow = Sprite(67, 72)
+    ground_shadow(shadow, 33, 68, 29, 2)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    poly(scene,[P(scene,-.6,-.5),P(scene,3.5,-.5),P(scene,3.5,3),P(scene,-.6,3)],
+         lambda x,y:WATER[0] if int(y)%4 else WATER[2])
+    block(scene,-.15,-.15,3.1,2.75,3,STONE)
+    def tower(a,b,height,lantern=False):
+        cylinder(scene,a,b,.49,.49,3,height,BRICK,windows(BRICK,height,bay=6,floor=10))
+        cylinder(scene,a,b,.54,.54,height+2,2,STONE)
+        spire(scene,a,b,.6,height+4,10,COPPER,onion=True)
+        if lantern:
+            block(scene,a-.18,b-.18,.36,.36,4,COPPER,
+                  lambda u,v,lit:IRON['deep'] if 1<v<3 else None,z=height+11)
+            spire(scene,a,b,.28,height+15,5,COPPER)
+    tower(0,0,20)
+    tower(2.8,0,19)
+    for a,b,wi,wj in ((0,0,2.8,.65),(0,.65,.65,1.75),(2.15,.65,.65,1.75),(.65,1.75,1.5,.65)):
+        block(scene,a,b,wi,wj,15,BRICK,windows(BRICK,15,bay=6,floor=10),z=3)
+        hip_roof(scene,a,b,wi,wj,18,6,IRON)
+    tower(0,2.4,18)
+    tower(2.8,2.4,22,True)
+    block(scene,1.05,2.4,.75,.18,10,STONE,
+          lambda u,v,lit:BRICK['outline'] if lit and 1<int(u)<5 and v<7 else None,z=3)
+    return scene.img
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1623,7 +1658,7 @@ ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
     "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge, "rock-of-cashel": rock_of_cashel,
-    "leaning-tower-pisa": leaning_tower_pisa, "kronborg": kronborg,
+    "leaning-tower-pisa": leaning_tower_pisa, "kronborg": kronborg, "gripsholm": gripsholm,
     **FLORA, **FAUNA,
 }
 

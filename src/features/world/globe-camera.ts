@@ -24,6 +24,7 @@ export const COVERAGE = [
   { id: 'dublin', country: 'Ireland', longitude: -6.2603, latitude: 53.3498, bounds: [-10.8, 51.35, -5.9, 55.5] },
   { id: 'rome', country: 'Italy', longitude: 12.4964, latitude: 41.9028, bounds: [6.6, 35.4, 18.6, 47.1] },
   { id: 'copenhagen', country: 'Denmark', longitude: 12.5683, latitude: 55.6761, bounds: [8.0, 54.5, 15.3, 57.8] },
+  { id: 'stockholm', country: 'Sweden', longitude: 18.0686, latitude: 59.3293, bounds: [11.0, 55.3, 24.2, 69.2] },
 ] as const;
 
 /** Keep the visited capital while panning across overlapping capital areas. Zooming out releases it. */
@@ -127,21 +128,6 @@ export function cameraFromParams(params: Record<string, string | string[] | unde
   });
 }
 
-export function rotateGlobe(
-  camera: GlobeCamera,
-  dx: number,
-  dy: number,
-  viewport: GlobeViewport
-) {
-  'worklet';
-  const degrees = 180 / (Math.PI * globeRadius(viewport) * 2 ** camera.zoom);
-  return constrainGlobe({
-    ...camera,
-    longitude: camera.longitude - dx * degrees,
-    latitude: camera.latitude + dy * degrees,
-  });
-}
-
 export function globePoint(
   longitude: number,
   latitude: number,
@@ -187,6 +173,49 @@ export function globeLocation(
   };
 }
 
+/** Position a known geographic anchor at a screen point, preserving the other screen axis.
+ * Active capital scenes use their rectangle for pan bounds, rather than the arrival radius.
+ */
+export function cameraAtGlobePoint(
+  camera: GlobeCamera,
+  longitude: number,
+  latitude: number,
+  x: number,
+  y: number,
+  viewport: GlobeViewport
+) {
+  'worklet';
+  const radians = Math.PI / 180;
+  const radius = globeRadius(viewport) * 2 ** camera.zoom;
+  const lat = latitude * radians;
+  const nx = (x - viewport.width / 2) / radius;
+  const ny = (viewport.height / 2 - y) / radius;
+  const delta = Math.asin(Math.max(-1, Math.min(1, nx / Math.cos(lat))));
+  const a = Math.sin(lat), b = Math.cos(lat) * Math.cos(delta);
+  const center = Math.atan2(a, b) - Math.asin(Math.max(-1, Math.min(1, ny / Math.hypot(a, b))));
+  return constrainGlobe({ ...camera, longitude: longitude - delta / radians, latitude: center / radians }, false);
+}
+
+export function rotateGlobe(
+  camera: GlobeCamera,
+  dx: number,
+  dy: number,
+  viewport: GlobeViewport
+) {
+  'worklet';
+  const capital = activeCapital(camera);
+  if (capital) {
+    const point = globePoint(capital.longitude, capital.latitude, camera, viewport);
+    return cameraAtGlobePoint(camera, capital.longitude, capital.latitude, point.x + dx, point.y + dy, viewport);
+  }
+  const degrees = 180 / (Math.PI * globeRadius(viewport) * 2 ** camera.zoom);
+  return constrainGlobe({
+    ...camera,
+    longitude: camera.longitude - dx * degrees,
+    latitude: camera.latitude + dy * degrees,
+  });
+}
+
 export function zoomGlobe(
   camera: GlobeCamera,
   zoom: number,
@@ -196,13 +225,14 @@ export function zoomGlobe(
 ) {
   'worklet';
   const anchor = globeLocation(x, y, camera, viewport);
+  const visited = activeCapital(camera);
   // Detail under the fingers counts too, so pinching on Lisbon reaches the capital.
-  const limit = Math.max(
+  const limit = visited ? CAPITAL_ZOOM.full : Math.max(
     maxZoomAt(camera.longitude, camera.latitude),
     anchor ? maxZoomAt(anchor.longitude, anchor.latitude) : 0
   );
   let next = constrainGlobe({ ...camera, zoom: Math.min(zoom, limit) }, false);
-  if (!anchor) return constrainGlobe(next);
+  if (!anchor) return constrainGlobe(next, !(visited && next.zoom >= CAPITAL_ZOOM.in));
   // Keep the chosen surface location under the pointer as the sphere grows.
   for (let step = 0; step < 5; step++) {
     const point = globeLocation(x, y, next, viewport);
@@ -216,5 +246,5 @@ export function zoomGlobe(
       false
     );
   }
-  return constrainGlobe(next);
+  return constrainGlobe(next, !(visited && next.zoom >= CAPITAL_ZOOM.in));
 }

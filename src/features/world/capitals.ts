@@ -1,8 +1,7 @@
 import {
   CAPITAL_ZOOM,
   activeCapital,
-  constrainGlobe,
-  globeLocation,
+  cameraAtGlobePoint,
   globePoint,
   type GlobeCamera,
   type GlobeViewport,
@@ -64,19 +63,9 @@ export function clampToCapital(
   if (!dx && !dy) return camera;
   const x = rect.x + rect.width / 2 + dx;
   const y = rect.y + rect.height / 2 + dy;
-  let next = camera;
-  // Match the globe projection, as focal zoom does: a screen delta is not a longitude delta,
-  // especially this far north. A single rotateGlobe correction leaves a gap at the scene edge.
-  for (let step = 0; step < 5; step++) {
-    const point = globeLocation(x, y, next, viewport);
-    if (!point) break;
-    next = constrainGlobe({
-      ...next,
-      longitude: next.longitude + scene.longitude - point.longitude,
-      latitude: next.latitude + scene.latitude - point.latitude,
-    });
-  }
-  return next;
+  // Solve the anchor exactly: a latitude/longitude correction couples the screen axes
+  // and can drift along an edge after repeated horizontal drags at northern capitals.
+  return cameraAtGlobePoint({ ...camera, capitalId: scene.id }, scene.longitude, scene.latitude, x, y, viewport);
 }
 
 /** Clamp to whichever capital the camera is visiting (the nearest one within reach). */

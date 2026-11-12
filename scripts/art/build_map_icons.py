@@ -73,6 +73,10 @@ COUNTRY_TIER = [
      "trees": 7,
      # Kronborg at Helsingør, on the Danish side of the Øresund.
      "landmarks": [("kronborg", 12.6218, 56.0388)]},
+    {"adm0": "SWE", "bounds": (11.0, 55.3, 24.2, 69.2), "capital": "Stockholm", "cities": 9,
+     "trees": 7,
+     # Gripsholm's Renaissance castle on Lake Mälaren at Mariefred.
+     "landmarks": [("gripsholm", 17.2192, 59.2561)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -93,6 +97,7 @@ VARIANTS = {
     "rock-of-cashel": 1,
     "leaning-tower-pisa": 1,
     "kronborg": 1,
+    "gripsholm": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -332,6 +337,10 @@ def main():
                               and all(great_circle_km(t, other) >= 70 for other in tree_sites)]
                 tree_sites += spread(candidates, count, 70, 51, towns, 45)
         for lon, lat in tree_sites:
+            if spec["adm0"] == "SWE":
+                kind = "pine" if lat > 60 else "oak"
+                building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+                continue
             if spec["adm0"] == "ITA":
                 kind = "pine" if lat >= 44 else "oak" if lat >= 40 else "olive"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))

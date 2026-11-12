@@ -1343,6 +1343,124 @@ def copenhagen():
     return scene.img.convert('RGB')
 
 
+def stockholm():
+    import landmarks_sweden as se
+
+    scene = new_scene()
+    def at(x, y):
+        return tile_of((x - WIDTH / 2) / 8, (y - scene.oy) / 4)
+
+    # Compressed north-up island groups. Every bank follows i/j axes: Mälaren west,
+    # Norrström north of Gamla Stan, Riddarholmen west and Djurgården to the east.
+    def water(i, j):
+        mainland = i < 36 or (i < 40 and 19 < j < 30)
+        gamla_stan = 41 < i < 79 and 38 < j < (71 if i > 58 else 68)
+        riddarholmen = 44 < i < 56 and 69 < j < 79
+        djurgarden = (i > 38 and j < 16) or (i > 43 and j < 28)
+        sodermalm = (i > 83 and j > 43) or j > 86
+        return not (mainland or gamla_stan or riddarholmen or djurgarden or sodermalm)
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i + .5, j + .5)
+        if water(i + .5, j + .5):
+            kind = 'water'
+        elif any(water(i + .5 + di, j + .5 + dj) for di, dj in ((1,0),(-1,0),(0,1),(0,-1))):
+            kind = 'quay'
+        elif any(water(i + .5 + di, j + .5 + dj) for di, dj in ((3,0),(-3,0),(0,3),(0,-3))):
+            kind = 'promenade'
+        elif x > 600 or (80 < x < 260 and 130 < y < 230):
+            kind = 'gravel' if i % 7 == 0 or j % 7 == 0 else 'grass'
+        elif i % 9 == 0 or j % 9 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected = set(), []
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i + wi)):
+            for b in range(math.floor(j), math.ceil(j + wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[(a, b)] = 'pave'
+
+    def landmark(builder, x, y, wi, wj):
+        ci, cj = at(x, y)
+        i, j = ci - wi / 2, cj - wj / 2
+        builder(scene, i, j)
+        reserve(i - .5, j - .5, wi + 1, wj + 2)
+        study = iso.Scene(WIDTH + 200, HEIGHT + 200, (scene.ox + 100, scene.oy + 100))
+        builder(study, i, j)
+        study.paint_objects()
+        bounds = tuple(v - 100 for v in study.img.convert('RGB').getbbox())
+        left, top, right, bottom = bounds
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, bounds)
+        protected.append((left - 4, top - 3, right + 4, bottom + 5))
+
+    # Ground anchors preserve the real longitude and latitude ordering, including the
+    # palace/German Church's shared longitude and the closely spaced Djurgården museums.
+    landmark(se.nordiska, 640, 150, 5.2, 8.5)
+    landmark(se.nationalmuseum, 450, 175, 7.8, 5)
+    landmark(se.vasa_museum, 555, 225, 7.5, 6)
+    landmark(se.city_hall, 105, 225, 8.4, 5.4)
+    landmark(se.royal_palace, 385, 300, 9, 7)
+    landmark(se.storkyrkan, 285, 390, 4.3, 6.3)
+    landmark(se.riddarholmen, 190, 420, 4.8, 6.5)
+    landmark(se.german_church, 385, 480, 4, 5.8)
+    # Stortorget's open cobbled square south of the cathedral, and palace forecourt.
+    for x,y,wi,wj in ((305,427,6,4),(350,340,5,3)):
+        i,j=at(x,y)
+        reserve(i-wi/2,j-wj/2,wi,wj)
+
+    paint_ground(scene, {cell:'pave' if kind == 'promenade' else kind for cell,kind in kinds.items()},
+                 {}, se.WATER, se.STONE['dark'])
+    # Low bridges cross the island channels squarely, with open stone quays on both banks.
+    lp.stone_bridge(scene, 46, 65.5, 6, width=1.3, deck=5)
+    reserve(45,65,4,8)
+    lp.stone_bridge(scene, 54, 26, 13, width=1.4, deck=5)
+    reserve(53,25,4,15)
+    def north_bridge(s):
+        se.block(s,34,48,9,1.4,5,se.STONE,
+                 lambda u,v,lit:se.WATER[1] if lit and 3<int(u)%17<13 and v<3 else None)
+        for jj in (48,49.4):
+            se.block(s,34,jj,9,.12,2,se.STONE,z=5)
+    scene.add(34+48+10.4,north_bridge)
+    reserve(33,47,11,4)
+
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            wi,wj=2.3,2.8
+            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):
+                continue
+            seed=int(h01(li,lj,181)*10000)
+            floors=2+(seed%3!=0)
+            x,y=scene.screen(li+wi/2,lj+wj/2)
+            half=(wi+wj)*4+5
+            top,bottom=y-floors*10-29,y+(wi+wj)*2+8
+            if any(x+half>l and x-half<r and bottom>t and top<b for l,t,r,b in protected):
+                continue
+            if any(water(li+wi/2+di,lj+wj/2+dj) for di,dj in ((4,0),(-4,0),(0,4),(0,-4))):
+                continue
+            se.townhouse(scene,li,lj,wi,wj,floors,seed)
+            reserved.update(cells)
+
+    lindens=[round_tree(n,'#739B59','#2A4935') for n in range(3)]
+    for (i,j),kind in kinds.items():
+        x,y=scene.screen(i+.5,j+.5)
+        if (i,j) in reserved or any(l-10<x<r+10 and t-2<y<b+24 for l,t,r,b in protected):
+            continue
+        if kind=='grass' and h01(i,j,183)<.13 or kind=='promenade' and (i+j)%10==0:
+            scene.add(i+j+1.5,lambda s,x=x,y=y,tree=lindens[(i+j)%3]:s.sprite(tree,x,y+4))
+    for i,j in ((30,70),(39,58),(58,33),(74,35),(65,77),(45,18)):
+        if water(i,j):
+            x,y=scene.screen(i,j)
+            scene.add(i+j,lambda s,x=x,y=y:s.sprite(bateau(0),x,y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -1364,6 +1482,8 @@ CAPITALS = [
      "render": rome},
     {"id": "copenhagen", "name": "Copenhagen", "country": "Denmark", "longitude": 12.5683, "latitude": 55.6761,
      "render": copenhagen},
+    {"id": "stockholm", "name": "Stockholm", "country": "Sweden", "longitude": 18.0686, "latitude": 59.3293,
+     "render": stockholm},
 ]
 
 

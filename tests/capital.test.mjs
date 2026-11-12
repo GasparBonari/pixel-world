@@ -182,7 +182,8 @@ test('every capital keeps portrait and landscape viewports covered after long dr
           && rect.y + rect.height >= viewport.height - .5, JSON.stringify(rect));
         assert.equal(current.zoom, CAPITAL_ZOOM.full);
         assert.equal(current.capitalId, scene.id, 'a long drag cannot change the visited capital');
-        assert.ok(Math.abs(current.longitude - scene.longitude) < 2, 'stays at the visited capital');
+        // The rectangle and retained visit bound panning; 1.5° is only the arrival radius.
+        assert.equal(camera.activeCapital(current).id, scene.id, 'stays at the visited capital');
       }
     }
   }
@@ -488,7 +489,7 @@ test('Copenhagen: focal arrival and pan edges keep its scene; Jutland and Bornho
   assert.equal(maxZoomAt(9.9166, 57.0337), COUNTRY_ZOOM.max); // Aalborg
   assert.equal(maxZoomAt(8.45, 55.467), COUNTRY_ZOOM.max); // Esbjerg
   assert.equal(maxZoomAt(14.7, 55.1), COUNTRY_ZOOM.max); // Bornholm
-  assert.equal(maxZoomAt(18.0686, 59.3293), MAX_GLOBE_ZOOM); // Stockholm stays uncovered.
+  assert.equal(maxZoomAt(24.9384, 60.1699), MAX_GLOBE_ZOOM); // Helsinki stays uncovered.
   let current = { longitude: 12.1, latitude: 55.9, zoom: 5 };
   const focal = globePoint(copenhagen.longitude, copenhagen.latitude, current, view);
   for (let step = 0; step < 8; step++)
@@ -507,5 +508,95 @@ test('Copenhagen: focal arrival and pan edges keep its scene; Jutland and Bornho
     const stopped = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, view), scenes, view, 2);
     assert.ok(Math.abs(stopped.longitude - current.longitude) < 1e-9);
     assert.ok(Math.abs(stopped.latitude - current.latitude) < 1e-9);
+  }
+});
+
+test('Sweden marks Stockholm first, nine spaced cities and Gripsholm inside its bounds', () => {
+  const sweden = COVERAGE.find((c) => c.id === 'stockholm');
+  assert.deepEqual(sweden.bounds, [11.0, 55.3, 24.2, 69.2]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1] - lon) < .001 && Math.abs(i[2] - lat) < .001);
+  // Pinned Natural Earth coordinates, capital first, followed by population and 75 km spacing.
+  const cities = [[18.0954, 59.3527], [12.0, 57.75], [13.0333, 55.5833],
+    [16.54, 59.63], [15.22, 59.2803], [15.6299, 58.41], [14.165, 57.7713],
+    [20.24, 63.83], [13.4999, 59.3671]];
+  for (const [rank, [lon, lat]] of cities.entries()) {
+    assert.deepEqual(at(lon, lat).map((i) => icons.names[i[0]]).sort(), rank === 0
+      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
+        : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const [otherLon, otherLat] of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
+        + Math.cos(lat * rad) * Math.cos(otherLat * rad) * Math.cos((lon - otherLon) * rad));
+      assert.ok(km >= 75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+  assert.equal(at(17.2192, 59.2561).filter((i) => icons.names[i[0]] === 'gripsholm').length, 1);
+  assert.equal(at(17.64, 59.8601).length, 0, 'Uppsala respects capital spacing');
+  const decorations = [[17.2192, 59.2561], [16.875, 67.375], [22.375, 67.125],
+    [20.625, 66.625], [18.375, 63.875], [14.625, 58.875], [18.375, 57.625],
+    [14.125, 56.625], [19.625, 63.125], [18.125, 61.125]];
+  const swedenIcons = cities.concat(decorations).flatMap(([lon, lat]) => at(lon, lat));
+  assert.equal(swedenIcons.length, 28);
+  const [w, s, e, n] = sweden.bounds;
+  for (const [, lon, lat] of swedenIcons) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
+  assert.deepEqual(swedenIcons.filter((i) => ['pine', 'oak'].includes(icons.names[i[0]]))
+    .map((i) => icons.names[i[0]]).sort(), ['oak', 'oak', 'oak', 'pine', 'pine', 'pine', 'pine']);
+  assert.equal(swedenIcons.filter((i) => icons.names[i[0]] === 'boat').length, 2);
+});
+
+test('Stockholm: focal arrival and pan edges keep its scene; northern Sweden and Gotland retain country zoom', () => {
+  const stockholm = scenes.find((s) => s.id === 'stockholm');
+  assert.equal(stockholm.country, 'Sweden');
+  assert.deepEqual([stockholm.width, stockholm.height], [720, 520]);
+  assert.equal(maxZoomAt(18.0686, 59.3293), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(20.24, 63.83), COUNTRY_ZOOM.max); // Umeå
+  assert.equal(maxZoomAt(20.225, 67.855), COUNTRY_ZOOM.max); // Kiruna
+  assert.equal(maxZoomAt(18.3, 57.6), COUNTRY_ZOOM.max); // Gotland
+  assert.equal(maxZoomAt(24.9384, 60.1699), MAX_GLOBE_ZOOM); // Helsinki remains uncovered.
+  let current = { longitude: 17.7, latitude: 59.6, zoom: 5 };
+  const focal = globePoint(stockholm.longitude, stockholm.latitude, current, view);
+  for (let step = 0; step < 8; step++)
+    current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, view);
+  assert.equal(current.zoom, CAPITAL_ZOOM.full);
+  assert.equal(current.capitalId, 'stockholm');
+  const after = globePoint(stockholm.longitude, stockholm.latitude, current, view);
+  assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+  for (const [dx, dy] of [[50, 0], [-50, 0], [0, 50], [0, -50]]) {
+    for (let k = 0; k < 100; k++)
+      current = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, view), scenes, view, 2);
+    const rect = capitals.capitalRect(stockholm, current, view, 2);
+    assert.equal(current.capitalId, 'stockholm');
+    assert.ok(rect.x <= .5 && rect.y <= .5 && rect.x + rect.width >= view.width - .5
+      && rect.y + rect.height >= view.height - .5, JSON.stringify(rect));
+    const stopped = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, view), scenes, view, 2);
+    assert.ok(Math.abs(stopped.longitude - current.longitude) < 1e-9);
+    assert.ok(Math.abs(stopped.latitude - current.latitude) < 1e-9);
+  }
+});
+
+test('capital panning reaches actual scene edges and zooms out gradually at phone and desktop scales', () => {
+  for (const scene of scenes) {
+    for (const viewport of [{ width: 390, height: 844 }, { width: 1000, height: 780 }]) {
+      // Same responsive icon-pixel scale as GlobeCanvas, rather than an assumed two points.
+      const scale = Math.max(1.25, Math.min(viewport.width, viewport.height) / 130) * 2 / 3;
+      for (const [dx, dy] of [[50, 0], [-50, 0], [0, 50], [0, -50]]) {
+        let current = constrainGlobe({ longitude: scene.longitude, latitude: scene.latitude, zoom: 7 });
+        for (let k = 0; k < 150; k++)
+          current = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, scale);
+        const rect = capitals.capitalRect(scene, current, viewport, scale);
+        const edge = dx > 0 ? rect.x : dx < 0 ? rect.x + rect.width - viewport.width
+          : dy > 0 ? rect.y : rect.y + rect.height - viewport.height;
+        assert.ok(Math.abs(edge) < .5, `${scene.id}, ${viewport.width}, ${dx},${dy}: ${JSON.stringify(rect)}`);
+        assert.equal(current.capitalId, scene.id);
+        const stopped = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, scale);
+        assert.ok(Math.abs(stopped.longitude - current.longitude) < 1e-9);
+        assert.ok(Math.abs(stopped.latitude - current.latitude) < 1e-9);
+        const zoomed = zoomGlobe(current, 6.9, viewport.width / 2, viewport.height / 2, viewport);
+        assert.equal(zoomed.zoom, 6.9, 'zooming out at an outer edge stays gradual');
+        assert.equal(zoomed.capitalId, scene.id);
+        assert.equal(zoomGlobe(current, 5, viewport.width / 2, viewport.height / 2, viewport).capitalId, undefined);
+      }
+    }
   }
 });
