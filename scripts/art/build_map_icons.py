@@ -50,6 +50,10 @@ COUNTRY_TIER = [
      "trees": 7,
      # Neuschwanstein, above Hohenschwangau in the Bavarian Alps.
      "landmarks": [("neuschwanstein", 10.7492, 47.5576)]},
+    {"adm0": "NLD", "bounds": (3.2, 50.7, 7.3, 53.6), "capital": "Amsterdam", "cities": 9,
+     "trees": 7,
+     # Kinderdijk's Nederwaard mill network, at its actual polder site near Rotterdam.
+     "landmarks": [("kinderdijk", 4.64, 51.8833)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -64,6 +68,7 @@ VARIANTS = {
     "castle": 1, "church": 1, "house": 2, "boat": 1, "windmill": 1, "mont-saint-michel": 1, "vineyard": 1,
     **{animal: 1 for animal in sprites.FAUNA},
     "neuschwanstein": 1,
+    "kinderdijk": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -255,7 +260,9 @@ def main():
         cities = sorted(
             (p for p in places if p["adm0_a3"] == spec["adm0"] and w <= p["longitude"] <= e
              and s_ <= p["latitude"] <= n),
-            key=lambda p: -p["pop_max"])
+            # A capital can rank below a nearby metro area (The Hague above Amsterdam).
+            # Anchor it first so the 75 km spacing filter cannot discard the capital itself.
+            key=lambda p: (p["name"] != spec["capital"], -p["pop_max"]))
         towns = []
         for city in cities:
             here = (city["longitude"], city["latitude"])
@@ -292,8 +299,8 @@ def main():
                                                for dx in (-3, 0, 3) for dy in (-3, 0, 3)):
                     boats.append((lon, lat))
         for lon, lat in spread(trees, spec.get("trees", 7 if spec["adm0"] == "PRT" else 12), 70, 51, towns, 45):
-            if spec["adm0"] == "DEU":
-                kind = "pine" if lat > 53 else "oak"
+            if spec["adm0"] in ("DEU", "NLD"):
+                kind = "pine" if spec["adm0"] == "DEU" and lat > 53 else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if lat > 47.5 and spec["adm0"] == "FRA":

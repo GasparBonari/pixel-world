@@ -18,6 +18,7 @@ export const COVERAGE = [
   { id: 'madrid', country: 'Spain', longitude: -3.7038, latitude: 40.4168, bounds: [-9.4, 35.9, 3.4, 43.8] },
   { id: 'paris', country: 'France', longitude: 2.3522, latitude: 48.8566, bounds: [-5.2, 41.3, 9.6, 51.1] },
   { id: 'berlin', country: 'Germany', longitude: 13.405, latitude: 52.52, bounds: [5.8, 47.2, 15.1, 55.1] },
+  { id: 'amsterdam', country: 'Netherlands', longitude: 4.8952, latitude: 52.3702, bounds: [3.2, 50.7, 7.3, 53.6] },
 ] as const;
 
 /** The deepest zoom detail allows at a location. */

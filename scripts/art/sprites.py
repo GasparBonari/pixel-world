@@ -1372,6 +1372,51 @@ def neuschwanstein(seed=0):
     return s.image()
 
 
+def kinderdijk(seed=0):
+    """Kinderdijk's polder mills: a brick ground-sailer and a thatched smock mill by a channel."""
+    s = Sprite(33, 32)
+    brick, thatch, cap, wood = ramp("#9B7454", "#48372C"), ramp("#B59A69", "#57452D"), \
+        ramp("#4C5148", "#2D332E"), ramp("#C6B994", "#514735")
+    ground_shadow(s, 16, 30, 14)
+    for x in range(2, 31):
+        y = 29 - x // 12
+        s.put(x, y, C["leaf"], C["leaf_ol"])
+        s.put(x, y + 1, C["foam"] if x % 5 == 0 else C["glass"], C["hull_ol"])
+
+    def mill(cx, foot, height, material):
+        top = foot - height
+        for y in range(top + 4, foot):
+            half = 2 + (y - top - 4) * 2.7 / (height - 4)
+            for x in range(math.ceil(cx - half), math.floor(cx + half) + 1):
+                tone = 2 if x < cx - 1 else 0 if x > cx + 2 else 1
+                if y % 3 == 0 and (x + y // 3) % 4 == 0:
+                    tone = max(0, tone - 1)
+                s.put(x, y, material[0][tone], material[1])
+        for y in range(top, top + 5):
+            half = 1.2 + (y - top) * .65
+            for x in range(math.ceil(cx - half), math.floor(cx + half) + 1):
+                s.put(x, y, cap[0][2 if x < cx else 0], cap[1])
+        for y in range(foot - 4, foot):
+            s.put(cx, y, C["door"], material[1])
+        s.put(cx - 2, top + 9, C["glass"], material[1])
+        s.put(cx + 1, top + 13, C["glass"], material[1])
+        # Long narrow lattice sails, with two spars and widely spaced crosspieces.
+        hx, hy = cx, top + 4
+        for dx, dy in ((-7, -7), (7, -7), (7, 7), (-7, 7)):
+            line(s, hx, hy, hx + dx, hy + dy, wood[0][1], wood[1])
+            nx, ny = (-1 if dy > 0 else 1), (1 if dx > 0 else -1)
+            line(s, hx + dx * .4 + nx, hy + dy * .4 + ny,
+                 hx + dx + nx, hy + dy + ny, wood[0][2], wood[1])
+            for t in (.45, .7, 1):
+                line(s, hx + dx * t, hy + dy * t, hx + dx * t + nx, hy + dy * t + ny,
+                     wood[0][3], wood[1])
+        s.put(hx, hy, cap[0][3], cap[1])
+
+    mill(24, 26, 17, thatch)
+    mill(10, 29, 23, brick)
+    return s.image()
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1396,6 +1441,7 @@ FLORA = {
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
+    "kinderdijk": kinderdijk,
     **FLORA, **FAUNA,
 }
 

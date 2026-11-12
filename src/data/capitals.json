@@ -34,5 +34,14 @@
     "latitude": 52.52,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "amsterdam",
+    "name": "Amsterdam",
+    "country": "Netherlands",
+    "longitude": 4.8952,
+    "latitude": 52.3702,
+    "width": 720,
+    "height": 520
   }
 ]

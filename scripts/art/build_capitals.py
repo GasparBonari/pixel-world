@@ -650,6 +650,133 @@ def berlin():
     return scene.img.convert("RGB")
 
 
+# --------------------------------------------------------------- Amsterdam --
+
+import landmarks_amsterdam as am
+
+
+def amsterdam():
+    scene = new_scene()
+    def at(x, y):
+        return tile_of((x - WIDTH / 2) / 8, (y - scene.oy) / 4)
+
+    # North-up illustration. IJ/Oosterdok at the north; three compressed canal-belt elbows
+    # surround Dam. Each waterway segment follows i or j, including the Amstel at Magere Brug.
+    def water(i, j):
+        return i + j < 34 or (i > 48 and j < 30) \
+            or any((i <= corner and abs(j - bank) < 1.1)
+                   or (j <= bank and abs(i - corner) < 1.1)
+                   for corner, bank in ((58, 56), (70, 68), (82, 80))) \
+            or (i > 60 and abs(j - 48.5) < 3.2)
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i + .5, j + .5)
+        if water(i + .5, j + .5):
+            kind = "water"
+        elif any(water(i + .5 + di, j + .5 + dj) for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+            kind = "quay"
+        elif any(water(i + .5 + di, j + .5 + dj) for di, dj in ((2, 0), (-2, 0), (0, 2), (0, -2))):
+            kind = "promenade"
+        elif x < 200 and y > 410:
+            kind = "gravel" if i % 6 == 0 or j % 6 == 0 else "grass"  # Vondelpark, southwest
+        elif 260 < x < 390 and y > 466:
+            kind = "grass" if i % 4 and j % 4 else "gravel"  # Museumplein and museum garden
+        elif i % 10 == 0 or j % 10 == 0:
+            kind = "cobble"
+        else:
+            kind = "lot"
+        kinds[(i, j)] = kind
+
+    reserved, protected = set(), []
+    def reserve(i, j, wi, wj, ground="pave"):
+        for a in range(math.floor(i), math.ceil(i + wi)):
+            for b in range(math.floor(j), math.ceil(j + wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == "lot":
+                    kinds[(a, b)] = ground
+
+    def landmark(builder, x, y, wi, wj, height, front=2):
+        ci, cj = at(x, y)
+        i, j = ci - wi / 2, cj - wj / 2
+        builder(scene, i, j)
+        reserve(i - .5, j - .5, wi + 1, wj + front + 1)
+        half = (wi + wj) * 4 + 3
+        protected.append((x - half, y - height, x + half, y + (wi + wj) * 2 + 4))
+        # Curated sites sit on land. Water is shaped around their reserved footprints, not through them.
+        for a in range(math.floor(i - .5), math.ceil(i + wi + .5)):
+            for b in range(math.floor(j - .5), math.ceil(j + wj + .5)):
+                if (a, b) in kinds:
+                    kinds[(a, b)] = "pave"
+
+    landmark(am.centraal_station, 496, 124, 13.5, 3.6, 69)
+    landmark(am.anne_frank_house, 242, 155, 2.8, 4.3, 48)
+    landmark(am.westerkerk, 198, 235, 6.5, 5, 103)
+    landmark(am.oude_kerk, 468, 245, 5.8, 7.2, 93)
+    landmark(am.royal_palace, 350, 300, 9.5, 5, 77, front=4)
+    landmark(am.nemo, 612, 266, 8, 4.2, 45)
+    landmark(am.rijksmuseum, 318, 457, 12, 5.8, 73)
+
+    # Dam Square lies east of the palace. Noordermarkt/Jordaan lanes stay open around the Westertoren.
+    for x, y, wi, wj in ((407, 320, 6, 6), (200, 273, 5, 4)):
+        i, j = at(x, y)
+        reserve(i - wi / 2, j - wj / 2, wi, wj)
+
+    # Stone canal bridges along +j and the white double drawbridge across the wider Amstel.
+    for i, j, length in ((29, 53, 6), (43, 65, 6), (53, 77, 6)):
+        lp.stone_bridge(scene, i, j, length, width=1.2, deck=5)
+        reserve(i - 1, j - 1, 3, length + 2, "cobble")
+    am.magere_brug(scene, 71, 43.5, length=10)
+    reserve(70, 42, 4, 14)
+    bx, by = scene.screen(71.85, 48.5)
+    protected.append((bx - 53, by - 47, bx + 53, by + 32))
+
+    # NEMO's pedestrian connection to the mainland, supported above the dock water.
+    def nemo_walkway(s):
+        for a in (47.5, 51.5):
+            am.block(s, a, 24.1, .35, .7, 5, am.STONE)
+        am.block(s, 47.5, 24, 5.5, 1, 2, am.STONE, z=5)
+        for jj in (24, 25):
+            for a in range(48, 54):
+                seg0, seg1 = lp.P(s, a, jj, 7), lp.P(s, a, jj, 10)
+                lp.seg(s, seg0, seg1, am.COPPER["deep"])
+            lp.seg(s, lp.P(s, 47.5, jj, 10), lp.P(s, 53, jj, 10), am.COPPER["deep"])
+    scene.add(53 + 25, nemo_walkway)
+    reserve(47, 23, 7, 3)
+
+    # All canal-front lots have a broad open quay: buildings cannot cover the foreground water.
+    paint_ground(scene, kinds, {}, am.WATER, am.STONE["dark"])
+    for li in range(-12, 110, 2):
+        for lj in range(-12, 110, 3):
+            wi, wj = 2, 2
+            cells = [(a, b) for a in range(li, li + wi) for b in range(lj, lj + wj)]
+            if not all(kinds.get(c) == "lot" and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 89) * 10000)
+            floors = 2 + (seed % 4 == 0)
+            x, y = scene.screen(li + wi / 2, lj + wj / 2)
+            half, top, bottom = (wi + wj) * 4 + 2, y - floors * 9 - 26, y + (wi + wj) * 2
+            if any(x + half > l and x - half < r and bottom > t and top < b for l, t, r, b in protected):
+                reserve(li, lj, wi, wj)
+                continue
+            am.canal_house(scene, li, lj, wi, wj, floors, seed)
+            reserved.update(cells)
+
+    elms = [round_tree(n, "#719C56", "#2C4935") for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i + .5, j + .5)
+        if (i, j) in reserved or any(l - 4 < x < r + 4 and t < y < b + 12 for l, t, r, b in protected):
+            continue
+        if (kind == "promenade" and (i + j) % 5 == 0) or (kind == "grass" and h01(i, j, 91) < .23):
+            scene.add(i + j + 1.5, lambda s, x=x, y=y, tree=elms[(i + j) % 3]: s.sprite(tree, x, y + 5))
+    for i, j in ((17, 56), (35, 68), (50, 80), (64, 48), (87, 48), (36, 12), (60, 14)):
+        if kinds.get((i, j)) == "water":
+            x, y = scene.screen(i, j)
+            scene.add(i + j, lambda s, x=x, y=y: s.sprite(bateau(0), x, y))
+    scene.paint_objects()
+    return scene.img.convert("RGB")
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -659,6 +786,8 @@ CAPITALS = [
      "render": paris},
     {"id": "berlin", "name": "Berlin", "country": "Germany", "longitude": 13.4050, "latitude": 52.5200,
      "render": berlin},
+    {"id": "amsterdam", "name": "Amsterdam", "country": "Netherlands", "longitude": 4.8952, "latitude": 52.3702,
+     "render": amsterdam},
 ]
 
 

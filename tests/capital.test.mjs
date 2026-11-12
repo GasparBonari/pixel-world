@@ -186,3 +186,45 @@ test('every capital keeps portrait and landscape viewports covered after long dr
     }
   }
 });
+
+test("Netherlands marks Amsterdam before nearby larger metros, spaced towns and Kinderdijk", () => {
+  const netherlands = COVERAGE.find((c) => c.id === 'amsterdam');
+  assert.ok(netherlands);
+  assert.deepEqual(netherlands.bounds, [3.2, 50.7, 7.3, 53.6]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1] - lon) < .001 && Math.abs(i[2] - lat) < .001);
+  // Natural Earth ranks The Hague above Amsterdam. It must not displace the capital at 75 km spacing.
+  const cities = [[4.9147, 52.3519], [5.5, 51.43], [6.58, 53.2204], [6.097, 52.524], [3.61, 51.502]];
+  const [w, s, e, n] = netherlands.bounds;
+  for (const [rank, [lon, lat]] of cities.entries()) {
+    const kinds = at(lon, lat).map((i) => icons.names[i[0]]).sort();
+    assert.deepEqual(kinds, rank === 0 ? ['castle', 'house', 'house'] : rank <= 2
+      ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
+    for (const [otherLon, otherLat] of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
+        + Math.cos(lat * rad) * Math.cos(otherLat * rad) * Math.cos((lon - otherLon) * rad));
+      assert.ok(km >= 75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+  assert.equal(at(4.27, 52.08).length, 0, 'The Hague respects capital spacing');
+  assert.equal(at(4.64, 51.8833).filter((i) => icons.names[i[0]] === 'kinderdijk').length, 1);
+  const landmark = at(4.64, 51.8833)[0];
+  assert.ok(w <= landmark[1] && landmark[1] <= e && s <= landmark[2] && landmark[2] <= n);
+});
+
+test('Amsterdam: focal zoom arrives at its own scene while Groningen keeps country detail', () => {
+  const amsterdam = scenes.find((s) => s.id === 'amsterdam');
+  assert.deepEqual([amsterdam.width, amsterdam.height], [720, 520]);
+  assert.equal(maxZoomAt(4.8952, 52.3702), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(6.58, 53.22), COUNTRY_ZOOM.max); // Groningen, outside capital reach
+  assert.equal(maxZoomAt(12.5, 41.9), MAX_GLOBE_ZOOM); // Rome remains uncovered
+  let arriving = { longitude: 5.3, latitude: 52.1, zoom: 5 };
+  const focal = globePoint(amsterdam.longitude, amsterdam.latitude, arriving, view);
+  for (let step = 0; step < 8; step++)
+    arriving = zoomGlobe(arriving, arriving.zoom + .3, focal.x, focal.y, view);
+  assert.equal(arriving.zoom, CAPITAL_ZOOM.full);
+  const after = globePoint(amsterdam.longitude, amsterdam.latitude, arriving, view);
+  assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+});
