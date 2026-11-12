@@ -1683,6 +1683,46 @@ def borgund(seed=0):
     return scene.img
 
 
+def olavinlinna(seed=0):
+    """Olavinlinna's three surviving round towers and curtain on a Saimaa rock island."""
+    import iso
+    from landmarks_finland import block, GRANITE, BRICK, SLATE, WATER
+    from landmarks_italy import cylinder, ellipse
+    from landmarks_denmark import spire
+    from landmarks_paris import P, seg
+    from landmarks_iberia import stone_courses, arch_opening
+
+    scene = iso.Scene(65, 73, (32, 54))
+    shadow = Sprite(65, 73)
+    ground_shadow(shadow, 32, 69, 29, 2)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    ellipse(scene,0,0,2.6,1.65,0,lambda x,y:WATER[2] if (x+y)%9==0 else WATER[0])
+    cylinder(scene,0,0,2.25,1.4,0,4,GRANITE,stone_courses(GRANITE,2,5))
+    def slits(u,v,lit):
+        if int(u)%8 in (3,4) and int(v)%12 in (4,5,6,7):return GRANITE['outline']
+        return stone_courses(GRANITE,3,6)(u,v,lit)
+    # Rear curtain, occupied wings, then the two foreground towers: actual depth order.
+    block(scene,-1.5,-.7,3,.35,22,GRANITE,slits,z=4)
+    block(scene,-1.5,-.7,.4,1.9,19,GRANITE,slits,z=4)
+    block(scene,-1.1,-.5,2.3,1.5,17,GRANITE,slits,z=4)
+    for a,b,h in ((-.95,-.55,28),(1.25,-.1,25),(-.8,1,23)):
+        cylinder(scene,a,b,.62,.62,4,h,GRANITE,slits)
+        cylinder(scene,a,b,.65,.65,h+1,5,BRICK,slits)
+        spire(scene,a,b,.86,h+6,8,SLATE,conical=True)
+        # The shared spire helper ends with a gilt finial; these roofs have plain metal tips.
+        seg(scene,P(scene,a,b,h+14),P(scene,a,b,h+17),SLATE['lit'],2)
+    # Forward curtain has a real arched gate, projecting wall walk and stone landing.
+    block(scene,-.5,1.15,2.15,.4,17,GRANITE,
+          lambda u,v,lit:(arch_opening(u,v,9,2.4,5,GRANITE['outline']) if lit else None)
+          or slits(u,v,lit),z=4)
+    block(scene,-.55,1.08,2.25,.55,2,GRANITE,z=21)
+    block(scene,.4,1.6,.8,1.1,2,GRANITE,z=1)
+    for a in (-.4,1.4):
+        seg(scene,P(scene,a,1.58,21),P(scene,a,1.58,24),GRANITE['lit'])
+    return scene.img
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1709,6 +1749,7 @@ ICONS = {
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
     "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge, "rock-of-cashel": rock_of_cashel,
     "leaning-tower-pisa": leaning_tower_pisa, "kronborg": kronborg, "gripsholm": gripsholm, "borgund": borgund,
+    "olavinlinna": olavinlinna,
     **FLORA, **FAUNA,
 }
 

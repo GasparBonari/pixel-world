@@ -628,6 +628,58 @@ test('Oslo has a capital scene while western and Arctic Norway retain country zo
   assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
 });
 
+test('Finland marks Helsinki first, nine spaced cities and Olavinlinna within its bounds', () => {
+  const finland = COVERAGE.find((c) => c.id === 'helsinki');
+  assert.deepEqual(finland.bounds, [19.0, 59.7, 31.6, 70.2]);
+  const at = (lon, lat) => icons.icons.filter((i) => i[5] === 1 && i[1] === lon && i[2] === lat);
+  // Natural Earth's pinned city coordinates, rather than the illustrative scene anchor.
+  const cities = [[24.9322, 60.1775], [23.75, 61.5], [22.255, 60.4539],
+    [25.47, 65], [25.6649, 60.9939], [25.75, 62.2603], [27.6949, 62.8943],
+    [21.7749, 61.4789], [28.1833, 61.0671]];
+  for (const [rank, [lon, lat]] of cities.entries()) {
+    const names = at(lon, lat).map((i) => icons.names[i[0]]);
+    assert.deepEqual(names, rank === 0 ? ['house', 'house', 'castle']
+      : rank <= 2 ? ['church', 'house', 'house']
+        : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const [otherLon, otherLat] of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
+        + Math.cos(lat * rad) * Math.cos(otherLat * rad) * Math.cos((lon - otherLon) * rad));
+      assert.ok(km >= 75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+  assert.equal(at(28.9013, 61.8638).filter((i) => icons.names[i[0]] === 'olavinlinna').length, 1);
+  const decorations = [[28.9013, 61.8638], [27.625, 69.125], [21.375, 68.625],
+    [23.625, 67.625], [26.875, 67.625], [26.125, 64.625], [24.875, 62.125],
+    [27.125, 60.875], [22.875, 64.125], [28.125, 60.375]];
+  const finlandIcons = cities.concat(decorations).flatMap(([lon, lat]) => at(lon, lat));
+  assert.equal(finlandIcons.length, 28);
+  const [w, s, e, n] = finland.bounds;
+  for (const [, lon, lat] of finlandIcons) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
+  assert.equal(finlandIcons.filter((i) => icons.names[i[0]] === 'pine').length, 7);
+  assert.equal(finlandIcons.filter((i) => icons.names[i[0]] === 'boat').length, 2);
+});
+
+test('Helsinki has a capital scene while inland and Arctic Finland retain country zoom', () => {
+  const helsinki = scenes.find((s) => s.id === 'helsinki');
+  assert.equal(helsinki.country, 'Finland');
+  assert.deepEqual([helsinki.width, helsinki.height], [720, 520]);
+  assert.equal(maxZoomAt(helsinki.longitude, helsinki.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(23.75, 61.5), CAPITAL_ZOOM.full); // Tampere shares Helsinki's 1.5° arrival reach
+  assert.equal(maxZoomAt(27.6949, 62.8943), COUNTRY_ZOOM.max); // Kuopio
+  assert.equal(maxZoomAt(25.47, 65), COUNTRY_ZOOM.max); // Oulu
+  assert.equal(maxZoomAt(27.03, 69.9), COUNTRY_ZOOM.max); // Utsjoki
+  assert.equal(maxZoomAt(19.94, 60.1), COUNTRY_ZOOM.max); // Mariehamn, Åland
+  let current = { longitude: 24.5, latitude: 60.5, zoom: 5 };
+  const focal = globePoint(helsinki.longitude, helsinki.latitude, current, view);
+  for (let step = 0; step < 8; step++)
+    current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, view);
+  assert.equal(current.zoom, CAPITAL_ZOOM.full);
+  assert.equal(current.capitalId, 'helsinki');
+  const after = globePoint(helsinki.longitude, helsinki.latitude, current, view);
+  assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+});
+
 test('capital panning reaches actual scene edges and zooms out gradually at phone and desktop scales', () => {
   for (const scene of scenes) {
     for (const viewport of [{ width: 390, height: 844 }, { width: 1000, height: 780 }]) {

@@ -106,5 +106,14 @@
     "latitude": 59.9139,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "helsinki",
+    "name": "Helsinki",
+    "country": "Finland",
+    "longitude": 24.9384,
+    "latitude": 60.1699,
+    "width": 720,
+    "height": 520
   }
 ]

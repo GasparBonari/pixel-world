@@ -1577,6 +1577,110 @@ def oslo():
     return scene.img.convert('RGB')
 
 
+def helsinki():
+    import landmarks_finland as fi
+
+    scene = new_scene()
+    def at(x,y):
+        return tile_of((x-WIDTH/2)/8,(y-scene.oy)/4)
+
+    # The South Harbour opens southeast of the mainland. Katajanokka lies on
+    # its eastern side, and Kustaanmiekka is a separate offshore island.
+    # Shores follow tile axes; Töölönlahti lies east of Finlandia Hall.
+    def water(i,j):
+        toolo = 19 < i < 38 and 15 < j < 26
+        mainland = i < 64 or (i < 78 and j < 61) or (i < 81 and j < 42)
+        fortress_island = 79.5 < i < 92 and 43.5 < j < 54
+        return toolo or not (mainland or fortress_island)
+
+    kinds = {}
+    for i,j in visible_tiles(scene):
+        x,y = scene.screen(i+.5,j+.5)
+        if water(i+.5,j+.5):
+            kind = 'water'
+        elif any(water(i+.5+di,j+.5+dj) for di,dj in ((1,0),(-1,0),(0,1),(0,-1))):
+            kind = 'quay'
+        elif any(water(i+.5+di,j+.5+dj) for di,dj in ((3,0),(-3,0),(0,3),(0,-3))):
+            kind = 'promenade'
+        elif (150 < x < 350 and y < 185) or (230 < x < 455 and 360 < y < 420) or i>79:
+            kind = 'gravel' if i%7==0 or j%7==0 else 'grass'
+        elif i%11==0 or j%11==0 or (31<j<34 and i<65):
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i,j)] = kind
+
+    reserved,protected = set(),[]
+    def reserve(i,j,wi,wj):
+        for a in range(math.floor(i),math.ceil(i+wi)):
+            for b in range(math.floor(j),math.ceil(j+wj)):
+                reserved.add((a,b))
+                if kinds.get((a,b))=='lot':kinds[(a,b)]='pave'
+
+    def landmark(builder,x,y,wi,wj):
+        ci,cj=at(x,y)
+        i,j=ci-wi/2,cj-wj/2
+        builder(scene,i,j)
+        reserve(i-.7,j-.7,wi+1.4,wj+2.5)
+        study=iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
+        builder(study,i,j)
+        study.paint_objects()
+        left,top,right,bottom=(v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0<left<right<WIDTH and 0<top<bottom<HEIGHT,(builder.__name__,(left,top,right,bottom))
+        protected.append((left-4,top-3,right+4,bottom+5))
+
+    # Real longitude/latitude ordering, with distances compressed independently
+    # to keep the monuments and harbour readable within the 720×520 illustration.
+    landmark(fi.finlandia,235,120,9.5,5)
+    landmark(fi.national_museum,95,185,7.8,4.6)
+    landmark(fi.parliament,250,280,11,6)
+    landmark(fi.railway_station,380,310,9,4.5)
+    landmark(fi.cathedral,515,350,8,6.5)
+    landmark(fi.uspenski,650,380,6,6.5)
+    landmark(fi.market_hall,530,450,4,8.2)
+    landmark(fi.suomenlinna,657,475,10,6)
+    # Senate Square, Railway Square and Market Square have open paved forecourts.
+    for x,y,wi,wj in ((500,389,7,2),(385,343,7,2),(565,414,4,3)):
+        i,j=at(x,y)
+        reserve(i-wi/2,j-wj/2,wi,wj)
+    paint_ground(scene,{c:'pave' if k=='promenade' else k for c,k in kinds.items()},
+                 {},fi.WATER,fi.GRANITE['dark'])
+
+    # Low harbour landings beside the market. No bridge is invented across the
+    # sea: Suomenlinna is reached by boat, as it is in the actual city.
+    for i,j,wi,wj in ((78,53,2.5,.8),(78,57,2.5,.8)):
+        scene.add(i+j+wi+wj,lambda s,i=i,j=j,wi=wi,wj=wj:fi.block(s,i,j,wi,wj,3,fi.WOOD))
+        reserve(i,j,wi,wj)
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            wi,wj=2.7,3
+            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):continue
+            seed=int(h01(li,lj,211)*10000)
+            floors=2+(seed%3!=0)
+            x,y=scene.screen(li+wi/2,lj+wj/2)
+            half=(wi+wj)*4+9
+            top,bottom=y-floors*10-45,y+(wi+wj)*2+12
+            if any(x+half>l and x-half<r and bottom>t and top<b for l,t,r,b in protected):continue
+            if any(water(li+wi/2+di,lj+wj/2+dj) for di,dj in ((4,0),(-4,0),(0,4),(0,-4))):continue
+            fi.townhouse(scene,li,lj,wi,wj,floors,seed)
+            reserved.update(cells)
+
+    trees=[round_tree(n,'#739D69','#2C4A37') for n in range(3)]
+    for (i,j),kind in kinds.items():
+        x,y=scene.screen(i+.5,j+.5)
+        if (i,j) in reserved or any(l-11<x<r+11 and t-2<y<b+25 for l,t,r,b in protected):continue
+        if kind=='grass' and h01(i,j,213)<.12 or kind=='promenade' and (i+j)%11==0:
+            scene.add(i+j+1.5,lambda s,x=x,y=y,tree=trees[(i+j)%3]:s.sprite(tree,x,y+4))
+    for i,j in ((83,57),(89,61),(76,66),(69,72),(30,20)):
+        if water(i,j):
+            x,y=scene.screen(i,j)
+            image=bateau(0) if i%2 else sprites.sailboat(0)
+            scene.add(i+j,lambda s,x=x,y=y,image=image:s.sprite(image,x,y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -1602,6 +1706,8 @@ CAPITALS = [
      "render": stockholm},
     {"id": "oslo", "name": "Oslo", "country": "Norway", "longitude": 10.7522, "latitude": 59.9139,
      "render": oslo},
+    {"id": "helsinki", "name": "Helsinki", "country": "Finland", "longitude": 24.9384, "latitude": 60.1699,
+     "render": helsinki},
 ]
 
 
