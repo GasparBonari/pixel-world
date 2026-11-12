@@ -446,3 +446,66 @@ test('Rome: focal arrival and all pan edges stay in its scene; Milan retains cou
     assert.ok(Math.abs(stopped.latitude - current.latitude) < 1e-9);
   }
 });
+
+test('Denmark marks København first, five spaced cities and Kronborg inside its bounds', () => {
+  const denmark = COVERAGE.find((c) => c.id === 'copenhagen');
+  assert.deepEqual(denmark.bounds, [8.0, 54.5, 15.3, 57.8]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1] - lon) < .001 && Math.abs(i[2] - lat) < .001);
+  // Pinned Natural Earth calls the capital København and Aarhus Århus.
+  const cities = [[12.5615, 55.6805], [10.2107, 56.1572], [10.3833, 55.4004],
+    [9.9166, 57.0337], [8.45, 55.467]];
+  for (const [rank, [lon, lat]] of cities.entries()) {
+    assert.deepEqual(at(lon, lat).map((i) => icons.names[i[0]]).sort(), rank === 0
+      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
+        : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const [otherLon, otherLat] of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
+        + Math.cos(lat * rad) * Math.cos(otherLat * rad) * Math.cos((lon - otherLon) * rad));
+      assert.ok(km >= 75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+  assert.equal(at(12.0833, 55.65).length, 0, 'Roskilde respects capital spacing');
+  assert.equal(at(9.535, 55.709).length, 0, 'Vejle respects spacing from Odense');
+  assert.equal(at(12.6218, 56.0388).filter((i) => icons.names[i[0]] === 'kronborg').length, 1);
+  const decorations = [[12.6218, 56.0388], [10.125, 57.625], [10.875, 56.375],
+    [9.125, 56.125], [8.875, 55.125], [12.125, 55.125], [14.875, 55.125],
+    [10.625, 54.875], [8.125, 57.125], [11.875, 56.625]];
+  const denmarkIcons = cities.concat(decorations).flatMap(([lon, lat]) => at(lon, lat));
+  assert.equal(denmarkIcons.length, 22);
+  const [w, s, e, n] = denmark.bounds;
+  for (const [, lon, lat] of denmarkIcons) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
+  assert.deepEqual(denmarkIcons.filter((i) => ['pine', 'oak'].includes(icons.names[i[0]]))
+    .map((i) => icons.names[i[0]]).sort(), ['oak', 'oak', 'oak', 'oak', 'pine', 'pine', 'pine']);
+});
+
+test('Copenhagen: focal arrival and pan edges keep its scene; Jutland and Bornholm keep country detail', () => {
+  const copenhagen = scenes.find((s) => s.id === 'copenhagen');
+  assert.equal(copenhagen.country, 'Denmark');
+  assert.deepEqual([copenhagen.width, copenhagen.height], [720, 520]);
+  assert.equal(maxZoomAt(12.5683, 55.6761), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(9.9166, 57.0337), COUNTRY_ZOOM.max); // Aalborg
+  assert.equal(maxZoomAt(8.45, 55.467), COUNTRY_ZOOM.max); // Esbjerg
+  assert.equal(maxZoomAt(14.7, 55.1), COUNTRY_ZOOM.max); // Bornholm
+  assert.equal(maxZoomAt(18.0686, 59.3293), MAX_GLOBE_ZOOM); // Stockholm stays uncovered.
+  let current = { longitude: 12.1, latitude: 55.9, zoom: 5 };
+  const focal = globePoint(copenhagen.longitude, copenhagen.latitude, current, view);
+  for (let step = 0; step < 8; step++)
+    current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, view);
+  assert.equal(current.zoom, CAPITAL_ZOOM.full);
+  assert.equal(current.capitalId, 'copenhagen');
+  const after = globePoint(copenhagen.longitude, copenhagen.latitude, current, view);
+  assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+  for (const [dx, dy] of [[50, 0], [-50, 0], [0, 50], [0, -50]]) {
+    for (let k = 0; k < 100; k++)
+      current = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, view), scenes, view, 2);
+    const rect = capitals.capitalRect(copenhagen, current, view, 2);
+    assert.equal(current.capitalId, 'copenhagen');
+    assert.ok(rect.x <= .5 && rect.y <= .5 && rect.x + rect.width >= view.width - .5
+      && rect.y + rect.height >= view.height - .5, JSON.stringify(rect));
+    const stopped = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, view), scenes, view, 2);
+    assert.ok(Math.abs(stopped.longitude - current.longitude) < 1e-9);
+    assert.ok(Math.abs(stopped.latitude - current.latitude) < 1e-9);
+  }
+});

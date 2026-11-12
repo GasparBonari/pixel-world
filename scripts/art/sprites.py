@@ -1567,6 +1567,37 @@ def leaning_tower_pisa(seed=0):
     return scene.img
 
 
+def kronborg(seed=0):
+    """Kronborg at Helsingør: pale courtyard wings, red roofs and its great copper-capped tower."""
+    import iso
+    from landmarks_denmark import block, spire, windows, STONE, BRICK, CLAY, COPPER
+    from landmarks_iberia import hip_roof
+    from landmarks_paris import P, poly
+
+    scene = iso.Scene(61, 63, (30, 33))
+    shadow = Sprite(61, 63)
+    ground_shadow(shadow, 30, 59, 26, 2)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    poly(scene, [P(scene, -.2, -.2), P(scene, 3.25, -.2), P(scene, 3.25, 3.0), P(scene, -.2, 3.0)],
+         lambda x, y: hex_rgb('#477F8B') if int(y) % 3 else hex_rgb('#8EBDBF'))
+    block(scene, 0, 0, 3, 2.8, 3, STONE)
+    for i, j, wi, wj in ((0, 0, 3, .65), (0, .65, .65, 2.15), (2.35, .65, .65, 2.15), (.65, 2.15, 1.7, .65)):
+        block(scene, i, j, wi, wj, 12, STONE, windows(STONE, 12, bay=6, floor=11), z=3)
+        hip_roof(scene, i, j, wi, wj, 15, 5, CLAY)
+    block(scene, 1.25, .05, .8, .85, 25, STONE, windows(STONE, 25, bay=5), z=3)
+    spire(scene, 1.65, .48, .63, 28, 7, COPPER, onion=True)
+    for i,j in ((.05,1.9),(2.25,.05)):
+        block(scene,i,j,.55,.55,18,BRICK,windows(BRICK,18,bay=5),z=3)
+        spire(scene,i+.27,j+.27,.45,21,9,COPPER)
+    # Gateway in the near curtain and corner bastions are independent shaded volumes.
+    block(scene,1.1,2.16,.75,.67,10,STONE,
+          lambda u,v,lit: hex_rgb('#4B3D30') if 1<int(u)<5 and v<7 else None,z=3)
+    for i,j in ((-.05,2.3),(2.4,2.3)):
+        block(scene,i,j,.65,.65,5,STONE,z=1)
+    return scene.img
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1592,7 +1623,7 @@ ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
     "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge, "rock-of-cashel": rock_of_cashel,
-    "leaning-tower-pisa": leaning_tower_pisa,
+    "leaning-tower-pisa": leaning_tower_pisa, "kronborg": kronborg,
     **FLORA, **FAUNA,
 }
 

@@ -1223,6 +1223,126 @@ def rome():
     return scene.img.convert('RGB')
 
 
+def copenhagen():
+    import landmarks_denmark as dk
+
+    scene = new_scene()
+    def at(x, y):
+        return tile_of((x - WIDTH / 2) / 8, (y - scene.oy) / 4)
+
+    # North-up, compressed harbour bends along i/j axes. Nyhavn opens east into it;
+    # Slotsholmen stays on the city side, Christianshavn and Our Saviour on the east bank.
+    ni, nj = at(450, 300)
+    ni, nj = ni - 11.4 / 2, nj - 6.5 / 2
+    def water(i, j):
+        return (i > 28 and j < 5) or (52 < i < 58 and j < 35) or (52 < i < 67 and 29 < j < 35) \
+            or (61 < i < 67 and j >= 29) \
+            or (ni < i < 65 and nj + 2.9 < j < nj + 6.2) \
+            or (48 < i < 61 and 61 < j < 63)  # Slotsholmen's southern canal
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i + .5, j + .5)
+        if water(i + .5, j + .5):
+            kind = 'water'
+        elif any(water(i + .5 + di, j + .5 + dj) for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+            kind = 'quay'
+        elif any(water(i + .5 + di, j + .5 + dj) for di, dj in ((2, 0), (-2, 0), (0, 2), (0, -2))):
+            kind = 'promenade'
+        elif 215 < x < 390 and 70 < y < 205:
+            kind = 'gravel' if i % 7 == 0 or j % 7 == 0 else 'grass'  # King's Garden
+        elif x < 150 and y > 445:
+            kind = 'gravel' if i % 5 == 0 or j % 5 == 0 else 'grass'  # Tivoli's garden edge
+        elif i % 10 == 0 or j % 10 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected = set(), []
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i + wi)):
+            for b in range(math.floor(j), math.ceil(j + wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[(a, b)] = 'pave'
+
+    def landmark(builder, x, y, wi, wj):
+        ci, cj = at(x, y)
+        i, j = ci - wi / 2, cj - wj / 2
+        builder(scene, i, j)
+        reserve(i - .5, j - .5, wi + 1, wj + 2)
+        study = iso.Scene(WIDTH + 200, HEIGHT + 200, (scene.ox + 100, scene.oy + 100))
+        builder(study, i, j)
+        study.paint_objects()
+        bounds = tuple(v - 100 for v in study.img.convert('RGB').getbbox())
+        left, top, right, bottom = bounds
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, bounds)
+        protected.append((left - 4, top - 3, right + 4, bottom + 5))
+
+    # Ground anchors preserve every site's real longitude and latitude ordering.
+    landmark(dk.little_mermaid, 580, 85, 3.6, 3.2)
+    landmark(dk.rosenborg, 300, 135, 8, 4.5)
+    landmark(dk.marble_church, 470, 165, 7.2, 8)
+    landmark(dk.amalienborg, 560, 220, 9.4, 9.4)
+    landmark(dk.round_tower, 245, 255, 5.2, 7)
+    landmark(dk.nyhavn, 450, 300, 11.4, 6.5)
+    landmark(dk.christiansborg, 345, 405, 8.6, 7.1)
+    landmark(dk.city_hall, 140, 435, 8, 4.8)
+    landmark(dk.our_saviour, 570, 477, 5.6, 7.6)
+    # Rådhuspladsen and Kongens Nytorv remain paved/open in front of their buildings.
+    for x, y, wi, wj in ((115, 470, 7, 5), (400, 270, 5, 4)):
+        i, j = at(x, y)
+        reserve(i - wi / 2, j - wj / 2, wi, wj)
+    paint_ground(scene, {cell: 'pave' if kind == 'promenade' else kind for cell, kind in kinds.items()},
+                 {}, dk.WATER, dk.STONE['dark'])
+
+    # Square crossings on the isometric harbour reaches; low decks keep water visible.
+    lp.stone_bridge(scene, 55.5, 58.5, 7, width=1.4, deck=5)
+    reserve(54.5, 57.5, 4, 9)
+    def harbour_bridge(s):
+        dk.block(s, 59.5, 49, 9, 1.4, 5, dk.STONE,
+                 lambda u, v, lit: dk.WATER[1] if lit and 2 < int(u) % 18 < 14 and v < 3 else None)
+        for jj in (49, 50.4):
+            dk.block(s, 59.5, jj, 9, .12, 2, dk.STONE, z=5)
+    scene.add(59.5 + 49 + 9 + 1.4, harbour_bridge)
+    reserve(59, 48, 11, 4)
+
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            wi, wj = 2.4, 2.7
+            cells = [(a, b) for a in range(li, li + 3) for b in range(lj, lj + 3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 163) * 10000)
+            floors = 2 + (seed % 3 != 0)
+            x, y = scene.screen(li + wi / 2, lj + wj / 2)
+            half = (wi + wj) * 4 + 5
+            top, bottom = y - floors * 10 - 26, y + (wi + wj) * 2 + 7
+            if any(x + half > l and x - half < r and bottom > t and top < b for l, t, r, b in protected):
+                continue
+            # Broad promenades on BOTH banks, so foreground houses cannot mask the harbour.
+            if any(water(li + wi / 2 + di, lj + wj / 2 + dj)
+                   for di, dj in ((3, 0), (-3, 0), (0, 3), (0, -3))):
+                continue
+            dk.townhouse(scene, li, lj, wi, wj, floors, seed)
+            reserved.update(cells)
+
+    lindens = [round_tree(n, '#719A58', '#2A4935') for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i + .5, j + .5)
+        if (i, j) in reserved or any(l - 10 < x < r + 10 and t - 2 < y < b + 24 for l, t, r, b in protected):
+            continue
+        if kind == 'grass' and h01(i, j, 167) < .14 or kind == 'promenade' and (i + j) % 9 == 0:
+            scene.add(i + j + 1.5, lambda s, x=x, y=y, tree=lindens[(i + j) % 3]: s.sprite(tree, x, y + 4))
+    for i, j in ((54, 12), (55, 24), (64, 46), (64, 60), (64, 72), (51, 62)):
+        if water(i, j):
+            x, y = scene.screen(i, j)
+            scene.add(i + j, lambda s, x=x, y=y: s.sprite(bateau(0), x, y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -1242,6 +1362,8 @@ CAPITALS = [
      "render": dublin},
     {"id": "rome", "name": "Rome", "country": "Italy", "longitude": 12.4964, "latitude": 41.9028,
      "render": rome},
+    {"id": "copenhagen", "name": "Copenhagen", "country": "Denmark", "longitude": 12.5683, "latitude": 55.6761,
+     "render": copenhagen},
 ]
 
 

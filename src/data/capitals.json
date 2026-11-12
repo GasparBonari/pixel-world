@@ -79,5 +79,14 @@
     "latitude": 41.9028,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "copenhagen",
+    "name": "Copenhagen",
+    "country": "Denmark",
+    "longitude": 12.5683,
+    "latitude": 55.6761,
+    "width": 720,
+    "height": 520
   }
 ]
