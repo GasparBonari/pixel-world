@@ -54,6 +54,10 @@ COUNTRY_TIER = [
      "trees": 7,
      # Kinderdijk's Nederwaard mill network, at its actual polder site near Rotterdam.
      "landmarks": [("kinderdijk", 4.64, 51.8833)]},
+    {"adm0": "BEL", "bounds": (2.5, 49.45, 6.4, 51.6), "capital": "Brussels", "cities": 9,
+     "trees": 7,
+     # Gravensteen, the medieval Counts' castle beside the Leie in Ghent.
+     "landmarks": [("gravensteen", 3.7206, 51.0572)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -69,6 +73,7 @@ VARIANTS = {
     **{animal: 1 for animal in sprites.FAUNA},
     "neuschwanstein": 1,
     "kinderdijk": 1,
+    "gravensteen": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -299,7 +304,7 @@ def main():
                                                for dx in (-3, 0, 3) for dy in (-3, 0, 3)):
                     boats.append((lon, lat))
         for lon, lat in spread(trees, spec.get("trees", 7 if spec["adm0"] == "PRT" else 12), 70, 51, towns, 45):
-            if spec["adm0"] in ("DEU", "NLD"):
+            if spec["adm0"] in ("DEU", "NLD", "BEL"):
                 kind = "pine" if spec["adm0"] == "DEU" and lat > 53 else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue

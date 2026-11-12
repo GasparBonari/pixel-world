@@ -43,5 +43,14 @@
     "latitude": 52.3702,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "brussels",
+    "name": "Brussels",
+    "country": "Belgium",
+    "longitude": 4.3517,
+    "latitude": 50.8503,
+    "width": 720,
+    "height": 520
   }
 ]

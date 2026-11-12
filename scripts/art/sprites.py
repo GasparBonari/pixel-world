@@ -1417,6 +1417,50 @@ def kinderdijk(seed=0):
     return s.image()
 
 
+def gravensteen(seed=0):
+    """Ghent's Gravensteen: tall square donjon, battlemented curtain and round wall turrets."""
+    s = Sprite(35, 32)
+    stone = ramp("#BCAF91", "#514733")
+    water = ramp("#527D87", "#334F59")
+    ground_shadow(s, 17, 30, 15)
+    # Leie moat under the west/south curtain; reflections stay inside its narrow basin.
+    for x in range(3, 32):
+        y = 28 + abs(x - 17) // 10
+        s.put(x, y, water[0][2 if x % 5 == 0 else 1], water[1])
+
+    def wall(left, right, top, foot, slit=False):
+        for x in range(left, right):
+            for y in range(top, foot):
+                tone = 2 if x < (left + right) / 2 else 0
+                if y % 4 == 0 or (x + y // 4 * 2) % 6 == 0:
+                    tone = max(0, tone - 1)
+                if slit and x == (left + right) // 2 and top + 4 <= y <= top + 7:
+                    s.put(x, y, C["window"], stone[1])
+                else:
+                    s.put(x, y, stone[0][tone], stone[1])
+        for x in range(left, right, 3):
+            s.put(x, top - 1, stone[0][3], stone[1])
+            s.put(x, top - 2, stone[0][2], stone[1])
+
+    # Rear curtain, then the keep and gate; near turrets overlap their connecting wall.
+    wall(5, 30, 17, 25)
+    wall(11, 24, 5, 24)
+    for x in (14, 20):
+        for y in (11, 12, 18, 19):
+            s.put(x, y, C["window"], stone[1])
+            s.put(x + 1, y, C["window"], stone[1])
+        s.put(x, 13, stone[0][3], stone[1])
+    wall(4, 31, 22, 28)
+    for x, top in ((4, 17), (11, 19), (24, 19), (29, 17)):
+        wall(x - 2, x + 3, top, 28, slit=True)
+    wall(15, 22, 18, 29)
+    for y in range(23, 29):
+        for x in range(17, 20):
+            if y > 23 or x == 18:
+                s.put(x, y, C["door"] if y % 2 else stone[0][0], stone[1])
+    return s.image()
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1441,7 +1485,7 @@ FLORA = {
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
-    "kinderdijk": kinderdijk,
+    "kinderdijk": kinderdijk, "gravensteen": gravensteen,
     **FLORA, **FAUNA,
 }
 

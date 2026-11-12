@@ -1,7 +1,7 @@
 import { FilterMode, Group, Image, MipmapMode, type SkImage } from '@shopify/react-native-skia';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 
-import { CAPITAL_REACH, type GlobeCamera, type GlobeViewport } from './globe-camera';
+import { activeCapital, type GlobeCamera, type GlobeViewport } from './globe-camera';
 import { capitalOpacity, capitalRect, type CapitalScene } from './capitals';
 
 const NEAREST = { filter: FilterMode.Nearest, mipmap: MipmapMode.None } as const;
@@ -34,10 +34,7 @@ export function CapitalLayer({
   // Only the capital being visited appears, never a neighbour's scene at the screen edge.
   const opacity = useDerivedValue(() => {
     const c = camera.get();
-    const near =
-      Math.abs(c.longitude - scene.longitude) <= CAPITAL_REACH &&
-      Math.abs(c.latitude - scene.latitude) <= CAPITAL_REACH;
-    return near ? capitalOpacity(c.zoom) : 0;
+    return activeCapital(c)?.id === scene.id ? capitalOpacity(c.zoom) : 0;
   });
   return (
     <Group opacity={opacity}>

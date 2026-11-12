@@ -181,6 +181,7 @@ test('every capital keeps portrait and landscape viewports covered after long dr
         assert.ok(rect.x <= .5 && rect.y <= .5 && rect.x + rect.width >= viewport.width - .5
           && rect.y + rect.height >= viewport.height - .5, JSON.stringify(rect));
         assert.equal(current.zoom, CAPITAL_ZOOM.full);
+        assert.equal(current.capitalId, scene.id, 'a long drag cannot change the visited capital');
         assert.ok(Math.abs(current.longitude - scene.longitude) < 2, 'stays at the visited capital');
       }
     }
@@ -227,4 +228,67 @@ test('Amsterdam: focal zoom arrives at its own scene while Groningen keeps count
   assert.equal(arriving.zoom, CAPITAL_ZOOM.full);
   const after = globePoint(amsterdam.longitude, amsterdam.latitude, arriving, view);
   assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+});
+
+test("Belgium marks Brussels, spaced cities and Gravensteen within its own bounds", () => {
+  const belgium = COVERAGE.find((c) => c.id === 'brussels');
+  assert.deepEqual(belgium.bounds, [2.5, 49.45, 6.4, 51.6]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1] - lon) < .001 && Math.abs(i[2] - lat) < .001);
+  // The nearby Antwerp/Ghent metropolitan populations cannot override Brussels or the 75 km rule.
+  const cities = [[4.3314, 50.8353], [5.58, 50.63], [3.23, 51.2204], [5.8167, 49.6833]];
+  const [w, s, e, n] = belgium.bounds;
+  for (const [rank, [lon, lat]] of cities.entries()) {
+    const kinds = at(lon, lat).map((i) => icons.names[i[0]]).sort();
+    assert.deepEqual(kinds, rank === 0 ? ['castle', 'house', 'house'] : rank <= 2
+      ? ['church', 'house', 'house'] : ['church']);
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
+    for (const [otherLon, otherLat] of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
+        + Math.cos(lat * rad) * Math.cos(otherLat * rad) * Math.cos((lon - otherLon) * rad));
+      assert.ok(km >= 75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+  assert.equal(at(4.4131, 51.2223).length, 0, 'Antwerp respects capital spacing');
+  assert.equal(at(3.7, 51.03).length, 0, 'Ghent respects capital spacing');
+  const landmark = at(3.7206, 51.0572).find((i) => icons.names[i[0]] === 'gravensteen');
+  assert.ok(landmark, 'Gravensteen at its real site, separate from the excluded Ghent city group');
+  assert.ok(w <= landmark[1] && landmark[1] <= e && s <= landmark[2] && landmark[2] <= n);
+});
+
+test('Brussels: focal zoom arrives at its scene, and Eupen keeps country detail', () => {
+  const brussels = scenes.find((s) => s.id === 'brussels');
+  assert.deepEqual([brussels.width, brussels.height], [720, 520]);
+  assert.equal(maxZoomAt(4.3517, 50.8503), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(6.03, 50.63), COUNTRY_ZOOM.max); // Eupen, beyond capital reach
+  assert.equal(maxZoomAt(12.5, 41.9), MAX_GLOBE_ZOOM); // Rome remains uncovered
+  let arriving = { longitude: 4.8, latitude: 50.6, zoom: 5 };
+  const focal = globePoint(brussels.longitude, brussels.latitude, arriving, view);
+  for (let step = 0; step < 8; step++)
+    arriving = zoomGlobe(arriving, arriving.zoom + .3, focal.x, focal.y, view);
+  assert.equal(arriving.zoom, CAPITAL_ZOOM.full);
+  assert.equal(arriving.capitalId, 'brussels');
+  const after = globePoint(brussels.longitude, brussels.latitude, arriving, view);
+  assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+});
+
+test('overlapping Brussels/Amsterdam visits keep one capital until zooming back to the country', () => {
+  for (const id of ['brussels', 'amsterdam']) {
+    const scene = scenes.find((s) => s.id === id);
+    let current = constrainGlobe({ longitude: scene.longitude, latitude: scene.latitude, zoom: CAPITAL_ZOOM.full });
+    current = constrainGlobe({ ...current, longitude: 4.6, latitude: 51.6 }); // both capital areas
+    assert.equal(camera.activeCapital(current).id, id, 'the visible scene and the clamp use the same visit');
+    current = capitals.clampToCapitals(current, scenes, view, 2);
+    assert.equal(current.capitalId, id);
+    const other = scenes.find((s) => s.id === (id === 'brussels' ? 'amsterdam' : 'brussels'));
+    const pulled = constrainGlobe({ ...current, longitude: other.longitude, latitude: other.latitude });
+    assert.ok(Math.abs(pulled.longitude - scene.longitude) <= camera.CAPITAL_REACH);
+    assert.ok(Math.abs(pulled.latitude - scene.latitude) <= camera.CAPITAL_REACH);
+    const country = zoomGlobe(current, 5, view.width / 2, view.height / 2, view);
+    assert.equal(country.capitalId, undefined);
+    assert.equal(camera.activeCapital(country), undefined);
+    const nextVisit = constrainGlobe({ ...country, longitude: other.longitude, latitude: other.latitude, zoom: 7 });
+    assert.equal(camera.activeCapital(nextVisit).id, other.id);
+  }
 });

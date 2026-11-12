@@ -1,5 +1,6 @@
 import {
   CAPITAL_ZOOM,
+  activeCapital,
   constrainGlobe,
   globeLocation,
   globePoint,
@@ -7,7 +8,7 @@ import {
   type GlobeViewport,
 } from './globe-camera';
 
-export type CapitalScene = { longitude: number; latitude: number; width: number; height: number };
+export type CapitalScene = { id: string; longitude: number; latitude: number; width: number; height: number };
 
 /** Points per scene pixel: the icon pixel (2/3 of a terrain pixel) at full capital zoom. */
 export function capitalScale(zoom: number, iconScale: number) {
@@ -87,14 +88,7 @@ export function clampToCapitals(
 ) {
   'worklet';
   if (camera.zoom < CAPITAL_ZOOM.in) return camera;
-  let nearest: CapitalScene | null = null;
-  let best = Infinity;
-  for (const scene of scenes) {
-    const distance = Math.hypot(scene.longitude - camera.longitude, scene.latitude - camera.latitude);
-    if (distance < best) {
-      best = distance;
-      nearest = scene;
-    }
-  }
-  return nearest ? clampToCapital(camera, nearest, viewport, iconScale) : camera;
+  const capital = activeCapital(camera);
+  const scene = scenes.find((candidate) => candidate.id === capital?.id);
+  return scene ? clampToCapital({ ...camera, capitalId: scene.id }, scene, viewport, iconScale) : camera;
 }

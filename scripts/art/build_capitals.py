@@ -777,6 +777,128 @@ def amsterdam():
     return scene.img.convert("RGB")
 
 
+# ---------------------------------------------------------------- Brussels --
+
+import landmarks_belgium as bel
+
+
+def brussels():
+    scene = new_scene()
+    def at(x, y):
+        return tile_of((x - WIDTH / 2) / 8, (y - scene.oy) / 4)
+
+    # North-up, compressed geography: the Brussels canal runs southwest/northeast west of
+    # the centre. The Senne is buried here; there is deliberately no invented downtown river.
+    # The canal follows +j, with broad open banks on the foreground (+i) side.
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i + .5, j + .5)
+        if abs(i + .5 - 27) < 1.6:
+            kind = "water"
+        elif abs(i + .5 - 27) < 2.7:
+            kind = "quay"
+        elif 29 < i < 36 or 22 < i < 25:
+            kind = "promenade"
+        elif (40 < x < 190 and 185 < y < 300) or (420 < x < 550 and 215 < y < 285) \
+                or (550 < x < 710 and 355 < y < 480):
+            # Elisabeth Park, Brussels Park north of the palace, Cinquantenaire gardens.
+            kind = "gravel" if i % 6 == 0 or j % 6 == 0 else "grass"
+        elif i % 9 == 0 or j % 11 == 0:
+            kind = "cobble"
+        else:
+            kind = "lot"
+        kinds[(i, j)] = kind
+
+    reserved, protected = set(), []
+    def reserve(i, j, wi, wj, ground="pave"):
+        for a in range(math.floor(i), math.ceil(i + wi)):
+            for b in range(math.floor(j), math.ceil(j + wj)):
+                reserved.add((a, b))
+                if (a, b) in kinds:
+                    kinds[(a, b)] = ground
+
+    def landmark(builder, x, y, wi, wj, height, front=2, extra=4):
+        ci, cj = at(x, y)
+        i, j = ci - wi / 2, cj - wj / 2
+        builder(scene, i, j)
+        reserve(i - .6, j - .6, wi + 1.2, wj + front + 1.2)
+        half = (wi + wj) * 4 + extra
+        protected.append((x - half, y - height, x + half, y + (wi + wj) * 2 + 12))
+
+    landmark(bel.atomium, 250, 155, 9, 9, 143, extra=1)
+    landmark(bel.basilica, 110, 180, 8.5, 10, 106)
+    landmark(bel.cathedral, 475, 190, 7.6, 9, 80, front=4)
+    landmark(bel.kings_house, 350, 220, 7.5, 4.3, 96)
+    landmark(bel.town_hall, 290, 310, 11, 4, 133)
+    landmark(bel.royal_palace, 485, 340, 14, 4.5, 64, front=5)
+    landmark(bel.cinquantenaire, 605, 440, 10.5, 3, 79, front=4, extra=50)
+    landmark(bel.palace_of_justice, 290, 471, 12, 9, 122, front=2)
+
+    # Grand-Place is between the King’s House (northeast) and Town Hall (southwest).
+    # Distinct cobbling and a stone border, with ornate guild houses on its east edge.
+    for i, j in list(kinds):
+        x, y = scene.screen(i + .5, j + .5)
+        if 320 < x < 425 and 255 < y < 312:
+            reserve(i, j, 1, 1, "cobble")
+    for n, (x, y) in enumerate(((418, 286), (444, 301), (470, 316))):
+        ci, cj = at(x, y)
+        wi, wj = 2.3, 2.4
+        bel.brussels_house(scene, ci - wi / 2, cj - wj / 2, wi, wj, 3, n * 2, guild=True)
+        reserve(ci - wi / 2 - .3, cj - wj / 2 - .3, wi + .6, wj + .6)
+        protected.append((x - 22, y - 60, x + 22, y + 14))
+
+    # Low stone bridges cross the canal squarely along i, not diagonally across the water.
+    for jj in (20, 41, 59):
+        def bridge(s, jj=jj):
+            def masonry(u, v, lit):
+                if lit and lb.arch_opening(u % 16, v, 8, 5, 2, True):
+                    return rgb("#345B64")
+                return bel.PALE["lit" if lit else "dark"] if v > 4 else lb.stone_courses(bel.BLUE_STONE, 3, 8)(u, v, lit)
+            bel.block(s, 23, jj, 8, 1.4, 6, bel.BLUE_STONE, masonry)
+            for b in (jj, jj + 1.4):
+                lp.seg(s, lp.P(s, 23, b, 8), lp.P(s, 31, b, 8), bel.PALE["lit"])
+                for a in range(24, 31, 2):
+                    bel.block(s, a, b, .18, .18, 3, bel.PALE, z=6)
+        scene.add(31 + jj + 2, bridge)
+        for a in range(22, 33):
+            for b in range(jj - 1, jj + 3):
+                reserved.add((a, b))
+
+    paint_ground(scene, kinds, {}, (rgb("#497F89"), rgb("#386673"), rgb("#8FB9BC")), bel.BLUE_STONE["dark"])
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 4):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li + 3) for b in range(lj, lj + 3)]
+            if not all(kinds.get(c) == "lot" and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 111) * 10000)
+            floors = 2 + seed % 2
+            x, y = scene.screen(li + wi / 2, lj + wj / 2)
+            half = (wi + wj) * 4 + 4
+            top, bottom = y - floors * 10 - 28, y + (wi + wj) * 2
+            if any(x + half > l and x - half < r and bottom > t and top < b for l, t, r, b in protected):
+                continue
+            # Keep the foreground bank open far enough that roofs cannot hide the canal.
+            if 30 < li < 40:
+                continue
+            bel.brussels_house(scene, li, lj, wi, wj, floors, seed)
+            reserved.update(cells)
+
+    lindens = [round_tree(n, "#7CA257", "#304B32") for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i + .5, j + .5)
+        if (i, j) in reserved or any(l - 5 < x < r + 5 and t < y < b + 10 for l, t, r, b in protected):
+            continue
+        if kind == "grass" and h01(i, j, 113) < .17 \
+                or kind == "promenade" and (i + j) % 6 == 0:
+            scene.add(i + j + 1.5, lambda s, x=x, y=y, tree=lindens[(i + j) % 3]: s.sprite(tree, x, y + 4))
+    for jj in (12, 32, 50, 69):
+        x, y = scene.screen(27, jj)
+        scene.add(27 + jj, lambda s, x=x, y=y: s.sprite(bateau(0), x, y))
+    scene.paint_objects()
+    return scene.img.convert("RGB")
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -788,6 +910,8 @@ CAPITALS = [
      "render": berlin},
     {"id": "amsterdam", "name": "Amsterdam", "country": "Netherlands", "longitude": 4.8952, "latitude": 52.3702,
      "render": amsterdam},
+    {"id": "brussels", "name": "Brussels", "country": "Belgium", "longitude": 4.3517, "latitude": 50.8503,
+     "render": brussels},
 ]
 
 

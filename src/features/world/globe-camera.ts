@@ -1,4 +1,4 @@
-export type GlobeCamera = { longitude: number; latitude: number; zoom: number };
+export type GlobeCamera = { longitude: number; latitude: number; zoom: number; capitalId?: string };
 export type GlobeViewport = { width: number; height: number };
 // 32x: continent scale (~20 km per terrain pixel at 2.6) with room to look closer. Countries and
 // capitals with detail allow more (COVERAGE).
@@ -19,7 +19,27 @@ export const COVERAGE = [
   { id: 'paris', country: 'France', longitude: 2.3522, latitude: 48.8566, bounds: [-5.2, 41.3, 9.6, 51.1] },
   { id: 'berlin', country: 'Germany', longitude: 13.405, latitude: 52.52, bounds: [5.8, 47.2, 15.1, 55.1] },
   { id: 'amsterdam', country: 'Netherlands', longitude: 4.8952, latitude: 52.3702, bounds: [3.2, 50.7, 7.3, 53.6] },
+  { id: 'brussels', country: 'Belgium', longitude: 4.3517, latitude: 50.8503, bounds: [2.5, 49.45, 6.4, 51.6] },
 ] as const;
+
+/** Keep the visited capital while panning across overlapping capital areas. Zooming out releases it. */
+export function activeCapital(camera: GlobeCamera) {
+  'worklet';
+  if (camera.zoom < CAPITAL_ZOOM.in) return undefined;
+  let nearest: (typeof COVERAGE)[number] | undefined;
+  let best = Infinity;
+  for (const region of COVERAGE) {
+    if (region.id === camera.capitalId) return region;
+    const dx = region.longitude - camera.longitude;
+    const dy = region.latitude - camera.latitude;
+    const distance = dx * dx + dy * dy;
+    if (Math.abs(dx) <= CAPITAL_REACH && Math.abs(dy) <= CAPITAL_REACH && distance < best) {
+      nearest = region;
+      best = distance;
+    }
+  }
+  return nearest;
+}
 
 /** The deepest zoom detail allows at a location. */
 export function maxZoomAt(longitude: number, latitude: number) {
@@ -48,6 +68,11 @@ export function constrainGlobe(camera: GlobeCamera, coverage = true): GlobeCamer
   let longitude = ((((camera.longitude + 180) % 360) + 360) % 360) - 180;
   let latitude = Math.max(-80, Math.min(80, camera.latitude));
   let zoom = Math.max(0, Math.min(CAPITAL_ZOOM.full, camera.zoom));
+  const visited = COVERAGE.find((region) => region.id === camera.capitalId);
+  if (coverage && visited && zoom > COUNTRY_ZOOM.max) {
+    longitude = Math.max(visited.longitude - CAPITAL_REACH, Math.min(visited.longitude + CAPITAL_REACH, longitude));
+    latitude = Math.max(visited.latitude - CAPITAL_REACH, Math.min(visited.latitude + CAPITAL_REACH, latitude));
+  }
   if (coverage && zoom > maxZoomAt(longitude, latitude)) {
     // Deep zoom only over covered places: pull a nearby centre back inside, else zoom out.
     let best: [number, number] | null = null;
@@ -69,7 +94,15 @@ export function constrainGlobe(camera: GlobeCamera, coverage = true): GlobeCamer
     if (best) [longitude, latitude] = best;
     else zoom = maxZoomAt(longitude, latitude);
   }
-  return { longitude, latitude, zoom };
+  const next: GlobeCamera = { longitude, latitude, zoom };
+  if (zoom >= CAPITAL_ZOOM.in) {
+    // Focal zoom first solves the pointer's position without coverage constraints. Select the
+    // capital only after that solve, while retaining an existing visit through intermediate steps.
+    const capital = coverage ? activeCapital({ ...next, capitalId: camera.capitalId }) : undefined;
+    const capitalId = capital?.id ?? camera.capitalId;
+    if (capitalId) next.capitalId = capitalId;
+  }
+  return next;
 }
 
 export const OPENING_CAMERA: GlobeCamera = { longitude: -15, latitude: 20, zoom: 0 };
