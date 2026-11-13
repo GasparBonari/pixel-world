@@ -1681,6 +1681,126 @@ def helsinki():
     return scene.img.convert('RGB')
 
 
+def reykjavik():
+    import landmarks_iceland as ice
+
+    scene = new_scene()
+
+    def at(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # North-up: the old harbour and Faxaflói are north of the centre. Tjörnin
+    # runs south from City Hall; Öskjuhlíð is southeast of Hallgrímskirkja.
+    # Both pond and harbour shore segments follow the isometric tile axes.
+    def water(i, j):
+        harbour = i+j < 40 or (j > 29 and i < 18) or (i > 28 and j < 20)
+        tjornin = 39 < i < 53 and 65 < j < 78
+        return harbour or tjornin
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        if water(i+.5, j+.5):
+            kind = 'water'
+        elif any(water(i+.5+di, j+.5+dj) for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+            kind = 'quay'
+        elif any(water(i+.5+di, j+.5+dj) for di, dj in ((3, 0), (-3, 0), (0, 3), (0, -3))):
+            kind = 'promenade'
+        elif ((x > 525 and y > 390) or (x < 245 and y > 375)
+              or (40 < x < 150 and 170 < y < 265) or (205 < x < 275 and 190 < y < 225)
+              or (590 < x < 700 and 250 < y < 355)):
+            kind = 'gravel' if i % 9 == 0 or j % 9 == 0 else 'grass'
+        elif i % 14 == 0 or j % 14 == 0 or 31 < j < 34:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected = set(), []
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[(a, b)] = 'pave'
+
+    def landmark(builder, x, y, wi, wj):
+        ci, cj = at(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        builder(scene, i, j)
+        reserve(i-.7, j-.7, wi+1.4, wj+3)
+        # Measure the actual projected silhouette, including roof, flag and statue.
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j)
+        study.paint_objects()
+        left, top, right, bottom = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, (left, top, right, bottom))
+        protected.append((left-4, top-3, right+4, bottom+5))
+
+    # Curated real anchors, compressed independently to keep the city legible.
+    # Longitude ordering: Landakot, City Hall, Alþingi, Harpa, Hallgrímskirkja,
+    # Sun Voyager, Perlan, Höfði. Latitude ordering is preserved as well.
+    landmark(ice.harpa, 340, 140, 9.5, 5.4)
+    landmark(ice.sun_voyager, 510, 215, 8, 4.5)
+    landmark(ice.landakotskirkja, 95, 235, 6, 9)
+    landmark(ice.parliament, 250, 285, 8, 4.4)
+    landmark(ice.hofdi, 635, 305, 5.5, 6)
+    landmark(ice.city_hall, 180, 360, 8.5, 5)
+    landmark(ice.hallgrimskirkja, 435, 385, 8, 10)
+    landmark(ice.perlan, 600, 465, 8, 8)
+    # Austurvöllur and Hallgrímstorg stay open; the pond's banks are low promenades.
+    for x, y, wi, wj in ((250, 320, 6, 3), (425, 433, 7, 3), (635, 320, 4, 3)):
+        i, j = at(x, y)
+        reserve(i-wi/2, j-wj/2, wi, wj)
+    # Low iron-clad cottages fit the narrow streets between the civic squares
+    # and Hallgrímskirkja without entering any monument's projected silhouette.
+    for x, y, seed in ((333, 218, 0), (380, 218, 3), (332, 285, 2)):
+        ci, cj = at(x, y)
+        ice.house(scene, ci-1, cj-1.25, 2, 2.5, floors=1, seed=seed)
+        reserve(ci-1.2, cj-1.4, 2.4, 3)
+    paint_ground(scene, {c: 'pave' if k == 'promenade' else k for c, k in kinds.items()},
+                 {}, ice.WATER, ice.BASALT['dark'])
+
+    # Old-harbour timber landings, with boats in the sheltered northern water.
+    for i, j, wi, wj in ((16, 27, 1, 5), (21, 18, 5, 1)):
+        scene.add(i+j+wi+wj, lambda s, i=i, j=j, wi=wi, wj=wj:
+                  ice.block(s, i, j, wi, wj, 3, ice.WOOD))
+        reserve(i, j, wi, wj)
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li+3) for b in range(lj, lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 281)*10000)
+            floors = 1 if seed % 4 == 0 else 2
+            x, y = scene.screen(li+wi/2, lj+wj/2)
+            half = (wi+wj)*4+4
+            top, bottom = y-floors*11-23, y+(wi+wj)*2+5
+            if any(x+half > l and x-half < r and bottom > t and top < b for l, t, r, b in protected):
+                continue
+            if any(water(li+wi/2+di, lj+wj/2+dj) for di, dj in ((4, 0), (-4, 0), (0, 4), (0, -4))):
+                continue
+            ice.house(scene, li, lj, wi, wj, floors, seed)
+            reserved.update(cells)
+
+    trees = [round_tree(n, '#789D71', '#2E4D3C', .85) for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i+.5, j+.5)
+        if (i, j) in reserved or any(l-10 < x < r+10 and t-2 < y < b+23 for l, t, r, b in protected):
+            continue
+        if kind == 'grass' and h01(i, j, 283) < .1 or kind == 'promenade' and (i+j) % 13 == 0:
+            scene.add(i+j+1.5, lambda s, x=x, y=y, tree=trees[(i+j) % 3]: s.sprite(tree, x, y+4))
+    for i, j in ((8, 25), (12, 19), (19, 13), (25, 8)):
+        x, y = scene.screen(i, j)
+        if water(i, j):
+            image = bateau(0) if i % 2 else sprites.sailboat(0)
+            scene.add(i+j, lambda s, x=x, y=y, image=image: s.sprite(image, x, y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -1708,6 +1828,8 @@ CAPITALS = [
      "render": oslo},
     {"id": "helsinki", "name": "Helsinki", "country": "Finland", "longitude": 24.9384, "latitude": 60.1699,
      "render": helsinki},
+    {"id": "reykjavik", "name": "Reykjavík", "country": "Iceland", "longitude": -21.9426, "latitude": 64.1466,
+     "render": reykjavik},
 ]
 
 

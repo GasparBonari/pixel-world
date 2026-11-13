@@ -115,5 +115,14 @@
     "latitude": 60.1699,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "reykjavik",
+    "name": "Reykjav\u00edk",
+    "country": "Iceland",
+    "longitude": -21.9426,
+    "latitude": 64.1466,
+    "width": 720,
+    "height": 520
   }
 ]

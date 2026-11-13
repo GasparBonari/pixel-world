@@ -1723,6 +1723,38 @@ def olavinlinna(seed=0):
     return scene.img
 
 
+def gullfoss(seed=0):
+    """Gullfoss: broad upper cascade, transverse lower plunge and a narrow Hvítá gorge."""
+    import iso
+    from landmarks_iceland import block, BASALT, WATER, WHITE, GREEN
+    from landmarks_paris import P, poly, seg, corners
+
+    scene = iso.Scene(71, 66, (35, 36))
+    shadow = Sprite(71, 66)
+    ground_shadow(shadow, 35, 62, 32, 2)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    # Layered canyon rims and grassy cap, with a diagonal turn between the falls.
+    block(scene, -2.1, -1.3, 4.2, 3, 8, BASALT)
+    block(scene, -2.1, -1.3, 4.2, 1.5, 11, BASALT, z=8)
+    poly(scene, list(corners(scene, -2.1, -1.3, 4.2, 1.5, 19)),
+         lambda x, y: GREEN['lit'] if (int(x)+int(y)) % 4 else GREEN['hi'])
+    poly(scene, list(corners(scene, -1.8, -1.3, 3.3, 1.5, 20)),
+         lambda x, y: WATER[2] if (int(x)+int(y)) % 5 == 0 else WATER[0])
+    # Falling sheets have light rims, darker troughs and broken foam at their feet.
+    for a, b, wi, wj, base, height in ((-1.8, .18, 3.3, .13, 10, 10), (.6, .5, .14, 1.2, 0, 10)):
+        block(scene, a, b, wi, wj, height, WHITE,
+              lambda u, v, lit: WATER[2] if int(u) % 4 or int(v) < 2 else WATER[0], z=base)
+    poly(scene, list(corners(scene, -1.8, .3, 2.5, 1.2, 10)),
+         lambda x, y: WATER[2] if h01(x, y, 289) < .32 else WATER[0])
+    # The outflow vanishes into a deep slot below the transverse second fall.
+    poly(scene, list(corners(scene, .7, .65, 1.1, 1.3, 1)), lambda x, y: WATER[1])
+    block(scene, 1.8, .2, .35, 1.7, 12, BASALT)
+    for a, b, z in ((-.8, .4, 10), (.3, 1, 10), (.8, 1.5, 2), (1.4, 1.7, 2)):
+        seg(scene, P(scene, a, b, z), P(scene, a+.45, b, z+1), WHITE['hi'], 2)
+    return scene.img
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1750,6 +1782,7 @@ ICONS = {
     "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge, "rock-of-cashel": rock_of_cashel,
     "leaning-tower-pisa": leaning_tower_pisa, "kronborg": kronborg, "gripsholm": gripsholm, "borgund": borgund,
     "olavinlinna": olavinlinna,
+    "gullfoss": gullfoss,
     **FLORA, **FAUNA,
 }
 

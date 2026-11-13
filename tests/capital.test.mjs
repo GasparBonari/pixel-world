@@ -680,6 +680,52 @@ test('Helsinki has a capital scene while inland and Arctic Finland retain countr
   assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
 });
 
+test('Iceland marks Reykjavík, five spaced city groups and Gullfoss within its own bounds', () => {
+  const iceland = COVERAGE.find((c) => c.id === 'reykjavik');
+  assert.deepEqual(iceland.bounds, [-24.6, 63.2, -13.4, 66.6]);
+  const [w, s, e, n] = iceland.bounds;
+  // Iceland has no overlapping country boxes: inspect every generated Iceland icon.
+  const tier = icons.icons.filter((i) => i[5] === 1 && w <= i[1] && i[1] <= e && s <= i[2] && i[2] <= n);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1] - lon) < .001 && Math.abs(i[2] - lat) < .001);
+  // Natural Earth's exact accented name selects the capital before population/spacing.
+  const cities = [[-21.95, 64.15], [-18.1, 65.6666], [-23.15, 66.0833],
+    [-14.395, 65.2674], [-15.2139, 64.2723]];
+  for (const [rank, [lon, lat]] of cities.entries()) {
+    const names = at(lon, lat).map((i) => icons.names[i[0]]);
+    assert.deepEqual(names, rank === 0 ? ['house', 'house', 'castle']
+      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const [otherLon, otherLat] of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
+        + Math.cos(lat * rad) * Math.cos(otherLat * rad) * Math.cos((lon - otherLon) * rad));
+      assert.ok(km >= 75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+  assert.equal(at(-20.1225, 64.3271).filter((i) => icons.names[i[0]] === 'gullfoss').length, 1);
+  assert.equal(tier.length, 22);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'pine').length, 7);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat').length, 2);
+});
+
+test('Reykjavík supports capital arrival while northern and eastern Iceland retain country zoom', () => {
+  const reykjavik = scenes.find((s) => s.id === 'reykjavik');
+  assert.equal(reykjavik.name, 'Reykjavík');
+  assert.equal(reykjavik.country, 'Iceland');
+  assert.deepEqual([reykjavik.width, reykjavik.height], [720, 520]);
+  assert.equal(maxZoomAt(reykjavik.longitude, reykjavik.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(-18.1, 65.6666), COUNTRY_ZOOM.max); // Akureyri
+  assert.equal(maxZoomAt(-14.395, 65.2674), COUNTRY_ZOOM.max); // Egilsstaðir
+  assert.equal(maxZoomAt(-18.0, 66.54), COUNTRY_ZOOM.max); // Grímsey
+  let current = { longitude: -22.4, latitude: 64.5, zoom: 5 };
+  const focal = globePoint(reykjavik.longitude, reykjavik.latitude, current, view);
+  for (let step = 0; step < 8; step++)
+    current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, view);
+  assert.equal(current.zoom, CAPITAL_ZOOM.full);
+  assert.equal(current.capitalId, 'reykjavik');
+  const after = globePoint(reykjavik.longitude, reykjavik.latitude, current, view);
+  assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+});
+
 test('capital panning reaches actual scene edges and zooms out gradually at phone and desktop scales', () => {
   for (const scene of scenes) {
     for (const viewport of [{ width: 390, height: 844 }, { width: 1000, height: 780 }]) {
