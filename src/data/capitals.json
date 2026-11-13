@@ -232,5 +232,14 @@
     "latitude": 46.0514,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "zagreb",
+    "name": "Zagreb",
+    "country": "Croatia",
+    "longitude": 15.9819,
+    "latitude": 45.815,
+    "width": 720,
+    "height": 520
   }
 ]

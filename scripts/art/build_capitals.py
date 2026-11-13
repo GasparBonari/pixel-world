@@ -3220,6 +3220,176 @@ def ljubljana():
     return scene.img.convert('RGB')
 
 
+def zagreb():
+    import landmarks_croatia as hr
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # Gradec (the Upper Town) is a raised plateau in the north-west; Ilica runs along its southern
+    # foot on the i axis into Ban Jelačić Square; the Lower Town grid, Zrinjevac and the theatre
+    # square lie south; Kaptol's cathedral stands east of Dolac.
+    UP = 18
+    square = tile(400, 352)
+    ilica = square[1]+4
+    zrinjevac = tile(440, 408)
+    theatre_sq = tile(150, 440)
+
+    def plateau(x, y):
+        return ((x-205)/190)**2+((y-150)/92)**2 < 1
+
+    kinds, elev = {}, {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        di, dj = i+.5-square[0], j+.5-square[1]
+        if plateau(x, y):
+            # Wooded southern slopes (Strossmayer promenade, Grič); a paved rim elsewhere.
+            rim = not plateau(x, y+12) or not plateau(x-16, y) or not plateau(x+16, y)
+            kind = ('grass' if y > 150 else 'cobble') if rim else 'cobble' if i % 7 == 0 or j % 7 == 0 else 'lot'
+            elev[(i, j)] = UP
+        elif abs(j+.5-ilica) < 1.2:
+            kind = 'ilica'
+        elif -6 < di < 7 and -5 < dj < 5.5:
+            kind = 'square'
+        elif abs(i+.5-zrinjevac[0]) < 4.5 and abs(j+.5-zrinjevac[1]) < 3.5:
+            kind = 'park'
+        elif abs(i+.5-theatre_sq[0]) < 7 and abs(j+.5-theatre_sq[1]) < 7.5:
+            kind = 'park'
+        elif (i-int(square[0])) % 11 == 0 or (j-int(square[1])) % 11 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected, silhouette = set(), [], set()
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[(a, b)] = 'pave'
+
+    def measure(build):
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        build(study)
+        study.paint_objects()
+        left, top, right, bottom = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (left, top, right, bottom)
+        protected.append((left-4, top-4, right+4, bottom+5))
+        pixels = study.img.convert('RGB').load()
+        for sy in range(top+100, bottom+100):
+            for sx in range(left+100, right+100):
+                if pixels[sx, sy] != (0, 0, 0):
+                    silhouette.update((sx-100+dx, sy-100+dy) for dx in range(-3, 4) for dy in range(-3, 4))
+
+    for name, builder, (wi, wj), _, (x, y), z in hr.SITES:
+        ci, cj = tile(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        build = (lambda s, b=builder, i=i, j=j, z=z: b(s, i, j, z=z)) if z else (lambda s, b=builder, i=i, j=j: b(s, i, j))
+        build(scene)
+        reserve(i-1, j-1, wi+2, wj+2.5)
+        measure(build)
+        if name == 'lotrscak':
+            # The funicular runs down the slope beside the tower from the promenade to Ilica.
+            fi = math.floor(ci+3)
+            top = max(b for (a, b) in elev if a == fi and b < ilica)
+            length = ilica-1.6-(top+.5)
+            hr.funicular(scene, fi, top+.5, length, UP)
+            reserve(fi, top-2, 1, length+4)
+            measure(lambda s: hr.funicular(s, fi, top+.5, length, UP))
+
+    # Squares: the stone square with its tram stop, Kaptol before the cathedral, the Dolac stair foot.
+    for (i, j), kind in list(kinds.items()):
+        if kind == 'pave' and (i, j) not in elev:
+            kinds[(i, j)] = 'square'
+
+    for (i, j) in sorted(kinds, key=lambda t: (t[0]+t[1], t[0])):
+        kind, e = kinds[(i, j)], elev.get((i, j), 0)
+        def color(x, y, k=kind, i=i, j=j):
+            if k == 'square':
+                return rgb('#C9C3B6') if (x+2*(y % 2)) % 6 else rgb('#B1AA9C') if y % 3 else rgb('#DAD4C8')
+            if k == 'ilica':
+                d = j+.5-ilica
+                if abs(abs(d)-.55) < .12 or abs(abs(d)-.15) < .1:
+                    return rgb('#5B5650')   # tram rails
+                return rgb('#8E8A84') if (x+y) % 5 else rgb('#7D7973')
+            if k == 'park':
+                pc = theatre_sq
+                if abs(i+.5-pc[0]) < 7 and (abs(i+.5-pc[0]) < .7 or abs(j+.5-pc[1]) < .7 or abs(i-j-pc[0]+pc[1]) < .8):
+                    return rgb('#E2D6B5') if h01(x, y, 7001) > .12 else rgb('#CBBE9B')  # gravel paths
+                return ground_color('grass', x, y)
+            if e and k in ('lot', 'pave', 'cobble', 'square'):
+                # Gradec's older, warmer cobbles set it apart from the Lower Town's flagstones.
+                if k == 'cobble':
+                    return rgb('#9D9078') if (x+2*(y % 2)) % 4 == 0 else rgb('#BBAE93')
+                return rgb('#D3C5A6') if (x+3*(y % 2)) % 6 else rgb('#BCAE90')
+            return ground_color('pave' if k == 'lot' else k, x, y)
+        iso.ground_tile(scene, i, j, color, e, iso.stone_wall(hr.ROCK['mid']) if e else None)
+
+    # Ilica and the square stay open for the trams; the parks keep their trees and pavilion.
+    for (i, j), kind in kinds.items():
+        if kind in ('ilica', 'square', 'park'):
+            reserved.add((i, j))
+    reserved_paths = {(i, j) for (i, j), k in kinds.items() if k == 'park' and any(
+        abs(a-pc[0]) < 1.2 or abs(b-pc[1]) < 1.2 or abs(i-j-pc[0]+pc[1]) < 1.3
+        for pc in (theatre_sq,) for a, b in ((i+.5, j+.5),))}
+    gi, gj = zrinjevac
+    hr.gazebo(scene, gi, gj)
+    measure(lambda s: hr.gazebo(s, gi, gj))
+
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li+3) for b in range(lj, lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            up = {elev.get(c, 0) for c in cells}
+            if len(up) != 1:
+                continue
+            z = up.pop()
+            seed = int(h01(li, lj, 7002)*10000)
+            floors = 2 if z else 3 if seed % 3 else 4
+            x, y = scene.screen(li+wi/2, lj+wj/2)
+            y -= z
+            half = (wi+wj)*4+7
+            if any(x+half > l and x-half < r and y+17 > t and y-floors*10-33 < b for l, t, r, b in protected):
+                ax, ay = scene.screen(li, lj)
+                x0, y0 = math.floor(ax-50), math.floor(ay-100)
+                study = iso.Scene(100, 160, (scene.ox-x0, scene.oy-y0))
+                hr.townhouse(study, li, lj, wi, wj, floors, seed, z)
+                study.paint_objects()
+                l, t, r, b = study.img.convert('RGB').getbbox()
+                pixels = study.img.convert('RGB').load()
+                if any((sx+x0, sy+y0) in silhouette and pixels[sx, sy] != (0, 0, 0)
+                       for sy in range(t, b) for sx in range(l, r)):
+                    continue
+            hr.townhouse(scene, li, lj, wi, wj, floors, seed, z)
+            reserved.update(cells)
+
+    # Blue trams on the Ilica line through the square, clear of the statue and fountain.
+    for ti in (square[0]-6.4, square[0]+5):
+        hr.tram(scene, ti, ilica-.55)
+
+    planes = [round_tree(k, '#6FA04F', '#28472C', 1.1) for k in range(3)]
+    woods = [round_tree(k, '#5C8F45', '#21391F') for k in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i+.5, j+.5)
+        y0 = y-elev.get((i, j), 0)
+        # A tree may stand beside a landmark, never over any of its painted pixels.
+        if any((x+dx, y0+dy) in silhouette for dx in range(-9, 10, 3) for dy in range(-18, 6, 3)):
+            continue
+        if kind == 'grass' and (i, j) not in reserved and h01(i, j, 7003) < .45:
+            y -= elev.get((i, j), 0)
+            scene.add(i+j+1.5, lambda s, x=x, y=y, tree=woods[(i+j) % 3]: s.sprite(tree, x, y+4))
+        elif kind == 'park' and (i, j) not in reserved_paths and h01(i, j, 7004) < .45:
+            scene.add(i+j+1.5, lambda s, x=x, y=y, tree=planes[(i+j) % 3]: s.sprite(tree, x, y+4))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -3273,6 +3443,8 @@ CAPITALS = [
      "render": vilnius},
     {"id": "ljubljana", "name": "Ljubljana", "country": "Slovenia", "longitude": 14.5061, "latitude": 46.0514,
      "render": ljubljana},
+    {"id": "zagreb", "name": "Zagreb", "country": "Croatia", "longitude": 15.9819, "latitude": 45.8150,
+     "render": zagreb},
 ]
 
 

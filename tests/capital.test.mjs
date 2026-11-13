@@ -21,6 +21,66 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Croatia marks Zagreb, spaced cities and Plitvice Lakes within its bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'zagreb');
+  assert.deepEqual(region.bounds, [13.45, 42.4, 19.45, 46.6]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
+  // Zagreb, Split, Rijeka, Slavonski Brod, Zadar and Dubrovnik keep the 75 km rule; Osijek, Pula,
+  // Karlovac and Šibenik fall within 75 km of a larger city.
+  const cities = [[16, 45.8], [16.47, 43.5204], [14.45, 45.33], [18.0156, 45.1603], [15.2623, 44.1201], [18.0914, 42.6609]];
+  const decorations = [[17.875, 45.625], [18.875, 45.625], [15.125, 45.625], [17.125, 46.125], [13.625, 45.125],
+    [16.625, 43.125], [16.125, 43.875], [13.625, 44.125], [15.375, 43.125]];
+  const sites = [...cities, [15.6079, 44.9025], ...decorations];
+  const country = sites.flatMap((site) => at(...site));
+  assert.equal(country.length, 23);
+  for (const [, lon, lat] of country) {
+    const [w, s, e, n] = region.bounds;
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Croatia bounds`);
+  }
+  const kinds = (site) => at(...site).map((i) => icons.names[i[0]]).sort();
+  assert.deepEqual(kinds(cities[0]), ['castle', 'house', 'house']);
+  for (const town of cities.slice(1, 3)) assert.deepEqual(kinds(town), ['church', 'house', 'house']);
+  assert.deepEqual(kinds(cities[3]), ['church']);
+  assert.deepEqual(kinds(cities[4]), ['house', 'house']);
+  assert.deepEqual(kinds(cities[5]), ['church']);
+  const radians = (n) => n*Math.PI/180;
+  const km = ([a, b], [c, d]) => {
+    const h = Math.sin(radians(d-b)/2)**2 + Math.cos(radians(b))*Math.cos(radians(d))*Math.sin(radians(c-a)/2)**2;
+    return 6371*2*Math.atan2(Math.sqrt(h), Math.sqrt(1-h));
+  };
+  for (const [k, a] of cities.entries())
+    for (const b of cities.slice(k+1)) assert.ok(km(a, b) >= 75, `${a} and ${b} at least 75 km apart`);
+  assert.deepEqual(kinds([15.6079, 44.9025]), ['plitvice']);
+  const count = (kind) => country.filter((i) => icons.names[i[0]] === kind).length;
+  assert.deepEqual([count('oak'), count('pine'), count('olive'), count('boat')], [4, 1, 2, 2]);
+});
+
+test('Zagreb supports focal arrival, bounded panning and release at country zoom', () => {
+  const city = scenes.find((s) => s.id === 'zagreb');
+  assert.equal(city.name, 'Zagreb');
+  assert.equal(city.country, 'Croatia');
+  assert.deepEqual([city.longitude, city.latitude, city.width, city.height], [15.9819, 45.815, 720, 520]);
+  assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(15.5478, 45.4872), CAPITAL_ZOOM.full); // Karlovac is within Zagreb's arrival reach.
+  assert.equal(maxZoomAt(16.47, 43.5204), COUNTRY_ZOOM.max); // Split, beyond every capital reach
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
+    const focal = globePoint(city.longitude, city.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom+.3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(camera.activeCapital(current).id, 'zagreb');
+    const after = globePoint(city.longitude, city.latitude, current, viewport);
+    assert.ok(Math.hypot(after.x-focal.x, after.y-focal.y) < 1);
+    // Panning west towards Ljubljana keeps the Zagreb visit; a fresh arrival there picks Ljubljana.
+    assert.equal(camera.activeCapital({ ...current, longitude: 14.6, latitude: 45.9 }).id, 'zagreb');
+    assert.equal(camera.activeCapital({ longitude: 14.5061, latitude: 46.0514, zoom: 7 }).id, 'ljubljana');
+    assert.equal(camera.activeCapital({ ...current, zoom: 6.2 }), undefined);
+  }
+});
+
 test('Slovenia marks Ljubljana, Maribor and Bled Island within its bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'ljubljana');
   assert.deepEqual(region.bounds, [13.35, 45.4, 16.65, 46.9]);
@@ -52,7 +112,8 @@ test('Ljubljana supports focal arrival, bounded panning and release at country z
   assert.deepEqual([city.longitude, city.latitude, city.width, city.height], [14.5061, 46.0514, 720, 520]);
   assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(15.65, 46.5405), CAPITAL_ZOOM.full); // Maribor is within Ljubljana's arrival reach.
-  assert.equal(maxZoomAt(16.4519, 46.5631), COUNTRY_ZOOM.max); // Lendava, beyond every capital reach
+  assert.equal(maxZoomAt(16.4519, 46.5631), CAPITAL_ZOOM.full); // Lendava now falls within Zagreb's reach.
+  assert.equal(maxZoomAt(15.2623, 44.1201), COUNTRY_ZOOM.max); // Zadar, beyond Ljubljana's and Zagreb's reach
   assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };

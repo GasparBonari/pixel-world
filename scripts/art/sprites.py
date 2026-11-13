@@ -2178,6 +2178,63 @@ def bled(seed=0):
     return scene.img
 
 
+def plitvice(seed=0):
+    """Plitvice Lakes at Veliki slap: a wooded travertine cliff, the tall white fall dropping into
+    a turquoise pool, two lake terraces stepping down over mossy travertine barriers with small
+    cascades, and a timber boardwalk along the water."""
+    import iso
+    from landmarks_croatia import ROCK
+    from landmarks_slovakia import block
+    from landmarks_paris import P, poly, seg
+
+    scene = iso.Scene(48, 47, (24, 29))
+    shadow = Sprite(48, 47)
+    ground_shadow(shadow, 24, 43, 19)
+    scene.img = shadow.image(); scene.px = scene.img.load()
+    lake = (hex_rgb('#4FC3C0'), hex_rgb('#37A3A8'), hex_rgb('#C8F2EC'))
+    moss = hex_rgb('#7FA65A')
+    def water(x, y):
+        return lake[2] if (int(x)*3+int(y)) % 13 == 0 else lake[0] if (int(x)+int(y)) % 5 else lake[1]
+    # Back: the travertine cliff with forest on top; the fall drops down its lit face.
+    def cliff(u, v, lit):
+        if lit and 8 <= u <= 10:
+            return WHITE_FALL[int(v+u) % 3]
+        if int(v) % 4 == 0 or h01(int(u), int(v), 8101) < .15:
+            return ROCK['line' if lit else 'deep']
+        return None
+    block(scene, -1.3, -1.4, 2.6, .8, 13, ROCK, cliff)
+    leaf = ramp('#4F8A3E', '#1C3A1E')[0]
+    def tree(a, b, z, h=9):
+        x, y = P(scene, a, b, z)
+        for dx in range(-3, 4):
+            for dy in range(-h, 1):
+                e = dx*dx/9+(dy+h/2)**2/(h*h/4)
+                if e <= 1:
+                    scene.put(x+dx, y+dy, leaf[0] if e > .7 else leaf[1] if dx > 0 else leaf[2])
+        scene.put(x, y+1, C['bark'])
+    for a in (-1.1, -.4, .3):
+        tree(a, -1.05, 13, 6)
+    # Upper pool at the foot of the fall, then the barrier and the lower lake.
+    block(scene, -1.4, -.6, 2.8, 1.0, 4, ROCK,
+          lambda u, v, lit: moss if v > 2.5 else lake[2] if lit and int(u) % 6 in (1, 2) else None)
+    poly(scene, [P(scene, a, b, 4) for a, b in ((-1.3, -.6), (1.3, -.6), (1.3, .35), (-1.3, .35))], water)
+    x, y = P(scene, -.25, -.6, 4)
+    for k in range(3):
+        scene.put(x-1+k, y, lake[2]); scene.put(x+k, y+1, lake[2])        # spray at the fall's foot
+    poly(scene, [P(scene, a, b, 0) for a, b in ((-1.4, .45), (1.4, .45), (1.4, 1.4), (-1.4, 1.4))], water)
+    # Boardwalk along the lower lake.
+    for k in range(7):
+        a = -1.2+k*.36
+        seg(scene, P(scene, a, 1.05, 1), P(scene, a, 1.3, 1), hex_rgb('#9C7A52'))
+    seg(scene, P(scene, -1.2, 1.05, 1), P(scene, 1.0, 1.05, 1), hex_rgb('#6E5236'))
+    for a, b in ((-1.5, .1), (1.45, -.25), (1.5, .85)):
+        tree(a, b, 0, 8)
+    return scene.img
+
+
+WHITE_FALL = (hex_rgb('#FFFFFF'), hex_rgb('#DDF3F4'), hex_rgb('#B6E2E6'))
+
+
 FAUNA = {
     "deer": deer, "fox": fox, "elephant": elephant, "zebra": zebra, "panda": panda,
     "tiger": tiger, "bison": bison, "moose": moose, "jaguar": jaguar, "capybara": capybara,
@@ -2214,6 +2271,7 @@ ICONS = {
     "rundale": rundale,
     "trakai": trakai,
     "bled": bled,
+    "plitvice": plitvice,
     **FLORA, **FAUNA,
 }
 
