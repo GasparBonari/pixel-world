@@ -21,6 +21,64 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Latvia marks Riga, spaced cities and Rundāle Palace within its bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'riga');
+  assert.deepEqual(region.bounds, [20.9, 55.65, 28.25, 58.1]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
+  // Natural Earth's "Liepaga" is Liepāja. Jelgava is within 75 km of Riga.
+  const cities = [[24.1, 56.95], [26.51, 55.88], [21.01, 56.51],
+    [21.5606, 57.3899], [27.3166, 56.5]];
+  const sites = [...cities, [24.026, 56.4148], [25.125, 57.875], [26.375, 57.375],
+    [21.625, 56.875], [24.875, 56.625], [26.375, 56.625], [22.375, 56.375],
+    [27.625, 56.125], [23.875, 57.875], [21.375, 57.625]];
+  const country = sites.flatMap((site) => at(...site));
+  assert.equal(country.length, 22);
+  for (const [, lon, lat] of country) {
+    const [w, s, e, n] = region.bounds;
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Latvia bounds`);
+  }
+  for (const [rank, site] of cities.entries()) {
+    assert.deepEqual(at(...site).map((i) => icons.names[i[0]]).sort(), rank === 0
+      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
+        : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const other of cities.slice(rank+1)) {
+      const radians = (n) => n*Math.PI/180;
+      const h = Math.sin(radians(other[1]-site[1])/2)**2 + Math.cos(radians(site[1]))
+        * Math.cos(radians(other[1])) * Math.sin(radians(other[0]-site[0])/2)**2;
+      assert.ok(6371*2*Math.atan2(Math.sqrt(h), Math.sqrt(1-h)) >= 75);
+    }
+  }
+  assert.equal(at(23.7128, 56.6527).length, 0);
+  assert.equal(at(24.026, 56.4148).filter((i) => icons.names[i[0]] === 'rundale').length, 1);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length, 7);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'boat').length, 2);
+});
+
+test('Riga supports focal arrival and retains its scene beside Tallinn', () => {
+  const city = scenes.find((s) => s.id === 'riga');
+  assert.equal(city.name, 'Riga');
+  assert.equal(city.country, 'Latvia');
+  assert.deepEqual([city.longitude, city.latitude, city.width, city.height], [24.1052, 56.9496, 720, 520]);
+  assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(21.01, 56.51), COUNTRY_ZOOM.max); // Liepāja
+  assert.equal(maxZoomAt(26.51, 55.88), COUNTRY_ZOOM.max); // Daugavpils
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: 24.1, latitude: 56.95, zoom: 5 };
+    const focal = globePoint(city.longitude, city.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom+.3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(camera.activeCapital(current).id, 'riga');
+    const after = globePoint(city.longitude, city.latitude, current, viewport);
+    assert.ok(Math.hypot(after.x-focal.x, after.y-focal.y) < 1);
+    assert.equal(camera.activeCapital({ ...current, longitude: 24.6, latitude: 58.3 }).id, 'riga');
+    assert.equal(camera.activeCapital({ longitude: 24.7536, latitude: 59.437, zoom: 7 }).id, 'tallinn');
+    assert.equal(camera.activeCapital({ ...current, zoom: 6.2 }), undefined);
+  }
+});
+
 test('Estonia marks Tallinn, five spaced cities and Kuressaare within its bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'tallinn');
   assert.deepEqual(region.bounds, [21.7, 57.45, 28.25, 59.85]);

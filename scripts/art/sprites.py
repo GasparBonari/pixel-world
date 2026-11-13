@@ -2059,6 +2059,38 @@ def kuressaare(seed=0):
     return scene.img
 
 
+def rundale(seed=0):
+    """Compact Rastrelli palace, low enough to leave nearby Riga's castle visible."""
+    import iso
+    from landmarks_latvia import YELLOW, PALE, SLATE, STONE, GLASS
+    from landmarks_slovakia import block, band, pediment
+    from landmarks_iberia import hip_roof
+    from landmarks_paris import P, poly
+
+    def openings(u,v,lit):
+        c,level=int(u)%5,int(v)%7
+        if 1<=c<=3 and 2<=level<=5:
+            return PALE['lit' if lit else 'dark'] if c in (1,3) or level in (2,5) else GLASS['mid' if lit else 'dark']
+        return YELLOW['lit' if lit else 'dark']
+    scene=iso.Scene(46,29,(23,14))
+    shadow=Sprite(46,29)
+    ground_shadow(shadow,23,26,19)
+    scene.img=shadow.image();scene.px=scene.img.load()
+    poly(scene,[P(scene,a,b) for a,b in ((-1.3,-.7),(1.3,-.7),(1.3,1.6),(-1.3,1.6))],
+         lambda x,y:C['leaf'] if int(x)%5 else STONE['lit'])
+    for a,b,w,d in ((-1.2,-.6,2.4,.5),(-1.2,-.1,.5,1.2),(.7,-.1,.5,1.2)):
+        block(scene,a,b,w,d,6,YELLOW,openings)
+        for z in (1,5):band(scene,a,b,w,d,z,PALE)
+        hip_roof(scene,a,b,w,d,6,2,SLATE)
+    block(scene,-.45,-.65,.9,.7,7,YELLOW,openings)
+    hip_roof(scene,-.45,-.65,.9,.7,7,2,SLATE)
+    pediment(scene,-.5,-.05,1,.15,7,2,PALE)
+    for a in (-.95,-.3,.35):
+        poly(scene,[P(scene,a+u,1.2+v,.3) for u,v in ((0,0),(.35,0),(.35,.35),(0,.35))],
+             lambda x,y:PALE['lit'] if (int(x)+int(y))%3==0 else C['leaf'])
+    return scene.img
+
+
 FAUNA = {
     "deer": deer, "fox": fox, "elephant": elephant, "zebra": zebra, "panda": panda,
     "tiger": tiger, "bison": bison, "moose": moose, "jaguar": jaguar, "capybara": capybara,
@@ -2092,6 +2124,7 @@ ICONS = {
     "spis-castle": spis_castle,
     "tihany-abbey": tihany_abbey,
     "kuressaare": kuressaare,
+    "rundale": rundale,
     **FLORA, **FAUNA,
 }
 

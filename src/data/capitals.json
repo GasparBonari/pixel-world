@@ -205,5 +205,14 @@
     "latitude": 59.437,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "riga",
+    "name": "Riga",
+    "country": "Latvia",
+    "longitude": 24.1052,
+    "latitude": 56.9496,
+    "width": 720,
+    "height": 520
   }
 ]
