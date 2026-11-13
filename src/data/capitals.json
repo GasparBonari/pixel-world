@@ -124,5 +124,14 @@
     "latitude": 64.1466,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "bern",
+    "name": "Bern",
+    "country": "Switzerland",
+    "longitude": 7.4474,
+    "latitude": 46.948,
+    "width": 720,
+    "height": 520
   }
 ]

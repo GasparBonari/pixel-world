@@ -89,6 +89,10 @@ COUNTRY_TIER = [
      "trees": 7,
      # Gullfoss's two cascades on the Hvítá, northeast of Reykjavík.
      "landmarks": [("gullfoss", -20.1225, 64.3271)]},
+    {"adm0": "CHE", "bounds": (5.95, 45.8, 10.55, 47.85), "capital": "Bern", "cities": 9,
+     "trees": 7,
+     # Chillon's island castle on Lake Geneva, south of Montreux.
+     "landmarks": [("chillon", 6.9275, 46.4142)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -113,6 +117,7 @@ VARIANTS = {
     "borgund": 1,
     "olavinlinna": 1,
     "gullfoss": 1,
+    "chillon": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.

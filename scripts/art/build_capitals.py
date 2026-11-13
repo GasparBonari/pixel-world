@@ -1801,6 +1801,120 @@ def reykjavik():
     return scene.img.convert('RGB')
 
 
+def bern():
+    import landmarks_switzerland as ch
+
+    scene = new_scene()
+
+    def at(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # The Aare embraces the peninsula on its north/east/south sides. Compress
+    # its loop to two joined tile-axis reaches; keep both foreground banks low.
+    def water(i, j):
+        return (12 < j < 17 and i < 62) or (57 < i < 62 and j > 12)
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        if water(i+.5, j+.5):
+            kind = 'water'
+        elif any(water(i+.5+di, j+.5+dj) for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+            kind = 'quay'
+        elif any(water(i+.5+di, j+.5+dj) for di, dj in ((3, 0), (-3, 0), (0, 3), (0, -3))):
+            kind = 'promenade'
+        elif ((x > 570 and y < 180) or (x > 610 and 265 < y < 390)
+              or (y > 440 and 245 < x < 460) or (x < 225 and 365 < y < 445)):
+            # Schosshalden, Rosengarten, museum gardens and Bundeshausterrasse.
+            kind = 'gravel' if i % 8 == 0 or j % 8 == 0 else 'grass'
+        elif i % 12 == 0 or j % 12 == 0 or 215 < y < 231 or 275 < y < 286:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected = set(), []
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[(a, b)] = 'pave'
+
+    def landmark(builder, x, y, wi, wj):
+        ci, cj = at(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        builder(scene, i, j)
+        reserve(i-.8, j-.8, wi+1.6, wj+3)
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j)
+        study.paint_objects()
+        left, top, right, bottom = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, (left, top, right, bottom))
+        protected.append((left-4, top-3, right+4, bottom+5))
+
+    # North-up ground anchors, ordered from real longitude/latitude records.
+    landmark(ch.paul_klee, 635, 100, 11.4, 5)
+    landmark(ch.kafigturm, 80, 270, 5, 3.2)
+    landmark(ch.rathaus, 475, 225, 7, 5)
+    landmark(ch.nydeggkirche, 590, 212, 4.3, 7.2)
+    landmark(ch.zytglogge, 265, 295, 4.4, 3.3)
+    landmark(ch.minster, 425, 335, 5.7, 9)
+    landmark(ch.federal_palace, 170, 365, 12, 5.3)
+    landmark(ch.historical_museum, 395, 468, 10, 5.5)
+    # Bundesplatz, Münsterplatz and the Münsterplattform stay open.
+    for x, y, wi, wj in ((170, 305, 7, 5), (425, 370, 8, 3), (265, 315, 5, 3)):
+        ci, cj = at(x, y)
+        reserve(ci-wi/2, cj-wj/2, wi, wj)
+
+    # Nydegg's stone bridge crosses the northern reach squarely along +j.
+    lp.stone_bridge(scene, 49, 10, 10, width=1.8, deck=10)
+    reserve(48.5, 9.5, 2.8, 11)
+    # Kirchenfeld's iron bridge crosses the southern reach along +i.
+    ch.kirchenfeld_bridge(scene, 54, 62)
+    reserve(53.5, 61.5, 11, 2.8)
+    paint_ground(scene, {c: 'pave' if k == 'promenade' else k for c, k in kinds.items()},
+                 {}, ch.WATER, ch.SAND['dark'])
+
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li+3) for b in range(lj, lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 311)*10000)
+            floors = 2 if seed % 3 == 0 else 3
+            x, y = scene.screen(li+wi/2, lj+wj/2)
+            half = (wi+wj)*4+5
+            top, bottom = y-floors*11-31, y+(wi+wj)*2+5
+            if any(x+half > l and x-half < r and bottom > t and top < b for l, t, r, b in protected):
+                continue
+            if any(water(li+wi/2+di, lj+wj/2+dj) for di, dj in ((4, 0), (-4, 0), (0, 4), (0, -4))):
+                continue
+            ch.townhouse(scene, li, lj, wi, wj, floors, seed)
+            reserved.update(cells)
+
+    trees = [round_tree(n, '#648A57', '#2E4D36') for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i+.5, j+.5)
+        if (i, j) in reserved or any(l-11 < x < r+11 and t-2 < y < b+24 for l, t, r, b in protected):
+            continue
+        if kind == 'grass' and h01(i, j, 313) < .11 or kind == 'promenade' and (i+j) % 11 == 0:
+            scene.add(i+j+1.5, lambda s, x=x, y=y, tree=trees[(i+j) % 3]: s.sprite(tree, x, y+4))
+        # Rose beds on the real northeastern Rosengarten hillside.
+        if kind == 'grass' and x > 560 and y < 80 and (i+j) % 4 == 0:
+            for dx, dy in ((-2, 0), (2, 0), (0, -2)):
+                scene.put(x+dx, y+dy, ch.RED if i % 2 else ch.PALE['hi'])
+    # Small rowing craft, rather than seagoing ships, on the Aare.
+    for i, j in ((58.7, 42), (59.2, 73), (20, 14), (43, 14)):
+        x, y = scene.screen(i, j)
+        image = rowboat(int(i))
+        scene.add(i+j, lambda s, x=x, y=y, image=image: s.sprite(image, x, y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -1830,6 +1944,8 @@ CAPITALS = [
      "render": helsinki},
     {"id": "reykjavik", "name": "Reykjavík", "country": "Iceland", "longitude": -21.9426, "latitude": 64.1466,
      "render": reykjavik},
+    {"id": "bern", "name": "Bern", "country": "Switzerland", "longitude": 7.4474, "latitude": 46.9480,
+     "render": bern},
 ]
 
 

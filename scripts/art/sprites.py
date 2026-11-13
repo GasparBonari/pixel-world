@@ -1755,6 +1755,44 @@ def gullfoss(seed=0):
     return scene.img
 
 
+def chillon(seed=0):
+    """Chillon: lake island, Savoyard round towers, red roofs and a tall square keep."""
+    import iso
+    from landmarks_switzerland import block, windows, SAND, PALE, CLAY, WATER
+    from landmarks_italy import cylinder
+    from landmarks_iberia import hip_roof
+    from landmarks_denmark import spire
+    from landmarks_paris import P, poly, seg
+
+    scene = iso.Scene(59, 60, (29, 35))
+    shadow = Sprite(59, 60)
+    ground_shadow(shadow, 29, 56, 25, 2)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    # The oval rocky islet and lake remain part of the icon, not continent art.
+    lake = [P(scene, -1.9, -.5), P(scene, 1.4, -.75), P(scene, 1.9, 1.5),
+            P(scene, .5, 2.5), P(scene, -1.7, 1.5)]
+    poly(scene, lake, lambda x, y: WATER[2] if (int(x)+int(y)) % 11 == 0 else WATER[0])
+    block(scene, -1.45, -.1, 3, 1.95, 3, SAND)
+    # Back residential wing, then donjon and lake-facing halls.
+    block(scene, -1.35, -.1, 2.7, .65, 10, PALE, windows(PALE, 10, 5, 9), z=3)
+    hip_roof(scene, -1.45, -.2, 2.9, .85, 13, 5, CLAY)
+    block(scene, -.25, .25, .9, .8, 23, PALE,
+          lambda u, v, lit: C['window'] if 2 < u % 6 < 4 and 5 < v % 10 < 8
+          else None, z=3)
+    hip_roof(scene, -.35, .15, 1.1, 1, 26, 6, CLAY)
+    for a, b, wi, wj in ((-1.35, .65, .8, 1.15), (-.55, 1.2, 2, .6)):
+        block(scene, a, b, wi, wj, 12, PALE, windows(PALE, 12, 5, 10), z=3)
+        hip_roof(scene, a-.07, b-.07, wi+.14, wj+.14, 15, 5, CLAY)
+    for a, b, h in ((-1.25, .55, 17), (1.2, .15, 15), (1.2, 1.55, 15)):
+        cylinder(scene, a, b, .3, .3, 3, h, PALE,
+                 lambda u, v, lit: C['window'] if 1 < u % 6 < 3 and 5 < v % 9 < 8 else None)
+        spire(scene, a, b, .37, h+3, 6, CLAY, conical=True)
+    for a in (-.9, 0, .6):
+        seg(scene, P(scene, a, 1.95, 1), P(scene, a+.5, 1.95, 1), WATER[2])
+    return scene.img
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1783,6 +1821,7 @@ ICONS = {
     "leaning-tower-pisa": leaning_tower_pisa, "kronborg": kronborg, "gripsholm": gripsholm, "borgund": borgund,
     "olavinlinna": olavinlinna,
     "gullfoss": gullfoss,
+    "chillon": chillon,
     **FLORA, **FAUNA,
 }
 

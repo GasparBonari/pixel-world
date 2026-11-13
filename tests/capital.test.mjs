@@ -726,6 +726,53 @@ test('Reykjavík supports capital arrival while northern and eastern Iceland ret
   assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
 });
 
+test('Switzerland marks Bern first, six spaced city groups and Chillon within its own bounds', () => {
+  const switzerland = COVERAGE.find((c) => c.id === 'bern');
+  assert.deepEqual(switzerland.bounds, [5.95, 45.8, 10.55, 47.85]);
+  const [w, s, e, n] = switzerland.bounds;
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1] - lon) < .001 && Math.abs(i[2] - lat) < .001);
+  // Exact pinned Natural Earth sites. Bern must survive larger Geneva/Zürich,
+  // while nearby Basel, Lausanne and Luzern obey the existing 75 km filter.
+  const cities = [[7.467, 46.9167], [6.14, 46.21], [8.5481, 47.3819],
+    [8.9667, 46.0004], [9.5, 46.85], [7.354, 46.239]];
+  for (const [rank, [lon, lat]] of cities.entries()) {
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
+    const names = at(lon, lat).map((i) => icons.names[i[0]]);
+    assert.deepEqual(names, rank === 0 ? ['house', 'house', 'castle']
+      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const [otherLon, otherLat] of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
+        + Math.cos(lat * rad) * Math.cos(otherLat * rad) * Math.cos((lon - otherLon) * rad));
+      assert.ok(km >= 75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+  for (const [lon, lat, kind] of [[6.9275, 46.4142, 'chillon'],
+    [7.625, 47.375, 'pine'], [9.375, 47.375, 'pine'], [6.875, 46.875, 'pine'], [8.625, 46.625, 'pine']]) {
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
+    assert.equal(at(lon, lat).filter((i) => icons.names[i[0]] === kind).length, 1);
+  }
+});
+
+test('Bern supports focal capital arrival while eastern Switzerland retains country zoom', () => {
+  const bern = scenes.find((s) => s.id === 'bern');
+  assert.equal(bern.name, 'Bern');
+  assert.equal(bern.country, 'Switzerland');
+  assert.deepEqual([bern.width, bern.height], [720, 520]);
+  assert.equal(maxZoomAt(bern.longitude, bern.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(9.5, 46.85), COUNTRY_ZOOM.max); // Chur, outside Bern's 1.5° arrival reach
+  assert.equal(maxZoomAt(10.45, 46.8), COUNTRY_ZOOM.max); // eastern Graubünden
+  let current = { longitude: 7.1, latitude: 47.1, zoom: 5 };
+  const focal = globePoint(bern.longitude, bern.latitude, current, view);
+  for (let step = 0; step < 8; step++)
+    current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, view);
+  assert.equal(current.zoom, CAPITAL_ZOOM.full);
+  assert.equal(current.capitalId, 'bern');
+  const after = globePoint(bern.longitude, bern.latitude, current, view);
+  assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+});
+
 test('capital panning reaches actual scene edges and zooms out gradually at phone and desktop scales', () => {
   for (const scene of scenes) {
     for (const viewport of [{ width: 390, height: 844 }, { width: 1000, height: 780 }]) {
