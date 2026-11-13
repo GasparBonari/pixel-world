@@ -27,6 +27,19 @@ IRON, WOOD = rgb('#344438'), rgb('#70523C')
 WATER = (rgb('#477E91'), rgb('#345E75'), rgb('#C3DDE1'))
 
 
+def lifted(draw, z):
+    """Draw a model z pixels up (on a raised plateau) by shifting the projection origin while it paints."""
+    if not z:
+        return draw
+    def raised(s):
+        s.oy -= z
+        try:
+            draw(s)
+        finally:
+            s.oy += z
+    return raised
+
+
 def windows(material, height, bay=10, floor=12, gothic=False):
     joints = stone_courses(material, 4, 11)
     def pattern(u, v, lit):
@@ -64,7 +77,7 @@ def round_tower(s, i, j, radius, height, roof=True):
     if roof:spire(s,i,j,radius+.18,height+1,21,CLAY,conical=True)
 
 
-def townhouse(scene,i,j,wi=2.5,wj=3,floors=2,seed=0):
+def townhouse(scene,i,j,wi=2.5,wj=3,floors=2,seed=0,z=0):
     """Narrow Hanseatic merchant houses, pointed storage gables and hoisting hatches."""
     wall,height=palette_of(WALLS[seed%len(WALLS)]),floors*10+3
     base=windows(wall,height,9,10)
@@ -88,7 +101,7 @@ def townhouse(scene,i,j,wi=2.5,wj=3,floors=2,seed=0):
             hip_roof(s,i+.75,j+.45,.65,.7,height+10,4,CLAY)
         block(s,i+wi-.7,j+.3,.45,.5,9,STONE,z=height+7)
         band(s,i+wi-.7,j+.3,.45,.5,height+15,CLAY,2)
-    scene.add(i+j+wi+wj,draw)
+    scene.add(i+j+wi+wj,lifted(draw,z))
 
 
 def fat_margaret(scene,i,j):
@@ -280,7 +293,7 @@ def onion(s,ci,cj,radius,base,height):
     cross(s,ci,cj,base+height+14)
 
 
-def nevsky(scene,i,j):
+def nevsky(scene,i,j,z=0):
     """Five dark onion domes, red/white Russian Revival walls, kokoshnik arches and mosaic portals."""
     def draw(s):
         # Far pair, central drum and near pair: all five bulbs have separate silhouettes.
@@ -312,10 +325,10 @@ def nevsky(scene,i,j):
                  lambda x,y:GOLD['lit'] if (int(x)+int(y))%3 else GOLD['dark'])
             block(s,i+a+.57,fj+.7,.16,.12,3,RED,z=23)
         for a in range(3):block(s,i+2.5,j+6.7+a*.3,3,.3,4-a,STONE)
-    scene.add(i+j+18,draw)
+    scene.add(i+j+18,lifted(draw,z))
 
 
-def toompea(scene,i,j):
+def toompea(scene,i,j,z=0):
     """Pink parliamentary façade, medieval limestone curtain and flag-topped Tall Hermann."""
     def draw(s):
         block(s,i-.4,j-.4,9.8,6.5,8,STONE)
@@ -336,7 +349,7 @@ def toompea(scene,i,j):
             a=n*math.tau/10
             block(s,ci+1.2*math.cos(a)-.16,cj+1.2*math.sin(a)-.16,.32,.32,4,STONE,z=77)
         flag(s,ci,cj,81)
-    scene.add(i+j+18,draw)
+    scene.add(i+j+18,lifted(draw,z))
 
 
 def viru_gate(scene,i,j):
@@ -352,21 +365,22 @@ def viru_gate(scene,i,j):
     scene.add(i+j+14,draw)
 
 
-# name, builder, footprint, real longitude/latitude, compressed north-up screen anchor.
+# name, builder, footprint, real longitude/latitude, compressed north-up ground anchor, elevation
+# (the Toompea plateau stands above the Lower Town).
 SITES = [
-    ('fat-margaret', fat_margaret, (8,8), (24.74955,59.44253), (595,112)),
-    ('st-olaf', st_olaf, (5.2,8.5), (24.747806,59.441417), (505,220)),
-    ('kadriorg', kadriorg, (11,6.5), (24.79084,59.43851), (635,287)),
-    ('town-hall', town_hall, (10,4), (24.7454694,59.4370917), (450,355)),
-    ('viru-gate', viru_gate, (8.5,4), (24.7503639,59.4366306), (610,395)),
-    ('st-nicholas', st_nicholas, (5,8), (24.74263,59.43598), (340,425)),
-    ('nevsky', nevsky, (8,7.5), (24.739361,59.435833), (215,450)),
-    ('toompea', toompea, (9.5,6.5), (24.7372,59.4356), (82,480)),
+    ('fat-margaret', fat_margaret, (8,8), (24.74955,59.44253), (595,112), 0),
+    ('st-olaf', st_olaf, (5.2,8.5), (24.747806,59.441417), (505,220), 0),
+    ('kadriorg', kadriorg, (11,6.5), (24.79084,59.43851), (635,287), 0),
+    ('town-hall', town_hall, (10,4), (24.7454694,59.4370917), (450,355), 0),
+    ('viru-gate', viru_gate, (8.5,4), (24.7503639,59.4366306), (610,395), 0),
+    ('st-nicholas', st_nicholas, (5,8), (24.74263,59.43598), (340,425), 0),
+    ('nevsky', nevsky, (8,7.5), (24.739361,59.435833), (203,456), 24),
+    ('toompea', toompea, (9.5,6.5), (24.7372,59.4356), (82,480), 24),
 ]
 
 
 def main():
-    for name,builder,_,_,_ in SITES:
+    for name,builder,_,_,_,_ in SITES:
         print(preview([lambda s,b=builder:b(s,4,4)],'tallinn-'+name,
                       size=(240,230),origin=(110,110),tiles=17))
     print(preview([lambda s,n=n:townhouse(s,3+n*3,3,2.5,3,2+n%2,n) for n in range(5)],

@@ -169,8 +169,12 @@ def matthias_church(scene,i,j):
         for a,bj in ((.1,1),(4.7,1),(4.7,3.2),(4.7,5.3)):
             block(s,i+a,j+bj,.3,.5,30,STONE)
             spire(s,i+a+.15,j+bj+.25,.25,30,13,WHITE)
-        # Dominant southwestern Matthias tower: successive open belfry stages.
-        ti,tj=i-.3,j+D-1.8
+        # The west front runs along i, so its -i end is north and its +i end south. The lower Béla
+        # tower stands at the north-west corner (drawn first, it is farther away); it has a tiled tent cap.
+        block(s,i-.2,j+D-1.9,1.8,1.9,42,WHITE,windows(WHITE,42,8,18,True))
+        spire(s,i+.7,j+D-.95,1.2,43,16,RED,conical=True)
+        # Dominant south-western Matthias tower: successive open belfry stages.
+        ti,tj=i+W-1.9,j+D-2.3  # flush with the front, so the portal and rose stay clear
         block(s,ti,tj,2.1,2.3,61,WHITE,windows(WHITE,61,9,20,True))
         for z in (3,24,43,59):band(s,ti,tj,2.1,2.3,z)
         clock(s,ti+1.05,tj+2.36,4,40)
@@ -179,15 +183,12 @@ def matthias_church(scene,i,j):
         for a,bj in ((0,0),(1.9,0),(0,2.1),(1.9,2.1)):
             spire(s,ti+a,tj+bj,.20,60,15,WHITE)
         cross(s,ti+1.05,tj+1.15,110)
-        # Lower Béla tower has a tiled tent cap, deliberately much shorter.
-        block(s,i+3.4,j+D-1.6,1.8,1.9,42,WHITE,windows(WHITE,42,8,18,True))
-        spire(s,i+4.3,j+D-.65,1.2,43,16,RED,conical=True)
         # Portal and rose face west/south; return face keeps its own lancets.
         fj=j+D+.04
-        block(s,i+1.9,fj,1.4,.1,17,STONE,
-              lambda u,v,lit:arch_opening(u,v,5.6,4,12,WOOD) or WHITE['lit'])
-        center=(i+2.6,fj,26)
-        ring=[P(s,center[0]+.57*math.cos(n*math.tau/32),fj,26+4.6*math.sin(n*math.tau/32)) for n in range(32)]
+        block(s,i+1.75,fj,1.2,.1,17,STONE,
+              lambda u,v,lit:arch_opening(u,v,4.8,3.4,12,WOOD) or WHITE['lit'])
+        center=(i+2.35,fj,26)
+        ring=[P(s,center[0]+.5*math.cos(n*math.tau/32),fj,26+4.6*math.sin(n*math.tau/32)) for n in range(32)]
         poly(s,ring,lambda x,y:GLASS['dark'])
         for a,bj in zip(ring,ring[1:]+ring[:1]):seg(s,a,bj,STONE['lit'])
         for n in range(8):seg(s,P(s,*center),ring[n*4],WHITE['lit'])

@@ -631,9 +631,11 @@ def obelisk(scene, i, j):
 
 # ----------------------------------------------------------------- bridges --
 
-def stone_bridge(scene, i, j, length, width=1.6, deck=7, gilded=False):
-    """A masonry bridge along +j: arches on its visible +i face, a parapet; with gilded=True,
-    Pont Alexandre III's gilded statues on tall pillars at both ends."""
+def stone_bridge(scene, i, j, length, width=1.6, deck=7, gilded=False, along_i=False):
+    """A masonry bridge along +j (or +i with along_i=True): arches on its long visible face, a
+    parapet; with gilded=True, Pont Alexandre III's gilded statues on tall pillars at both ends."""
+    wi, wj = (length, width) if along_i else (width, length)
+
     def draw(s):
         arches = max(2, int(length / 2.4))
         span = length * 8 / arches  # screen length of one arch along the face
@@ -647,18 +649,19 @@ def stone_bridge(scene, i, j, length, width=1.6, deck=7, gilded=False):
             if v >= deck - 1:
                 return STONE["hi"] if lit else STONE["mid"]  # parapet
             return None
-        cover = facade(s, i, j, width, length, deck, face)
-        T, R, B, L = corners(s, i, j, width, length, deck)
+        cover = facade(s, i, j, wi, wj, deck, face)
+        T, R, B, L = corners(s, i, j, wi, wj, deck)
         poly(s, [T, R, B, L], lambda x, y: ground_cobble(x, y))
         if gilded:
-            for jj in (j + 0.4, j + length - 0.4):
-                for ii in (i + 0.1, i + width - 0.1):
-                    x, y = P(s, ii, jj, deck)
+            for a in (0.4, length - 0.4):
+                for c in (0.1, width - 0.1):
+                    x, y = P(s, i + c, j + a) if not along_i else P(s, i + a, j + c)
+                    y -= deck
                     for dy in range(0, 16):
                         s.put(x, y - dy, STONE["lit"] if dy < 13 else rgb("#E8B84A"))
                         s.put(x + 1, y - dy, STONE["dark"] if dy < 13 else rgb("#C9962E"))
         iso.outline(s, cover, STONE["outline"])
-    scene.add(i + j + width + length + 0.5, draw)
+    scene.add(i + j + wi + wj + 0.5, draw)
 
 
 def ground_cobble(x, y):

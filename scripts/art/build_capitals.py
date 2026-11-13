@@ -272,59 +272,99 @@ def lisbon():
 
 def madrid():
     scene = new_scene()
-    river = lambda i, j: j > 76 + 2 * math.sin(i / 7) and i < 44  # the Manzanares, in the corner
-    lake = lambda i, j: math.hypot((i - 78) * 0.8, j - 53) < 4.2
-    retiro = lambda i, j: i >= 64 and j >= 47
-    squares = [((22, 43), 6.5), ((56, 42), 4.5), ((68, 44), 3.2), ((78, 44), 3.5)]  # Armería, Sol, Cibeles, Alcalá
+    # The city runs west to east across the scene (2.8 km against 0.7 km north-south, so east-west is
+    # compressed most): the Palacio Real above the Manzanares, the Almudena facing it across the Plaza
+    # de la Armería; Plaza Mayor; Puerta del Sol with the Casa de Correos; Calle de Alcalá climbing
+    # north-east past the Metrópolis (where the Gran Vía forks off north-west) to Cibeles on the
+    # Prado-Recoletos boulevard and the Puerta de Alcalá; then the Retiro, wholly east of the
+    # boulevard, with the Estanque, Alfonso XII on its east bank and the Palacio de Cristal south-east.
+    bank = lambda i: 76 + 2 * math.sin(i / 7)
+    river = lambda i, j: bank(i) < j < bank(i) + 6  # the Manzanares, along the south-west
+    alcala, gran_via, mayor = 46.5, 34.5, 49  # Calle de Alcalá (constant i), Gran Vía and Calle Mayor (constant j)
+    pond = lambda i, j: 56 <= i <= 61 and 26 <= j <= 30  # the Estanque
+    retiro = lambda i, j: i >= 48 and i - j >= 25
+    # The Campo del Moro and the Vistillas gardens fall from the palace and the Almudena to the river.
+    # The Plaza de Oriente's gardens lie east of the palace.
+    campo = lambda i, j: j >= bank(i) + 7.5 or (j >= 53 and i < 22) or (j >= 60 and i - j < -32) or \
+        28 <= i < 31 and 43 <= j < 52
+    rects = [(22, 40, 53, 63), (27, 31, 42, 53),  # Plaza de la Armería; Plaza de Oriente's paving
+             (41, 53, 44, 48),  # Puerta del Sol's south side, before the Casa de Correos
+             (40, 53, 50, 67),  # Plaza Mayor and the streets around it
+             (31, 42, 72, 76), (42, 46, 29, 33)]  # the Almudena's forecourt; the Metrópolis corner
+    circles = [((48, 39), 4.5), ((46.5, 28), 3.5), ((46.5, 19.5), 7)]  # Sol, Cibeles, Independencia
 
     kinds = {}
     for i, j in visible_tiles(scene):
+        ci, cj = i + 0.5, j + 0.5
         if river(i, j):
             kind = "water"
-        elif river(i, j - 1.5):
+        elif river(i, j - 1.5) or river(i, j + 1.5):
             kind = "quay"
-        elif lake(i, j):
+        elif pond(i, j):
             kind = "water"
-        elif retiro(i, j):
-            ring = abs(math.hypot((i - 78) * 0.8, j - 53) - 5.5) < 0.9
-            kind = "gravel" if ring or (i - 64) % 9 == 0 or (j - 47) % 11 == 0 else "grass"
-        elif any(math.hypot(i - c[0], j - c[1]) < r for c, r in squares):
+        elif campo(i, j):
+            kind = "grass"
+        elif any(a <= i < b and c <= j < d for a, b, c, d in rects) or \
+                any(math.hypot(ci - a, cj - b) < r for (a, b), r in circles):
             kind = "pave"
-        elif (j in (44, 45) and 28 <= i <= 90) or (abs((i - 60) + (j - 40)) < 1.1 and i >= 56 and j <= 40):
-            kind = "cobble"  # Calle Mayor and Calle de Alcalá; the Gran Vía climbing north-east
+        elif retiro(i, j):
+            ring = 55 <= i <= 62 and 25 <= j <= 31
+            kind = "gravel" if ring or (i - 52) % 8 == 0 or j % 9 == 0 else "grass"
+        elif abs(ci - alcala) < 1.6 and cj < 42 or abs(cj - gran_via) < 1.1 and ci < alcala or \
+                abs(cj - mayor) < 1.1 and 31 <= i < 53:
+            kind = "cobble"  # Calle de Alcalá from Sol, the Gran Vía, Calle Mayor
+        elif 17 <= i - j <= 20:
+            kind = "gravel"  # the Paseo del Prado and Recoletos, north-south through Cibeles
         else:
             kind = "lot"
         kinds[(i, j)] = kind
 
-    reserved = set()
+    reserved, silhouette = set(), {}  # landmark pixel -> the earliest draw depth of the landmarks there
 
     def reserve(i, j, wi, wj, ground="court"):
-        for a in range(int(i), int(math.ceil(i + wi))):
-            for b in range(int(j), int(math.ceil(j + wj))):
+        for a in range(math.floor(i), math.ceil(i + wi)):
+            for b in range(math.floor(j), math.ceil(j + wj)):
                 reserved.add((a, b))
                 if kinds.get((a, b)) == "lot":
                     kinds[(a, b)] = ground
 
-    lb.palacio_real(scene, 14, 27)
-    reserve(13, 26, 18, 11)
-    lb.almudena(scene, 16.5, 47)
-    reserve(14, 45, 13, 17)  # with the open square before it
-    reserve(14, 37, 16, 9)  # Plaza de la Armería
-    lb.plaza_mayor(scene, 36, 48)
-    reserve(34, 46, 15, 15, ground="pave")  # the streets around the square keep it in view
-    lb.casa_correos(scene, 52, 34.5)
-    reserve(52, 34, 9, 5)
-    lb.metropolis(scene, 63, 35)
-    reserve(60, 33, 5, 4)
-    lb.cibeles(scene, 68, 44.5)
-    lb.puerta_alcala(scene, 74, 43.2)
-    reserve(73, 42, 10, 4)
-    lb.palacio_cristal(scene, 66, 55)
-    reserve(66, 55, 7, 5)
-    lb.alfonso_xii(scene, 81, 48.5)
-    for i0 in (24,):
-        start = 76 + 2 * math.sin(i0 / 7) - 1.5
-        lp.stone_bridge(scene, i0, start, 9)
+    def landmark(build):
+        """Draw a landmark and record its painted pixels, so that nothing drawn after it covers them."""
+        build(scene)
+        study = iso.Scene(WIDTH + 200, HEIGHT + 200, (scene.ox + 100, scene.oy + 100))
+        build(study)
+        depth = min(o[0] for o in study.objects)
+        study.paint_objects()
+        img = study.img.convert("RGB")
+        left, top, right, bottom = img.getbbox()
+        pixels = img.load()
+        for sy in range(top, bottom):
+            for sx in range(left, right):
+                if pixels[sx, sy] != (0, 0, 0):
+                    for dx in range(-3, 4):
+                        for dy in range(-3, 4):
+                            p = (sx - 100 + dx, sy - 100 + dy)
+                            silhouette[p] = min(silhouette.get(p, depth), depth)
+
+    def covers(pixels, depth):
+        """Would something drawn at this depth over these pixels paint on a landmark?"""
+        return any(silhouette.get(p, math.inf) <= depth for p in pixels)
+
+    landmark(lambda s: lb.palacio_real(s, 11.5, 44.5))
+    reserve(11.5, 44.5, 15, 8)
+    landmark(lambda s: lb.almudena(s, 33, 63))  # due south of the palace, across the Armería
+    reserve(33, 63, 5.6, 9)
+    landmark(lambda s: lb.plaza_mayor(s, 40.5, 52))
+    landmark(lambda s: lb.casa_correos(s, 44, 41.5))
+    reserve(44, 41.5, 8, 3.5)
+    landmark(lambda s: lb.metropolis(s, 44.5, 32.5))
+    landmark(lambda s: lb.cibeles(s, 46.5, 28))
+    landmark(lambda s: lb.puerta_alcala(s, 42.5, 18.5))  # astride Calle de Alcalá
+    landmark(lambda s: lb.alfonso_xii(s, 62, 26))
+    landmark(lambda s: lb.palacio_cristal(s, 76, 39))
+    reserve(75, 38, 8, 6, ground="gravel")
+    i0 = 44  # the Puente de Segovia
+    landmark(lambda s: lp.stone_bridge(s, i0, 76 + 2 * math.sin(i0 / 7) - 1.5, 9))
 
     paint_ground(scene, kinds, {}, TAGUS, lb.GRANITE["dark"])
 
@@ -332,31 +372,55 @@ def madrid():
         for lj in range(-12, 110, 3):
             for wi, wj in ((3, 3), (3, 2), (2, 3)):
                 cells = [(a, b) for a in range(li, li + wi) for b in range(lj, lj + wj)]
-                if all(kinds.get(c) == "lot" and c not in reserved for c in cells):
-                    reserved.update(cells)
-                    seed = int(h01(li, lj, 27) * 1000)
-                    wall = MADRID_WALLS[int(h01(seed, 25) * len(MADRID_WALLS))]
-                    lb.madrid_house(scene, li, lj, wi, wj, 4 + int(h01(seed, 29) * 2), wall, seed,
-                                    mansard_roof=h01(seed, 26) < 0.75, corner_dome=h01(seed, 28) < 0.07)
-                    break
+                if not all(kinds.get(c) == "lot" and c not in reserved for c in cells):
+                    continue
+                seed = int(h01(li, lj, 27) * 1000)
+                wall = MADRID_WALLS[int(h01(seed, 25) * len(MADRID_WALLS))]
+                # Lower houses on the near side of the Gran Vía and Calle de Alcalá let the avenues show.
+                low = lj == 36 and li < 45 or li == 48 and lj < 42
+                floors = 2 if low else 4 + int(h01(seed, 29) * 2)
+                house = lambda s, wi=wi, wj=wj: lb.madrid_house(
+                    s, li, lj, wi, wj, floors, wall, seed,
+                    mansard_roof=h01(seed, 26) < 0.75, corner_dome=h01(seed, 28) < 0.07)
+                ax, ay = scene.screen(li, lj)
+                x0, y0 = math.floor(ax - 60), math.floor(ay - 110)
+                study = iso.Scene(120, 180, (scene.ox - x0, scene.oy - y0))
+                house(study)
+                depth = max(o[0] for o in study.objects)
+                study.paint_objects()
+                img = study.img.convert("RGB")
+                l, t, r, b = img.getbbox()
+                pixels = img.load()
+                if covers(((sx + x0, sy + y0) for sy in range(t, b) for sx in range(l, r)
+                           if pixels[sx, sy] != (0, 0, 0)), depth):
+                    continue  # it would stand over a landmark: leave the ground open
+                house(scene)
+                reserved.update(cells)
+                break
 
     green = [round_tree(n) for n in range(3)]
     dark = [round_tree(n, "#4E9A3E", "#1E3A22") for n in range(2)]
     for (i, j), kind in kinds.items():
         x, y = scene.screen(i + 0.5, j + 0.5)
+        # A tree may stand beside a landmark, never over any of its painted pixels.
+        if covers(((x + dx, y + dy) for dx in range(-9, 10, 3) for dy in range(-16, 8, 3)), i + j + 1.5):
+            continue
         pick = None
         if kind == "grass" and h01(i, j, 31) < 0.42 and (i, j) not in reserved:
             pick = (dark if h01(i, j, 32) < 0.45 else green)[int(h01(i, j, 33) * 2)]
         elif kind == "quay" and i % 3 == 0:
             pick = green[i % 3]
+        elif kind == "gravel" and (i - j) in (17, 20) and (i + j) % 4 == 0:
+            pick = green[(i + j) % 3]  # the double rows of planes on the Prado and Recoletos
         elif kind == "cobble" and (i + j) % 5 == 0 and h01(i, j, 34) < 0.5:
             pick = green[(i + j) % 3]  # plane trees along the avenues
         if pick is not None:
             scene.add(i + j + 1.5, lambda s, img=pick, x=x, y=y: s.sprite(img, x, y + 6))
     boat = rowboat(0)
-    for a, b in ((77, 52), (80, 54), (76, 55)):
+    for a, b in ((57.5, 30), (59, 28.4), (60.4, 30.2)):
         x, y = scene.screen(a, b)
-        scene.add(a + b, lambda s, x=x, y=y: s.sprite(boat, x, y))
+        if not covers(((x + dx, y + dy) for dx in range(-6, 7) for dy in range(-6, 3)), a + b):
+            scene.add(a + b, lambda s, x=x, y=y: s.sprite(boat, x, y))
 
     scene.paint_objects()
     return scene.img.convert("RGB")
@@ -387,56 +451,72 @@ def bateau(seed):
 
 
 def paris():
-    ox = WIDTH / 2
-    oy = HEIGHT / 2 - CENTER_TILE * 2 * 4
-    scene = iso.Scene(WIDTH, HEIGHT, (ox, oy))
+    scene = new_scene()
 
-    # The Seine runs along the i axis (so bridges cross it squarely along j): the Right Bank lies at
-    # smaller j (upper right), the Left Bank at larger j (lower left). Upstream is smaller i.
-    def river_j(i):
-        return 44 + 2.5 * math.sin((i - 20) / 14)
+    # North up, west left, distances compressed. The Seine comes in from the east (lower right) past
+    # the Île de la Cité and Notre-Dame and flows west-north-west along -i (at j = RA), with the Louvre,
+    # the Tuileries and Concorde on its Right Bank (smaller j). West of Concorde it bends south-west
+    # along +j (at i = RB) past the Eiffel Tower on its Left Bank (larger i), the Champ de Mars behind
+    # it. The Champs-Élysées climbs along -i from Concorde to the Arc on its star; Montmartre and
+    # Sacré-Cœur rise in the north. Both reaches run on isometric axes, so bridges cross squarely.
+    RA, RB, HW = 46, 18, 2.8
+    ISLAND = (66, 83)  # the Île de la Cité, along i
+    montmartre = (30.5, 10.5)
+    concorde = (24.5, 38)
+    etoile = (10, 37.8)  # the centre of the Arc's footprint
+    louvre_at = (39, 26.5)
+    pond = (31, 36.5)  # the Tuileries' round basin
+    eiffel_at = (25, 62)
+    champs_j = 38
 
     def half_width(i):
-        return 2.8 + (4.2 if 17 <= i <= 31 else 0)  # wider around the Île de la Cité
+        return 7.2 if ISLAND[0] - 2 <= i <= ISLAND[1] + 2 else HW  # wider around the island
 
-    island = lambda i, j: 18.5 <= i <= 30.5 and abs(j - river_j(i)) <= 5.2
-    montmartre = (34, 8)
-    bridges = [(33, False), (47, False), (61, True), (73, False)]
-    streets_i = [14, 22, 51, 62]  # boulevards running along i (at these j)
-    streets_j = [20, 33, 52, 66, 84]  # boulevards running along j (at these i)
+    def river(i, j):
+        """Square (Chebyshev) distances from a tile's centre to the two reaches, so the bend has
+        square corners and every bank runs on an isometric axis."""
+        x, y = i + 0.5, j + 0.5
+        return max(abs(y - RA), RB - x), max(abs(x - RB), RA - y)
 
     kinds, elev = {}, {}
-    for i in range(-20, 120):
-        for j in range(-20, 120):
-            x, y = scene.screen(i, j)
-            if not (-16 < x < WIDTH + 16 and -50 < y < HEIGHT + 8):
-                continue
-            d = abs(j + 0.5 - river_j(i + 0.5))
-            hw = half_width(i)
-            hill = math.hypot((i - montmartre[0]) * 0.8, (j - montmartre[1]) * 0.8)
-            if island(i, j):
-                kind = "pave"
-            elif d <= hw:
-                kind = "water"
-            elif d <= hw + 1.2:
-                kind = "quay"
-            elif d <= hw + 2.4 or (j > river_j(i) and d <= hw + 8.5):
-                kind = "promenade"  # Left Bank kept open so its tall blocks never hide the river
-            elif hill < 7:
-                kind = "grass"
-            elif 49 <= i <= 58 and 26 <= j <= 38:
-                kind = "gravel"  # the Tuileries
-            elif 66 <= i <= 81 and 54 <= j <= 64:
-                kind = "grass"  # the Champ de Mars
-            elif any(abs(j - s) <= 0.7 for s in streets_i) or any(abs(i - s) <= 0.7 for s in streets_j) \
-                    or (58 <= i <= 64 and 30 <= j <= 32):
-                kind = "cobble"  # boulevards and the Champs-Élysées
-            else:
-                kind = "lot"
-            kinds[(i, j)] = kind
-            elev[(i, j)] = 14 if hill < 7 and kind == "grass" else 0
+    for i, j in visible_tiles(scene):
+        x, y = i + 0.5, j + 0.5
+        da, db = river(i, j)
+        hw = half_width(i)
+        hill = math.hypot(x - montmartre[0], y - montmartre[1]) * 0.8
+        di, dj = x - etoile[0], y - etoile[1]
+        star = math.hypot(di, dj)
+        if ISLAND[0] <= i <= ISLAND[1] and abs(y - (RA + 0.3)) <= 5.0:
+            kind = "island"
+        elif da <= hw or db <= HW:
+            kind = "water"
+        elif da <= hw + 1.2 or db <= HW + 1.2:
+            kind = "quay"
+        elif da <= hw + 2.4 or db <= HW + 2.4 or (x > RB and y > RA and (da <= hw + 8.5 or db <= HW + 8.5)):
+            kind = "promenade"  # the Left Bank kept open so its tall blocks never hide the river
+        elif hill < 7:
+            kind = "grass"
+        elif star < 6.5:
+            kind = "pave"  # Place de l'Étoile
+        elif star < 16 and min(abs(di), abs(dj), abs(di - dj) * 0.8, abs(di + dj) * 0.8) < 0.8:
+            kind = "cobble"  # the avenues radiating from the star
+        elif etoile[0] < x < concorde[0] and abs(y - champs_j) < 1.2:
+            kind = "cobble"  # the Champs-Élysées
+        elif etoile[0] < x < concorde[0] and abs(y - champs_j) < 2.2:
+            kind = "allee"  # its tree-lined side walks
+        elif 28 <= i <= 37 and 30 <= j <= 41:
+            kind = "gravel"  # the Tuileries
+        elif 28 <= i <= 42 and 58 <= j <= 66:
+            kind = "grass"  # the Champ de Mars
+        elif (j == 27 and 12 <= i <= 62) or (j == 19 and i >= 40) or (j == 68 and i >= 44) \
+                or (i == 58 and j < 38) or (i == 25 and j < 35) or (i == 52 and j > 60):
+            kind = "cobble"  # rue de Rivoli, the Grands Boulevards, Saint-Germain, Sébastopol, Royale
+        else:
+            kind = "lot"
+        kinds[(i, j)] = kind
+        elev[(i, j)] = 14 if hill < 7 and kind == "grass" else 0
 
-    reserved = set()
+    reserved, protected = set(), []
 
     def reserve(i, j, wi, wj, ground="pave"):
         for a in range(int(i), int(math.ceil(i + wi))):
@@ -445,22 +525,47 @@ def paris():
                 if kinds.get((a, b)) == "lot":
                     kinds[(a, b)] = ground
 
+    def place(build):
+        """Build a landmark and record its painted pixels and earliest draw depth, so nothing drawn
+        after it (houses, trees, boats) may cover it."""
+        build(scene)
+        study = iso.Scene(WIDTH + 200, HEIGHT + 200, (scene.ox + 100, scene.oy + 100))
+        build(study)
+        first = min(d for d, _, _ in study.objects)
+        study.paint_objects()
+        img = study.img.convert("RGB")
+        px = img.load()
+        l, t, r, b = img.getbbox()
+        sil = {(x - 100, y - 100) for x in range(l, r) for y in range(t, b) if px[x, y] != (0, 0, 0)}
+        protected.append((first, (l - 101, t - 101, r - 99, b - 99), sil))
+
+    def clear(depth, x0, y0, x1, y1):
+        """True when an object drawn at this depth over this screen box hides no landmark pixel."""
+        for first, (l, t, r, b), sil in protected:
+            if depth >= first and x1 > l and x0 < r and y1 > t and y0 < b:
+                if any((x, y) in sil for x in range(int(x0), int(x1) + 1) for y in range(int(y0), int(y1) + 1)):
+                    return False
+        return True
+
     # Landmarks.
-    lp.notre_dame(scene, 21.5, 37.0)
-    reserve(21, 37, 5, 10)
-    lp.louvre(scene, 34, 23)
-    reserve(33, 22, 16, 15)
-    lp.obelisk(scene, 59.5, 34.5)
-    reserve(58, 33, 3, 3)
-    lp.arc_de_triomphe(scene, 64.0, 28.5)
-    reserve(59, 23, 18, 17)  # Place de l'Étoile: the Arc stands in a wide open circle
-    lp.sacre_coeur(scene, montmartre[0] - 2, montmartre[1] - 2, 14)
-    lp.eiffel_tower(scene, 73.5, 58.5)
-    for i0, gilded in bridges:
-        rj = river_j(i0)
-        start = rj - half_width(i0) - 1.4
-        lp.stone_bridge(scene, i0, start, 2 * half_width(i0) + 2.8, gilded=gilded)
-        reserve(i0, start, 2, 2 * half_width(i0) + 2.8, ground="cobble")
+    place(lambda s: lp.sacre_coeur(s, montmartre[0] - 2, montmartre[1] - 2, 14))
+    place(lambda s: lp.louvre(s, *louvre_at))
+    reserve(louvre_at[0] - 1, louvre_at[1] - 1, 17, 16)
+    place(lambda s: lp.obelisk(s, *concorde))
+    reserve(concorde[0] - 3.5, concorde[1] - 3, 7, 6)  # Place de la Concorde
+    place(lambda s: lp.arc_de_triomphe(s, etoile[0] - 3, etoile[1] - 1.8))
+    place(lambda s: lp.eiffel_tower(s, *eiffel_at))
+    reserve(eiffel_at[0] - 3, eiffel_at[1] - 4, 6, 8)
+    place(lambda s: lp.notre_dame(s, 72.5, 39.8))
+    # Pont Alexandre III (gilded), Pont de la Concorde, Pont Royal, Pont des Arts, Pont Neuf.
+    for i0, gilded in ((22, True), (26, False), (36.5, False), (49, False), (67, False)):
+        hw = half_width(i0)
+        start = RA - hw - 1.4
+        lp.stone_bridge(scene, i0, start, 2 * hw + 2.8, gilded=gilded)
+        reserve(i0, start, 2, 2 * hw + 2.8, ground="cobble")
+    start = RB - HW - 1.4  # Pont d'Iéna, straight to the tower
+    lp.stone_bridge(scene, start, eiffel_at[1] - 0.8, 2 * HW + 2.8, along_i=True)
+    reserve(start, eiffel_at[1] - 0.8, 2 * HW + 2.8, 2, ground="cobble")
 
     # Ground, back to front.
     wall = iso.stone_wall(lp.STONE["dark"])
@@ -474,55 +579,67 @@ def paris():
                 return SEINE_WATER[1] if h01(x // 6, y // 2, 4) < 0.3 else SEINE_WATER[0]
             if k == "quay":
                 return lp.STONE["mid"] if (x + y) % 6 else lp.STONE["line"]
-            if k == "gravel":
+            if k in ("gravel", "allee"):
                 return shade(rgb("#E6DAB8"), -0.08) if h01(x, y, 6) < 0.15 else rgb("#E6DAB8")
-            if k == "promenade":
+            if k in ("promenade", "island"):
                 return ground_color("pave", x, y)
             return ground_color("pave" if k == "lot" else k, x, y)
         iso.ground_tile(scene, i, j, color, e, wall if e else None)
     # The Tuileries' round pond.
-    cx, cy = scene.screen(53.5, 32.5)
+    cx, cy = scene.screen(*pond)
     for dy in range(-6, 7):
         for dx in range(-12, 13):
             r = (dx / 12) ** 2 + (dy / 6) ** 2
             if r <= 1:
                 scene.put(cx + dx, cy + dy, lp.STONE["mid"] if r > 0.78 else SEINE_WATER[2] if (dx + dy) % 5 else rgb("#E4F4FA"))
 
-    # Haussmann blocks fill the remaining lots as continuous street walls.
+    # Haussmann blocks fill the remaining lots as continuous street walls, never in front of a landmark.
     for li in range(-12, 110, 4):
         for lj in range(-12, 110, 4):
             for wi, wj in ((3, 3), (3, 2), (2, 3), (2, 2)):
                 cells = [(a, b) for a in range(li, li + wi) for b in range(lj, lj + wj)]
                 if all(kinds.get(c) == "lot" and c not in reserved for c in cells):
-                    reserved.update(cells)
                     seed = int(h01(li, lj, 47) * 1000)
-                    lp.haussmann(scene, li, lj, wi, wj, seed, floors=4 + int(h01(seed, 3) * 2))
+                    floors = 4 + int(h01(seed, 3) * 2)
+                    left, right = scene.screen(li, lj + wj)[0], scene.screen(li + wi, lj)[0]
+                    top, bottom = scene.screen(li, lj)[1] - (10 + floors * 8) - 16, scene.screen(li + wi, lj + wj)[1]
+                    if not clear(li + lj + wi + wj, left, top, right, bottom):
+                        continue
+                    reserved.update(cells)
+                    lp.haussmann(scene, li, lj, wi, wj, seed, floors=floors)
                     break
 
-    # Trees: rows along the quays, boulevards and in the gardens; rowing the Tuileries' allées.
+    # Trees: rows along the quays and the Champs-Élysées, in the gardens and on Montmartre.
     green = [round_tree(n) for n in range(3)]
     chestnut = [round_tree(n, "#4E9A3E", "#1E3A22") for n in range(2)]
     for (i, j), kind in kinds.items():
-        x, y = scene.screen(i + 0.5, j + 0.5, elev[(i, j)])
+        if (i, j) in reserved:
+            continue
+        da, db = river(i, j)
+        edge = da <= half_width(i) + 2.6 or db <= HW + 2.6
         pick = None
-        if kind == "promenade" and (i % 3 == 0) and (abs(j - river_j(i)) < half_width(i) + 2.6
-                                                      or j % 3 == 0) and (i, j) not in reserved:
+        if kind == "promenade" and ((edge and (i + j) % 3 == 0) or (not edge and i % 3 == 0 and j % 3 == 0)):
             pick = green[i % 3]
-        elif kind == "gravel" and (i % 3 == 0) and (j % 3 == 0):
+        elif kind == "island" and i <= ISLAND[0] + 2 and (i + j) % 2 == 0:
+            pick = green[j % 3]  # the Square du Vert-Galant at the island's western tip
+        elif kind == "allee" and i % 2 == 0:
+            pick = chestnut[(i + j) % 2]
+        elif kind == "gravel" and (i % 3 == 0) and (j % 3 == 0) and math.hypot(i + 0.5 - pond[0], j + 0.5 - pond[1]) > 2.5:
             pick = chestnut[(i + j) % 2]
         elif kind == "grass" and elev[(i, j)] and h01(i, j, 61) < 0.25:
             pick = green[(i + j) % 3]
-        elif kind == "grass" and not elev[(i, j)] and (i in (66, 67, 80, 81) or j in (54, 64)) and (i + j) % 2 == 0:
+        elif kind == "grass" and not elev[(i, j)] and (i in (28, 42) or j in (58, 66)) and (i + j) % 2 == 0:
             pick = chestnut[(i + j) % 2]  # the Champ de Mars' tree-lined edges
         if pick is not None:
-            scene.add(i + j + 1.5, lambda s, img=pick, x=x, y=y: s.sprite(img, x, y + 6))
+            x, y = scene.screen(i + 0.5, j + 0.5, elev[(i, j)])
+            if clear(i + j + 1.5, x - 9, y - 14, x + 9, y + 6):
+                scene.add(i + j + 1.5, lambda s, img=pick, x=x, y=y: s.sprite(img, x, y + 6))
 
     boat = bateau(0)
-    for i0 in (12, 40, 55, 68, 84):
-        rj = river_j(i0)
-        if kinds.get((i0, int(rj))) == "water":
-            x, y = scene.screen(i0, rj)
-            scene.add(i0 + rj, lambda s, x=x, y=y: s.sprite(boat, x, y))
+    for a, b in [(i0, RA) for i0 in (31, 41, 54, 61, 88)] + [(RB, j0) for j0 in (56, 70)]:
+        x, y = scene.screen(a, b)
+        if kinds.get((int(a), int(b))) == "water" and clear(a + b, x - 12, y - 8, x + 12, y + 1):
+            scene.add(a + b, lambda s, x=x, y=y: s.sprite(boat, x, y))
 
     scene.paint_objects()
     return scene.img.convert("RGB")
@@ -535,22 +652,26 @@ import landmarks_berlin as be
 
 def berlin():
     scene = new_scene()
-    # A north-up illustration, with distances compressed. The Spree runs north-west to south-east
-    # along +i; its southern arm encloses Museum Island. Tiergarten stays west of the Gate.
-    # Screen-space anchors make the real cardinal relationships explicit (see the coordinate table
-    # in DEVELOPMENT_PLAN.md). Buildings themselves always use the 16×8 isometric tile axes.
+    # A north-up illustration, with distances compressed. The Spree enters from the south-east
+    # (Mühlendamm) south-west of the Rotes Rathaus, splits around Museum Island (main arm on the
+    # east side, Kupfergraben on the west), then runs west and bends around the Reichstag's north
+    # and east sides. Rathaus and TV Tower share the east (Alexanderplatz) bank. Tiergarten stays
+    # west of the Gate. Every reach follows an isometric axis so bridges cross squarely.
     def at(x, y):
         return tile_of((x - WIDTH / 2) / 8, (y - scene.oy) / 4)
 
     def river(i, j):
-        return abs(j - 25) < 2 or (37 <= i <= 52 and abs(j - 38) < 1.4) \
-            or (abs(i - 37) < 1.3 and 25 <= j <= 38) \
-            or (abs(i - 52) < 1.3 and 25 <= j <= 38)
+        return (i > 50.4 and abs(j - 38) < 2) \
+            or (37 <= i <= 52 and abs(j - 38) < 1.4) \
+            or (35.4 <= i <= 53.6 and abs(j - 25) < 2) \
+            or (abs(i - 52) < 1.6 and 23 <= j <= 40) \
+            or (abs(i - 37) < 1.6 and 23 <= j <= 43.5) \
+            or (i < 38.6 and abs(j - 41.5) < 2)
 
     kinds = {}
     for i, j in visible_tiles(scene):
         x, y = scene.screen(i + .5, j + .5)
-        island = 38.3 < i < 50.7 and 27 < j < 36.6
+        island = 38.6 < i < 50.4 and 27 < j < 36.6
         if river(i + .5, j + .5):
             kind = "water"
         elif any(river(i + .5 + di, j + .5 + dj) for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1))):
@@ -588,8 +709,8 @@ def berlin():
         half = (wi + wj) * 4 + 9
         protected.append((x - half, y - height, x + half, y + (wi + wj) * 2 + 12))
 
-    landmark(be.reichstag, 237, 275, 10, 6, 75)
-    landmark(be.brandenburg_gate, 267, 345, 8.2, 2, 70, forecourt=6)
+    landmark(be.reichstag, 224, 254, 10, 6, 75)
+    landmark(be.brandenburg_gate, 267, 357, 8.2, 2, 70, forecourt=6)
     landmark(be.berlin_cathedral, 469, 237, 7.4, 6.2, 85)
     landmark(be.rotes_rathaus, 572, 293, 7, 5, 95)
     landmark(be.konzerthaus, 389, 440, 8.5, 5.2, 70, forecourt=6)
@@ -600,10 +721,11 @@ def berlin():
         protected.append((x - 23, y - height, x + 23, y + 22))
 
     # Open cobbled forecourts keep the Gate, Gendarmenmarkt and Alexanderplatz readable.
-    for x, y, wi, wj in ((284, 369, 5, 6), (406, 473, 8, 6), (610, 219, 4, 6)):
+    for x, y, wi, wj in ((284, 381, 5, 6), (406, 473, 8, 6), (610, 219, 4, 6)):
         i, j = at(x, y)
         reserve(i - wi / 2, j - wj / 2, wi, wj)
-    for i, j, length in ((24, 22, 6), (46, 22, 6), (56, 22, 6), (43, 36, 4)):
+    # Moltkebrücke west of the Reichstag, Liebknecht- and Schlossbrücke to the island, Mühlendamm.
+    for i, j, length in ((20, 38.5, 6), (46, 22, 6), (43, 36, 4), (62, 35, 6)):
         lp.stone_bridge(scene, i, j, length, width=1.4)
         reserve(i - 1, j - 1, 3, length + 3, "cobble")
 
@@ -642,9 +764,9 @@ def berlin():
             pick = lindens[i % 3]
         if pick is not None:
             scene.add(i + j + 1.5, lambda s, img=pick, x=x, y=y: s.sprite(img, x, y + 5))
-    for i in (14, 31, 42, 62, 70):
-        x, y = scene.screen(i, 25)
-        scene.add(i + 25, lambda s, x=x, y=y: s.sprite(bateau(0), x, y))
+    for i, j in ((8, 41.5), (30, 41.5), (42, 25), (68, 38), (76, 38)):
+        x, y = scene.screen(i, j)
+        scene.add(i + j, lambda s, x=x, y=y: s.sprite(bateau(0), x, y))
 
     scene.paint_objects()
     return scene.img.convert("RGB")
@@ -660,13 +782,23 @@ def amsterdam():
     def at(x, y):
         return tile_of((x - WIDTH / 2) / 8, (y - scene.oy) / 4)
 
-    # North-up illustration. IJ/Oosterdok at the north; three compressed canal-belt elbows
-    # surround Dam. Each waterway segment follows i or j, including the Amstel at Magere Brug.
+    # North-up illustration. IJ/Oosterdok at the north; three compressed canal-belt rings
+    # (Herengracht, Keizersgracht, Prinsengracht) wrap Dam on the west, south-west and south, open
+    # to the IJ. Each ring has a north-west reach (i = west), a south-west reach (j = bank) and a
+    # southern reach (i = corner); Brouwersgracht joins their northern ends to the IJ.
+    # Prinsengracht steps west to east in front of the Westerkerk, so the Anne Frank House (north)
+    # and the church stand on its inner (east) quay with the water beside and in front of them.
+    # Each waterway segment follows i or j, including the Amstel at Magere Brug.
+    rings = ((37, 31, 56, 58), (33, 31, 68, 70), (27, 54, 80, 82))  # (west, top, bank, corner)
+
     def water(i, j):
         return i + j < 34 or (i > 48 and j < 30) \
-            or any((i <= corner and abs(j - bank) < 1.1)
+            or (i < rings[0][0] + 1.1 and abs(j - 31) < 1.1) \
+            or (abs(i - 19) < 1.1 and 31 <= j <= 55.1) or (17.9 <= i <= 28.1 and abs(j - 54) < 1.1) \
+            or any((abs(i - west) < 1.1 and top <= j <= bank + 1.1)
+                   or (west - 1.1 <= i <= corner and abs(j - bank) < 1.1)
                    or (j <= bank and abs(i - corner) < 1.1)
-                   for corner, bank in ((58, 56), (70, 68), (82, 80))) \
+                   for west, top, bank, corner in rings) \
             or (i > 60 and abs(j - 48.5) < 3.2)
 
     kinds = {}
@@ -710,20 +842,24 @@ def amsterdam():
                     kinds[(a, b)] = "pave"
 
     landmark(am.centraal_station, 496, 124, 13.5, 3.6, 69)
-    landmark(am.anne_frank_house, 242, 155, 2.8, 4.3, 48)
-    landmark(am.westerkerk, 198, 235, 6.5, 5, 103)
+    landmark(am.anne_frank_house, 230, 184, 2.8, 4.3, 48)
+    landmark(am.westerkerk, 166, 231, 6.5, 5, 103)
     landmark(am.oude_kerk, 468, 245, 5.8, 7.2, 93)
     landmark(am.royal_palace, 350, 300, 9.5, 5, 77, front=4)
     landmark(am.nemo, 612, 266, 8, 4.2, 45)
     landmark(am.rijksmuseum, 318, 457, 12, 5.8, 73)
 
-    # Dam Square lies east of the palace. Noordermarkt/Jordaan lanes stay open around the Westertoren.
-    for x, y, wi, wj in ((407, 320, 6, 6), (200, 273, 5, 4)):
+    # Dam Square lies east of the palace. Westermarkt stays open beside the Westertoren.
+    for x, y, wi, wj in ((407, 320, 6, 6), (180, 272, 4, 4)):
         i, j = at(x, y)
         reserve(i - wi / 2, j - wj / 2, wi, wj)
+    # The Anne Frank House's rear Annex stands behind its footprint; keep roofs off it.
+    i, j = at(230, 184)
+    reserve(i - 1.4, j - 4.5, 2.8, 2.5)
+    protected.append((236, 128, 278, 182))
 
     # Stone canal bridges along +j and the white double drawbridge across the wider Amstel.
-    for i, j, length in ((29, 53, 6), (43, 65, 6), (53, 77, 6)):
+    for i, j, length in ((45, 53, 6), (43, 65, 6), (53, 77, 6), (27, 29, 4)):
         lp.stone_bridge(scene, i, j, length, width=1.2, deck=5)
         reserve(i - 1, j - 1, 3, length + 2, "cobble")
     am.magere_brug(scene, 71, 43.5, length=10)
@@ -769,7 +905,8 @@ def amsterdam():
             continue
         if (kind == "promenade" and (i + j) % 5 == 0) or (kind == "grass" and h01(i, j, 91) < .23):
             scene.add(i + j + 1.5, lambda s, x=x, y=y, tree=elms[(i + j) % 3]: s.sprite(tree, x, y + 5))
-    for i, j in ((17, 56), (35, 68), (50, 80), (64, 48), (87, 48), (36, 12), (60, 14)):
+    for i, j in ((27, 64), (33, 46), (50, 56), (40, 68), (50, 80), (64, 48), (87, 48), (36, 12),
+                 (60, 14), (10, 31)):
         if kinds.get((i, j)) == "water":
             x, y = scene.screen(i, j)
             scene.add(i + j, lambda s, x=x, y=y: s.sprite(bateau(0), x, y))
@@ -1074,12 +1211,13 @@ def dublin():
     # Anchor centres retain the real sites' east/west and north/south ordering.
     landmark(irl.gpo, 400, 95, 12, 5, front=3)
     landmark(irl.custom_house, 600, 150, 14, 5, front=3)
-    landmark(irl.four_courts, 150, 235, 12, 5, front=3)
+    landmark(irl.four_courts, 112, 229, 12, 5, front=3)
     landmark(irl.hapenny_bridge, 365, 227.5, 2.2, 8.5, front=1)
-    landmark(irl.christ_church, 105, 355, 11, 5, front=2)
-    landmark(irl.dublin_castle, 310, 395, 13.8, 8, front=2)
+    # Christ Church lies just east of the Four Courts' longitude; St Patrick's is directly south of it.
+    landmark(irl.christ_church, 158, 349, 11, 5, front=2)
+    landmark(irl.dublin_castle, 326, 395, 13.8, 8, front=2)
     landmark(irl.trinity, 535, 330, 11, 8.8, front=2)
-    landmark(irl.st_patricks, 228, 478, 14.2, 6, front=2, ground='gravel')
+    landmark(irl.st_patricks, 160, 482, 14.2, 6, front=2, ground='gravel')
     paint_ground(scene, kinds, {}, (rgb('#447F87'), rgb('#346573')), irl.STONE['dark'])
 
     for li in range(-12, 112, 3):
@@ -1350,10 +1488,13 @@ def stockholm():
     def at(x, y):
         return tile_of((x - WIDTH / 2) / 8, (y - scene.oy) / 4)
 
-    # Compressed north-up island groups. Every bank follows i/j axes: Mälaren west,
+    # Compressed north-up island groups. Every bank follows i/j axes: Riddarfjärden west,
     # Norrström north of Gamla Stan, Riddarholmen west and Djurgården to the east.
+    # Kungsholmen's south shore runs along i = 36 and Klara sjö splits it from Norrmalm,
+    # so City Hall stands on the island's eastern tip with Riddarfjärden at its feet.
     def water(i, j):
-        mainland = i < 36 or (i < 40 and 19 < j < 30)
+        kungsholmen = i < 35 and j > 54.5
+        mainland = (i < 36 and j < 52) or kungsholmen or (i < 40 and 19 < j < 30)
         gamla_stan = 41 < i < 79 and 38 < j < (71 if i > 58 else 68)
         riddarholmen = 44 < i < 56 and 69 < j < 79
         djurgarden = (i > 38 and j < 16) or (i > 43 and j < 28)
@@ -1400,13 +1541,19 @@ def stockholm():
 
     # Ground anchors preserve the real longitude and latitude ordering, including the
     # palace/German Church's shared longitude and the closely spaced Djurgården museums.
-    landmark(se.nordiska, 640, 150, 5.2, 8.5)
+    landmark(se.nordiska, 633, 146, 12, 5.6)
     landmark(se.nationalmuseum, 450, 175, 7.8, 5)
     landmark(se.vasa_museum, 555, 225, 7.5, 6)
-    landmark(se.city_hall, 105, 225, 8.4, 5.4)
+    # City Hall on Kungsholmen's tip: its tower corner stands on the Riddarfjärden quay
+    # and the colonnade opens onto a garden that runs down to the water.
+    landmark(se.city_hall, *scene.screen(29.7, 60.6), 8.4, 5.4)
+    for a in range(26, 36):
+        for b in range(64, 68):
+            if kinds.get((a, b)) in ('lot', 'pave', 'cobble', 'promenade'):
+                kinds[(a, b)] = 'gravel' if b == 65 or a == 34 else 'grass'
     landmark(se.royal_palace, 385, 300, 9, 7)
     landmark(se.storkyrkan, 285, 390, 4.3, 6.3)
-    landmark(se.riddarholmen, 190, 420, 4.8, 6.5)
+    landmark(se.riddarholmen, 196, 428, 4.8, 6.5)
     landmark(se.german_church, 385, 480, 4, 5.8)
     # Stortorget's open cobbled square south of the cathedral, and palace forecourt.
     for x,y,wi,wj in ((305,427,6,4),(350,340,5,3)):
@@ -1427,6 +1574,9 @@ def stockholm():
             se.block(s,34,jj,9,.12,2,se.STONE,z=5)
     scene.add(34+48+10.4,north_bridge)
     reserve(33,47,11,4)
+    # Stadshusbron over Klara sjö, just north of City Hall.
+    lp.stone_bridge(scene, 30, 51.3, 3.9, width=1.3, deck=5)
+    reserve(29,50,3,6)
 
     for li in range(-12,112,3):
         for lj in range(-12,112,3):
@@ -1520,13 +1670,14 @@ def oslo():
     landmark(no.royal_palace,125,130,10,5)
     landmark(no.national_theatre,280,185,6.7,5.5)
     landmark(no.storting,420,235,7.7,5)
-    landmark(no.cathedral,565,280,5,6.8)
+    # The cathedral stands west of the Opera (about 370 m), east of the Storting.
+    landmark(no.cathedral,522,300,5,6.8)
     landmark(no.city_hall,195,340,8.4,5.3)
     landmark(no.akershus,340,465,9.2,6.4)
-    landmark(no.opera_house,535,410,9.5,6.3)
-    landmark(no.munch,660,480,3.2,2.9)
+    landmark(no.opera_house,553,414,9.5,6.3)
+    landmark(no.munch,662,484,3.2,2.9)
     # Open Rådhusplassen, Løvebakken and Stortorvet; never put tall houses before them.
-    for x,y,wi,wj in ((195,380,8,3),(430,280,6,3),(520,302,5,3)):
+    for x,y,wi,wj in ((195,380,8,3),(430,280,6,3),(460,314,5,3)):
         i,j=at(x,y)
         reserve(i-wi/2,j-wj/2,wi,wj)
 
@@ -1977,7 +2128,7 @@ def vienna():
     landmark(at.hofburg, 300, 285, 12, 4.5)
     landmark(at.opera, 370, 385, 8, 6)
     landmark(at.karlskirche, 490, 430, 8.2, 5.2)
-    landmark(at.belvedere, 625, 465, 12, 4.2)
+    landmark(at.belvedere, 618, 465, 15, 4.2)
     landmark(at.schonbrunn, 115, 470, 14, 4)
     # Stephansplatz, Heldenplatz and Karlsplatz are low paved forecourts.
     for x, y, wi, wj in ((505, 280, 6, 3), (275, 310, 8, 4), (470, 455, 6, 3)):
@@ -2392,34 +2543,68 @@ def luxembourg():
     def tile(x, y):
         return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
 
-    # Compressed Alzette bends around the Bock/Grund on alternating isometric axes.
-    path = [tile(x,y) for x,y in ((650,200),(530,260),(610,300),(410,400),(490,440),(650,520))]
-    bridge_i, bridge_j = tile(75,475)
-    stream_i = bridge_i
+    # The Ville Haute and the Kirchberg are raised plateaus cut by wooded gorges, all on
+    # isometric axes. The Pétrusse runs up the i = 49 line under the Adolphe Bridge to its
+    # confluence in the Grund; the Alzette arrives from the south along j = 47, turns past
+    # Neumünster towards Clausen below the Bock, then runs north through Pfaffenthal (j = 20)
+    # between the old town and the Kirchberg. Neumünster's Grund and the Bock's ravine are
+    # valley floor; the Bock rock rises from it beside the Castle Bridge.
+    UP = 30
+    PETRUSSE = [(49, 130), (49, 47)]
+    ALZETTE = [(120, 47), (49, 47), (49, 20), (-40, 20)]
+    GRUND = (49.5, 63, 35.5, 47)
+    BOCK = (36.3, 49, 21, 29.5)
 
-    def alzette(i,j,margin=0):
-        for (a,b),(c,d) in zip(path,path[1:]):
-            if abs(a-c)<.01 and min(b,d)-margin < j < max(b,d)+margin and abs(i-a)<.8+margin:
-                return True
-            if abs(b-d)<.01 and min(a,c)-margin < i < max(a,c)+margin and abs(j-b)<.8+margin:
-                return True
-        return False
+    def path_nearest(i, j, path):
+        best = (1e9, i, j)
+        for (a, b), (c, d) in zip(path, path[1:]):
+            ni, nj = min(max(i, min(a, c)), max(a, c)), min(max(j, min(b, d)), max(b, d))
+            best = min(best, (math.hypot(i-ni, j-nj), ni, nj))
+        return best
 
-    def water(i,j):
-        return alzette(i,j) or abs(i-stream_i)<.7 and j>bridge_j-24
+    def rect_nearest(i, j, rect):
+        i0, i1, j0, j1 = rect
+        ni, nj = min(max(i, i0), i1), min(max(j, j0), j1)
+        return math.hypot(i-ni, j-nj), ni, nj
 
-    kinds={}
-    for i,j in visible_tiles(scene):
-        x,y=scene.screen(i+.5,j+.5)
-        petrusse=abs(i-stream_i)<3.8 and j>bridge_j-24
-        if water(i+.5,j+.5):kind='water'
-        elif alzette(i+.5,j+.5,1):kind='quay'
-        elif alzette(i+.5,j+.5,2.5):kind='promenade'
-        elif petrusse or x>510 and y<190 or x<160 and y<230:
-            kind='gravel' if i%11==0 or j%11==0 else 'grass'
-        elif i%12==0 or j%12==0:kind='cobble'
-        else:kind='lot'
-        kinds[(i,j)]=kind
+    def terrain(i, j):
+        a, p = path_nearest(i, j, ALZETTE), path_nearest(i, j, PETRUSSE)
+        e = UP
+        for (d, ni, nj), floor in ((a, 2), (p, 1.4), (rect_nearest(i, j, GRUND), 0), (rect_nearest(i, j, BOCK), 0)):
+            low = d-floor
+            # Sandstone cliffs face the viewer across each gorge; the near side, which would
+            # otherwise hide the river, descends in gentle wooded terraces.
+            width = 5 if ni+nj < i+j-.3 else 1.5
+            e = min(e, 0 if low <= 0 else min(UP, 6*math.ceil(UP*low/width/6)))
+        return a[0], p[0], e
+
+    # Raised tiles are drawn up to UP pixels higher, so cover the bottom edge with extra rows.
+    tiles = [(i, j) for i in range(-20, 120) for j in range(-20, 120)
+             if -16 < scene.screen(i, j)[0] < WIDTH+16 and -50 < scene.screen(i, j)[1] < HEIGHT+8+UP]
+    kinds, elev = {}, {}
+    for i, j in tiles:
+        x, y = scene.screen(i+.5, j+.5)
+        a, p, e = terrain(i+.5, j+.5)
+        # Plateau edges standing in front of (below) a gorge stay open so the valley shows.
+        front = e == UP and any(terrain(i+.5-k, j+.5-k)[2] < UP for k in (1, 2, 3, 4, 5))
+        if a < 1.1 or p < .7:
+            kind = 'water'
+        elif e == 0:
+            kind = 'quay' if a < 1.9 or p < 1.3 else 'grass'
+        elif e < UP:
+            kind = 'wood'
+        elif front:
+            kind = 'rim' if terrain(i+.5-1, j+.5-1)[2] < UP else 'grass'
+        elif j+.5 < 20 and i+.5 < 49 or x < 150 and y < 200:
+            # Kirchberg's parkland round Fort Thüngen; the municipal park north-west.
+            kind = 'gravel' if i % 11 == 0 or j % 11 == 0 else 'grass'
+        elif i % 12 == 0 or j % 12 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+        if e:
+            elev[(i, j)] = e
 
     reserved,protected,silhouette=set(),[],set()
 
@@ -2429,76 +2614,111 @@ def luxembourg():
                 reserved.add((a,b))
                 if kinds.get((a,b))=='lot':kinds[(a,b)]='pave'
 
-    def landmark(builder,x,y,wi,wj):
-        ci,cj=tile(x,y)
-        i,j=ci-wi/2,cj-wj/2
-        builder(scene,i,j)
-        reserve(i-.8,j-.8,wi+1.6,wj+2)
-        study=iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
-        builder(study,i,j);study.paint_objects()
-        left,top,right,bottom=(v-100 for v in study.img.convert('RGB').getbbox())
-        assert 0<left<right<WIDTH and 0<top<bottom<HEIGHT,(builder.__name__,(left,top,right,bottom))
-        protected.append((left-4,top-4,right+4,bottom+5))
-        pixels=study.img.convert('RGB').load()
-        for sy in range(top+100,bottom+100):
-            for sx in range(left+100,right+100):
-                if pixels[sx,sy]!=(0,0,0):
-                    silhouette.update((sx-100+dx,sy-100+dy) for dx in range(-3,4) for dy in range(-3,4))
+    def landmark(builder, ci, cj, wi, wj, z=0):
+        i, j = ci-wi/2, cj-wj/2
+        build = (lambda s: builder(s, i, j, z=z)) if z else (lambda s: builder(s, i, j))
+        build(scene)
+        reserve(i-.8, j-.8, wi+1.6, wj+2)
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        build(study)
+        study.paint_objects()
+        left, top, right, bottom = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, (left, top, right, bottom))
+        protected.append((left-4, top-4, right+4, bottom+5))
+        pixels = study.img.convert('RGB').load()
+        for sy in range(top+100, bottom+100):
+            for sx in range(left+100, right+100):
+                if pixels[sx, sy] != (0, 0, 0):
+                    silhouette.update((sx-100+dx, sy-100+dy) for dx in range(-3, 4) for dy in range(-3, 4))
 
-    # Relative coordinate order is preserved in both axes, with distance compressed.
-    landmark(lu.philharmonie,635,85,9,6)
-    landmark(lu.mudam,530,165,9,6)
-    landmark(lu.bock,465,255,10,4.5)
-    landmark(lu.palace,290,275,9,3.5)
-    landmark(lu.abbey,425,375,10,7)
-    landmark(lu.cathedral,250,405,6,8)
-    landmark(lu.gelle_fra,170,430,3.8,3.8)
-    landmark(lu.adolphe_bridge,75,475,12,2.6)
+    # Relative coordinate order is preserved in both axes, with distance compressed. The Bock
+    # rock, Neumünster and the Adolphe Bridge stand on the valley floor; the rest on the plateaus.
+    landmark(lu.philharmonie, *tile(655, 100), 9, 6, UP)
+    landmark(lu.mudam, 35.5, 12.9, 9, 6, UP)
+    landmark(lu.bock, 42, 24.6, 10, 4.5)
+    landmark(lu.palace, 38.5, 48.5, 9, 3.5, UP)
+    landmark(lu.abbey, 55.5, 39.4, 10, 7)
+    landmark(lu.cathedral, 43.2, 64, 6, 8, UP)
+    landmark(lu.gelle_fra, 44.5, 75, 3.8, 3.8, UP)
+    landmark(lu.adolphe_bridge, 49.5, 82.5, 12, 2.6)
 
-    # Open Place de la Constitution, palace forecourt and the Corniche promenade.
-    for (i,j),kind in list(kinds.items()):
-        x,y=scene.screen(i+.5,j+.5)
-        if kind=='lot' and (120<x<210 and 350<y<450 or 210<x<350 and 275<y<305):
-            kinds[(i,j)]='cobble';reserved.add((i,j))
-    paint_ground(scene,{c:'pave' if k=='promenade' else k for c,k in kinds.items()},
-                 {},lu.WATER,lu.ROCK['dark'])
+    # Place de la Constitution round the Gëlle Fra and the palace's street front stay open.
+    for (i, j), kind in list(kinds.items()):
+        if kind in ('lot', 'pave', 'cobble') and (41 <= i <= 46 and 70 <= j <= 77 or 34 <= i <= 43 and 50 <= j <= 52):
+            kinds[(i, j)] = 'square'
+            reserved.add((i, j))
 
-    for li in range(-12,112,3):
-        for lj in range(-12,112,3):
-            wi,wj=2.5,3
-            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
-            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):continue
-            seed=int(h01(li,lj,613)*10000)
-            floors=2 if seed%3==0 else 3
-            x,y=scene.screen(li+wi/2,lj+wj/2)
-            half=(wi+wj)*4+7
-            if any(x+half>l and x-half<r and y+17>t and y-floors*11-30<b for l,t,r,b in protected):
-                ax,ay=scene.screen(li,lj)
-                x0,y0=math.floor(ax-50),math.floor(ay-80)
-                study=iso.Scene(100,140,(scene.ox-x0,scene.oy-y0))
-                lu.townhouse(study,li,lj,wi,wj,floors,seed)
+    rim, slope = iso.stone_wall(lu.ROCK['mid']), iso.stone_wall(rgb('#7F8A55'))
+    for (i, j) in sorted(kinds, key=lambda t: (t[0]+t[1], t[0])):
+        kind, e = kinds[(i, j)], elev.get((i, j), 0)
+        def color(x, y, k=kind):
+            if k == 'water':
+                if h01(x//3, y, 9) < .02:
+                    return lu.WATER[2]
+                return lu.WATER[1] if h01(x//6, y//2, 4) < .3 else lu.WATER[0]
+            if k == 'quay':
+                return rgb('#D8CDB2') if (x+y) % 6 else rgb('#B3A68C')
+            if k == 'rim':
+                return rgb('#CFC2A2') if (x+3*(y % 2)) % 8 else rgb('#B5A786')
+            if k == 'wood':
+                r = h01(x, y, 6)
+                return rgb('#5F8A3E') if r < .2 else rgb('#7FA94A') if r < .3 else rgb('#6E9A45')
+            if k == 'gravel':
+                return shade(rgb('#E6DAB8'), -.08) if h01(x, y, 6) < .15 else rgb('#E6DAB8')
+            if k == 'square':
+                return rgb('#C9C3B6') if (x+2*(y % 2)) % 6 else rgb('#B1AA9C') if y % 3 else rgb('#DAD4C8')
+            return ground_color('pave' if k == 'lot' else k, x, y)
+        iso.ground_tile(scene, i, j, color, e, (rim if e == UP else slope) if e else None)
+
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li+3) for b in range(lj, lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            up = {elev.get(c, 0) for c in cells}
+            if len(up) != 1:
+                continue
+            z = up.pop()
+            seed = int(h01(li, lj, 613)*10000)
+            floors = 2 if seed % 3 == 0 else 3
+            x, y = scene.screen(li+wi/2, lj+wj/2)
+            y -= z
+            half = (wi+wj)*4+7
+            if any(x+half > l and x-half < r and y+17 > t and y-floors*11-30 < b for l, t, r, b in protected):
+                ax, ay = scene.screen(li, lj)
+                x0, y0 = math.floor(ax-50), math.floor(ay-80-z)
+                study = iso.Scene(100, 140, (scene.ox-x0, scene.oy-y0))
+                lu.townhouse(study, li, lj, wi, wj, floors, seed, z)
                 study.paint_objects()
-                l,t,r,b=study.img.convert('RGB').getbbox()
-                pixels=study.img.convert('RGB').load()
-                if any((sx+x0,sy+y0) in silhouette and pixels[sx,sy]!=(0,0,0)
-                       for sy in range(t,b) for sx in range(l,r)):
+                l, t, r, b = study.img.convert('RGB').getbbox()
+                pixels = study.img.convert('RGB').load()
+                if any((sx+x0, sy+y0) in silhouette and pixels[sx, sy] != (0, 0, 0)
+                       for sy in range(t, b) for sx in range(l, r)):
                     continue
-            lu.townhouse(scene,li,lj,wi,wj,floors,seed)
+            lu.townhouse(scene, li, lj, wi, wj, floors, seed, z)
             reserved.update(cells)
 
-    trees=[round_tree(n,'#78975F','#304C36') for n in range(3)]
-    for (i,j),kind in kinds.items():
-        x,y=scene.screen(i+.5,j+.5)
-        if (i,j) in reserved or any(l-12<x<r+12 and t-3<y<b+25 for l,t,r,b in protected):continue
-        if kind=='grass' and h01(i,j,617)<.14 or kind=='promenade' and (i+j)%13==0:
-            scene.add(i+j+1.5,lambda s,x=x,y=y,tree=trees[(i+j)%3]:s.sprite(tree,x,y+4))
-    # One small rowing boat on the Alzette, away from the narrow Pétrusse stream.
-    bi,bj=tile(570,240)
-    x,y=scene.screen(bi,bj)
-    scene.add(bi+bj,lambda s:s.sprite(rowboat(0),x,y))
-    # A low square-crossing bridge in Grund, separate from the high Adolphe bridge.
-    ai,aj=path[4]
-    lp.stone_bridge(scene,ai-2,aj-2,4,width=1.2,deck=5)
+    # A low bridge into the Grund beside Neumünster, below the high Adolphe Bridge's level.
+    lp.stone_bridge(scene, 57.5, 45.7, 2.6, width=1.2, deck=5)
+    reserved.update((a, b) for a in range(56, 60) for b in range(44, 50))
+
+    trees = [round_tree(n, '#78975F', '#304C36') for n in range(3)]
+    woods = [round_tree(n, '#5C8F45', '#21391F') for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i+.5, j+.5)
+        y -= elev.get((i, j), 0)
+        # A tree may stand beside a landmark, never over any of its painted pixels.
+        if (i, j) in reserved or any((x+dx, y+dy) in silhouette for dx in range(-9, 10, 3) for dy in range(-18, 6, 3)):
+            continue
+        if kind == 'wood' and h01(i, j, 619) < .3:
+            scene.add(i+j+1.5, lambda s, x=x, y=y, tree=woods[(i+j) % 3]: s.sprite(tree, x, y+4))
+        elif kind == 'grass' and h01(i, j, 617) < .16 or kind == 'rim' and h01(i, j, 618) < .07:
+            scene.add(i+j+1.5, lambda s, x=x, y=y, tree=trees[(i+j) % 3]: s.sprite(tree, x, y+4))
+    # Rowing boats on the Alzette: in Pfaffenthal and upstream of the Grund.
+    for bi, bj in ((30.5, 20.3), (68.5, 47.3)):
+        x, y = scene.screen(bi, bj)
+        scene.add(bi+bj, lambda s, x=x, y=y: s.sprite(rowboat(0), x, y))
     scene.paint_objects()
     return scene.img.convert('RGB')
 
@@ -2736,13 +2956,30 @@ def tallinn():
             if ax<=x<=bx:return ay+(by-ay)*(x-ax)/(bx-ax)
         return -25
 
-    kinds={}
-    for i,j in visible_tiles(scene):
+    # Toompea, the limestone upper town, stands about 25 m above the Lower Town in the south-west.
+    # Its plateau follows the tile axes, so the eastern escarpment shows as a limestone cliff above
+    # Lühike jalg; a street runs along the foot of its northern rims, and a green strip along the cliff.
+    UP=next(site[5] for site in ee.SITES if site[0]=='toompea')
+    def hill(i,j):return 40<=i<=60 and j>=69
+
+    kinds,elev={},{}
+    # Plateau tiles just below the frame are kept, so its cut edge shows no wall.
+    below=[(i,j) for i in range(-20,120) for j in range(-20,120)
+           if hill(i,j) and HEIGHT+8<=scene.screen(i,j)[1]<HEIGHT+UP+16 and -16<scene.screen(i,j)[0]<WIDTH+16]
+    for i,j in list(visible_tiles(scene))+below:
         x,y=scene.screen(i+.5,j+.5)
         distance=y-shore(x)
         if distance<0:kind='water'
         elif distance<9:kind='quay'
         elif distance<22:kind='promenade'
+        elif hill(i,j):
+            elev[(i,j)]=UP
+            # Rampart walks along the northern rims; grass above the eastern cliff.
+            if not hill(i-1,j) or not hill(i,j-1):kind='rampart'
+            elif not hill(i+1,j):kind='grass'
+            else:kind='cobble' if i%7==0 or j%7==0 else 'lot'
+        elif any(hill(i+a,j+b) for a in range(5) for b in range(5)):kind='cobble'
+        elif any(hill(i-a,j) for a in (1,2,3)):kind='grass'
         elif x<265 and y>330 or x>530 and 180<y<330:
             kind='gravel' if i%10==0 or j%10==0 else 'grass'
         elif i%11==0 or j%11==0:kind='cobble'
@@ -2757,13 +2994,15 @@ def tallinn():
                 reserved.add((a,b))
                 if kinds.get((a,b))=='lot':kinds[(a,b)]='pave'
 
-    for _,builder,(wi,wj),_,(x,y) in ee.SITES:
+    lower=set()   # pixels of the Lower Town landmarks, which stand behind Toompea's rims
+    for _,builder,(wi,wj),_,(x,y),z in ee.SITES:
         ci,cj=tile(x,y)
         i,j=ci-wi/2,cj-wj/2
-        builder(scene,i,j)
+        build=(lambda s,b=builder,i=i,j=j,z=z:b(s,i,j,z=z)) if z else (lambda s,b=builder,i=i,j=j:b(s,i,j))
+        build(scene)
         reserve(i-1,j-1,wi+2,wj+2.5)
         study=iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
-        builder(study,i,j);study.paint_objects()
+        build(study);study.paint_objects()
         left,top,right,bottom=(v-100 for v in study.img.convert('RGB').getbbox())
         assert 0<left<right<WIDTH and 0<top<bottom<HEIGHT,(builder.__name__,(left,top,right,bottom))
         protected.append((left-4,top-4,right+4,bottom+5))
@@ -2772,41 +3011,72 @@ def tallinn():
             for sx in range(left+100,right+100):
                 if pixels[sx,sy]!=(0,0,0):
                     silhouette.update((sx-100+dx,sy-100+dy) for dx in range(-3,4) for dy in range(-3,4))
+                    if not z:lower.add((sx-100,sy-100))
 
     # Raekoja plats opens north of the hall; Viru street and Lossi plats are paved.
     for (i,j),kind in list(kinds.items()):
         x,y=scene.screen(i+.5,j+.5)
         if kind=='lot' and (370<x<500 and 270<y<355 or 475<x<635 and 355<y<415):
             kinds[(i,j)]='cobble';reserved.add((i,j))
-    paint_ground(scene,{c:'pave' if k=='promenade' else k for c,k in kinds.items()},
+    paint_ground(scene,{c:'pave' if k=='promenade' else k for c,k in kinds.items() if c not in elev},
                  {},ee.WATER,ee.STONE['dark'])
+    # Toompea's older, warmer limestone paving, painted after the Lower Town so it covers the ground
+    # behind the plateau; each tile's cliff face is limestone.
+    cliff=iso.stone_wall(ee.STONE['dark'])
+    for (i,j) in sorted(elev,key=lambda t:(t[0]+t[1],t[0])):
+        def color(x,y,k=kinds[(i,j)]):
+            if k=='rampart':return rgb('#DCD6C2') if (x+2*(y%2))%8 else rgb('#B8B19C')
+            if k=='cobble':return rgb('#978566') if (x+2*(y%2))%4==0 else rgb('#B5A27E')
+            if k in ('lot','pave'):return rgb('#CBB994') if (x+2*(y%2))%5 else rgb('#AD9B77')
+            return ground_color(k,x,y)
+        iso.ground_tile(scene,i,j,color,UP,cliff)
+    # The medieval curtain wall crowns the northern rims, with merlons on alternate tiles.
+    for (i,j),kind in kinds.items():
+        if kind!='rampart':continue
+        reserved.add((i,j))
+        # Leave a gap where the wall would cross in front of a landmark (St Nicholas below the rim).
+        x,y=scene.screen(i+.5,j+.5,UP)
+        if any((x+dx,y+dy) in lower for dx in range(-9,10) for dy in range(-14,6)):continue
+        for wall,along in (((i,j,1,.3),not hill(i,j-1)),((i,j,.3,1),not hill(i-1,j))):
+            if not along:continue
+            def parapet(s,a=wall,n=i+j):
+                ee.block(s,*a,6,ee.STONE,z=UP)
+                if n%2:ee.block(s,a[0]+(.3 if a[2]==1 else 0),a[1]+(.3 if a[3]==1 else 0),
+                                .4 if a[2]==1 else .3,.4 if a[3]==1 else .3,3,ee.STONE,z=UP+6)
+            scene.add(i+j+1,parapet)
+        reserved.add((i,j))
 
     for li in range(-12,112,3):
         for lj in range(-12,112,3):
             wi,wj=2.5,3
             cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
             if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):continue
+            up={elev.get(c,0) for c in cells}
+            if len(up)!=1:continue
+            z=up.pop()
             seed=int(h01(li,lj,1901)*10000)
-            floors=2 if seed%3 else 3
+            floors=2 if seed%3 or z else 3
             x,y=scene.screen(li+wi/2,lj+wj/2)
+            y-=z
             half=(wi+wj)*4+7
             if any(x+half>l and x-half<r and y+17>t and y-floors*10-33<b for l,t,r,b in protected):
                 ax,ay=scene.screen(li,lj)
-                x0,y0=math.floor(ax-50),math.floor(ay-90)
-                study=iso.Scene(100,150,(scene.ox-x0,scene.oy-y0))
-                ee.townhouse(study,li,lj,wi,wj,floors,seed);study.paint_objects()
+                x0,y0=math.floor(ax-50),math.floor(ay-100)
+                study=iso.Scene(100,160,(scene.ox-x0,scene.oy-y0))
+                ee.townhouse(study,li,lj,wi,wj,floors,seed,z);study.paint_objects()
                 l,t,r,b=study.img.convert('RGB').getbbox()
                 pixels=study.img.convert('RGB').load()
                 if any((sx+x0,sy+y0) in silhouette and pixels[sx,sy]!=(0,0,0)
                        for sy in range(t,b) for sx in range(l,r)):continue
-            ee.townhouse(scene,li,lj,wi,wj,floors,seed)
+            ee.townhouse(scene,li,lj,wi,wj,floors,seed,z)
             reserved.update(cells)
 
     trees=[round_tree(n,'#789664','#304E3B') for n in range(3)]
     for (i,j),kind in kinds.items():
         x,y=scene.screen(i+.5,j+.5)
+        y-=elev.get((i,j),0)
         if (i,j) in reserved or any(l-12<x<r+12 and t-3<y<b+25 for l,t,r,b in protected):continue
-        if kind=='grass' and h01(i,j,1948)<.12 or kind=='promenade' and (i+j)%11==0:
+        if kind=='grass' and h01(i,j,1948)<(.3 if (i,j) in elev else .12) or kind=='promenade' and (i+j)%11==0:
             scene.add(i+j+1.5,lambda s,x=x,y=y,tree=trees[(i+j)%3]:s.sprite(tree,x,y+4))
     # Kadriorg's formal flower beds, each low enough to leave the palace visible.
     for x,y in ((565,285),(585,300),(605,315),(670,310)):
@@ -2941,29 +3211,49 @@ def vilnius():
         return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
 
     # The Neris passes north of the castle hill and Old Town along an isometric
-    # axis. Its southern bank stays open; the two hill parks have separate lawns.
+    # axis. Its southern bank stays open. Castle Hill (Gediminas' Tower) and the higher Hill of
+    # Three Crosses east of it rise as wooded mounds with flat summits, a valley between them.
     def river_bank(x):
         return .5*x-170
 
-    kinds = {}
+    tops = {name: z for name, _, _, _, _, z in lt.SITES if z}
+    hills = [(480, 150, 96, 58, tops['gediminas']), (662, 222, 80, 60, tops['three-crosses'])]
+
+    def hill_height(x, y):
+        e = 0
+        for cx, cy, rx, ry, top in hills:
+            d = math.hypot((x-cx)/rx, (y-cy)/ry)
+            if d < 1:
+                # Flat summit, then a steep bank that eases out at the foot.
+                e = max(e, top if d < .45 else 3*round(top*((1-d)/.55)**.6/3))
+        return e
+
+    kinds, elev = {}, {}
     for i, j in visible_tiles(scene):
         x, y = scene.screen(i+.5, j+.5)
         bank = y-river_bank(x)
-        castle_hill = ((x-480)/72)**2+((y-147)/48)**2 < 1
-        crosses_hill = ((x-649)/64)**2+((y-202)/52)**2 < 1
         if -38 < bank < 0:
             kind = 'water'
         elif -48 < bank <= -38 or 0 <= bank < 10:
             kind = 'quay'
         elif -65 < bank <= -48 or 10 <= bank < 25:
             kind = 'promenade'
-        elif castle_hill or crosses_hill or x > 615 and 210 < y < 410:
+        elif hill_height(x, y) or x > 615 and 210 < y < 410 or 555 < x < 620 and 150 < y < 250:
+            # The Bernardine Garden and the Vilnia valley between the two hills are parkland.
             kind = 'grass'
+            if hill_height(x, y):
+                elev[(i, j)] = hill_height(x, y)
         elif i % 11 == 0 or j % 11 == 0:
             kind = 'cobble'
         else:
             kind = 'lot'
         kinds[(i, j)] = kind
+
+    def occluded(i, j):
+        """True where a hill in front (screen-below) rises over this low cell's ground."""
+        base = elev.get((i, j), 0)
+        return any(elev.get((i+a, j+b), 0)-base > 4*(a+b)-2
+                   for a in range(12) for b in range(12) if a+b and abs(a-b) <= 2)
 
     reserved, protected, silhouette = set(), [], set()
 
@@ -2974,14 +3264,15 @@ def vilnius():
                 if kinds.get((a, b)) == 'lot':
                     kinds[(a, b)] = 'pave'
 
-    for _, builder, (wi, wj), _, (x, y) in lt.SITES:
+    for _, builder, (wi, wj), _, (x, y), z in lt.SITES:
         ci, cj = tile(x, y)
         i, j = ci-wi/2, cj-wj/2
-        builder(scene, i, j)
+        build = (lambda s, b=builder, i=i, j=j, z=z: b(s, i, j, z=z)) if z else (lambda s, b=builder, i=i, j=j: b(s, i, j))
+        build(scene)
         reserve(i-1, j-1, wi+2, wj+2.5)
         # Measure the actual projected sculpture/roof silhouette, including tall spires.
         study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
-        builder(study, i, j)
+        build(study)
         study.paint_objects()
         left, top, right, bottom = (v-100 for v in study.img.convert('RGB').getbbox())
         assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, (left,top,right,bottom))
@@ -3002,17 +3293,28 @@ def vilnius():
         if kind == 'lot' and (square or pilies):
             kinds[(i,j)] = 'cobble'
             reserved.add((i,j))
-    paint_ground(scene, {c:'pave' if k=='promenade' else k for c,k in kinds.items()}, {}, lt.WATER, lt.STONE['dark'])
-
-    # A stone crossing perpendicular to the northern river, away from the skyline.
-    bi,bj = tile(525,river_bank(525)-8)
-    lp.stone_bridge(scene,bi-.85,bj-5,10,width=1.7,deck=6)
+    paint_ground(scene, {c:'pave' if k=='promenade' else k for c,k in kinds.items() if c not in elev},
+                 {}, lt.WATER, lt.STONE['dark'])
+    # The hills are painted over the low ground behind them, in depth order; their earthen,
+    # grassy slopes step up to the summits.
+    def slope(x, y, lit):
+        if h01(x//2, y, 2204) < .25:
+            return rgb('#7C6B4C') if lit else rgb('#54492F')
+        return rgb('#5C8A3E') if lit else rgb('#3E5F31')
+    for (i, j) in sorted(elev, key=lambda t: (t[0]+t[1], t[0])):
+        # Lower slopes are darker under the woods; the open summits are lit.
+        rise = elev[(i, j)]/max(tops.values())
+        iso.ground_tile(scene, i, j, lambda x, y, k=rise: shade(ground_color('grass', x, y), -.28+.3*k),
+                        elev[(i, j)], slope)
+    # No bridge here: the real crossings (Mindaugas Bridge) lie north-west of the castle, off the scene.
 
     for li in range(-12,112,3):
         for lj in range(-12,112,3):
             wi,wj = 2.5,3
             cells = [(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
             if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):
+                continue
+            if any(occluded(*c) for c in cells):
                 continue
             seed = int(h01(li,lj,2201)*10000)
             floors = 2 if seed%3 else 3
@@ -3033,8 +3335,20 @@ def vilnius():
             reserved.update(cells)
 
     trees = [round_tree(n,'#789361','#304C36') for n in range(3)]
+    woods = [round_tree(n,'#5F8A4A','#243D27',1.1) for n in range(3)]
     for (i,j),kind in kinds.items():
         x,y = scene.screen(i+.5,j+.5)
+        if occluded(i, j):
+            continue
+        if (i,j) in elev:
+            # Wooded slopes; a tree may stand beside a monument, never over any of its pixels.
+            y -= elev[(i,j)]
+            if (i,j) in reserved or any((x+dx,y+dy) in silhouette for dx in range(-9,10,3) for dy in range(-18,6,3)):
+                continue
+            summit = elev[(i,j)] in tops.values()
+            if h01(i,j,2205) < (.2 if summit else .55):
+                scene.add(i+j+1.5,lambda s,x=x,y=y,tree=woods[(i+j)%3]:s.sprite(tree,x,y+4))
+            continue
         if (i,j) in reserved or any(l-12<x<r+12 and t-3<y<b+25 for l,t,r,b in protected):
             continue
         if kind=='grass' and h01(i,j,2202)<.15 or kind=='promenade' and (i+j)%9==0:

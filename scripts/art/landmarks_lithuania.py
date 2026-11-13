@@ -14,6 +14,7 @@ from landmarks_amsterdam import gable_roof
 from landmarks_italy import cylinder, ellipse, column
 from landmarks_denmark import spire, clock
 from landmarks_slovakia import block, band, pediment
+from landmarks_estonia import lifted
 
 STONE = tones('#E7E1CF', '#C9C3AC', '#AFAB93', '#8D927F', '#626D5B', '#9CA087', '#414C3A')
 WHITE = tones('#FFF9E9', '#EEE5D0', '#D9CCB4', '#B7AA92', '#817660', '#C7B89B', '#514735')
@@ -116,7 +117,7 @@ def townhouse(scene,i,j,wi=2.5,wj=3,floors=3,seed=0):
     scene.add(i+j+wi+wj,draw)
 
 
-def gediminas(scene,i,j):
+def gediminas(scene,i,j,z=0):
     """Octagonal red-brick Upper Castle tower, stone foot, open terrace and tricolour."""
     def draw(s):
         # Low ruin and retaining stonework anchor the tower on its landscaped hill.
@@ -149,7 +150,7 @@ def gediminas(scene,i,j):
         octagonal(55,4,BRICK)
         ellipse(s,ci,cj,1.75,1.75,59.2,STONE['dark'])
         flag(s,ci,cj,60)
-    scene.add(i+j+15,draw)
+    scene.add(i+j+15,lifted(draw,z))
 
 
 def cathedral(scene,i,j):
@@ -335,7 +336,7 @@ def gate_of_dawn(scene,i,j):
     scene.add(i+j+18,draw)
 
 
-def three_crosses(scene,i,j):
+def three_crosses(scene,i,j,z=0):
     """Three monumental concrete crosses sharing a stepped curved hilltop plinth."""
     def draw(s):
         for z,r,h in ((0,2.3,3),(3,1.9,3),(6,1.6,3)):
@@ -345,24 +346,25 @@ def three_crosses(scene,i,j):
             block(s,a-.85,b-.2,1.7,.4,5,WHITE,z=8+h*.67)
             # Sculpted flared feet tie the three stems to the common base.
             block(s,a-.35,b-.27,.7,.54,7,WHITE,z=8)
-    scene.add(i+j+15,draw)
+    scene.add(i+j+15,lifted(draw,z))
 
 
-# name, builder, footprint, real (longitude,latitude), compressed north-up ground anchor.
+# name, builder, footprint, real (longitude,latitude), compressed north-up ground anchor, hilltop
+# elevation (Castle Hill and the higher Hill of Three Crosses).
 SITES=[
-    ('gediminas',gediminas,(7,6),(25.29069,54.68676),(480,150)),
-    ('three-crosses',three_crosses,(5,5),(25.2975,54.68639),(650,200)),
-    ('palace',palace,(11,7.5),(25.28889,54.68611),(390,250)),
-    ('cathedral',cathedral,(11,10),(25.28778,54.68583),(200,315)),
-    ('st-anne',st_anne,(6,9),(25.29326,54.68304),(565,365)),
-    ('st-johns',st_johns,(9,8),(25.28833,54.6825),(345,445)),
-    ('town-hall',town_hall,(9,7.5),(25.28694,54.67806),(100,465)),
-    ('gate-of-dawn',gate_of_dawn,(6,3),(25.28954,54.67432),(465,490)),
+    ('gediminas',gediminas,(7,6),(25.29069,54.68676),(480,150),30),
+    ('three-crosses',three_crosses,(5,5),(25.2975,54.68639),(652,216),38),
+    ('palace',palace,(11,7.5),(25.28889,54.68611),(390,250),0),
+    ('cathedral',cathedral,(11,10),(25.28778,54.68583),(200,315),0),
+    ('st-anne',st_anne,(6,9),(25.29326,54.68304),(565,365),0),
+    ('st-johns',st_johns,(9,8),(25.28833,54.6825),(345,445),0),
+    ('town-hall',town_hall,(9,7.5),(25.28694,54.67806),(100,465),0),
+    ('gate-of-dawn',gate_of_dawn,(6,3),(25.28954,54.67432),(465,490),0),
 ]
 
 
 def main():
-    for name,builder,_,_,_ in SITES:
+    for name,builder,_,_,_,_ in SITES:
         print(preview([lambda s,b=builder:b(s,4,4)],'vilnius-'+name,
                       size=(290,310),origin=(135,175),tiles=21))
     print(preview([lambda s,n=n:townhouse(s,3+n*3,3,2.5,3,2+n%2,n) for n in range(5)],

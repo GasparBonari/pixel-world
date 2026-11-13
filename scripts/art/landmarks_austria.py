@@ -375,27 +375,65 @@ def karlskirche(scene, i, j):
 
 
 def belvedere(scene, i, j):
-    """Upper Belvedere: sculpted central pavilion, rhythmic wings and four copper tent roofs."""
-    W, D = 12, 4.2
+    """Upper Belvedere: a long, low, symmetrical Baroque front whose roofline steps up in separate
+    copper roofs - octagonal domed corner pavilions with lanterns, low wings, and the tall curved
+    roof of the three-storey central pavilion - with the three arched carriage openings under a
+    segmental pediment and gilded arms, pilasters and framed windows."""
+    from landmarks_slovenia import revolve, DOME
+    W, D = 15, 4.2
+    WING, CORNER, CENTRE = 22, 25, 33
+    def front(height, bay=8):
+        base = windows(PALE, height, bay, 11)
+        def pattern(u, v, lit):
+            if int(u) % bay == 0:
+                return PALE['hi' if lit else 'mid']            # pilaster strips
+            return base(u, v, lit)
+        return pattern
     def draw(s):
-        block(s, i, j, W, D, 28, PALE, windows(PALE, 28, 10, 14, arcade=True))
-        hip_roof(s, i-.1, j-.1, W+.2, D+.2, 28, 8, COPPER)
-        for a, b in ((0, 0), (9.8, 0), (0, D-1.6), (9.8, D-1.6)):
-            block(s, i+a, j+b, 2.2, 1.8, 32, PALE, windows(PALE, 32, 8, 16))
-            mansard(s, i+a-.1, j+b-.1, 2.4, 2, 32, 13, .65, COPPER, dome=True)
-            spire(s, i+a+1.1, j+b+.9, .3, 45, 8, COPPER)
-        block(s, i+4, j+.3, 4, D+.3, 38, PALE, windows(PALE, 38, 10, 19, arcade=True))
-        mansard(s, i+3.85, j+.15, 4.3, D+.6, 38, 17, .9, COPPER, dormers=2, dome=True)
-        for a in (4.2, 5.25, 6.6, 7.65):
-            block(s, i+a, j+D+.65, .18, .2, 23, PALE, z=10)
-        # Undulating Baroque attic, a carved central shield, crest and stone figures.
-        pediment(s, i+4, j+D+.85, 4, 39, 11)
-        cylinder(s, i+6, j+D+.9, .36, .12, 44, 6, GOLD)
-        for a in (4.3, 7.7):
-            figure(s, i+a, j+D+.8, 42, PALE, 6)
-        spire(s, i+6, j+2.4, .42, 55, 8, COPPER)
-        for n in range(4):
-            block(s, i+4.5, j+D+1+n*.25, 3, .3, 4-n, STONE)
+        # Low wings under their own copper hips, the full length of the front.
+        block(s, i+1.8, j+.4, W-3.6, D-.8, WING, PALE, front(WING))
+        band(s, i+1.8, j+.4, W-3.6, D-.8, WING-2)
+        hip_roof(s, i+1.7, j+.3, W-3.4, D-.6, WING, 7, COPPER)
+        # Octagonal corner pavilions: mansard drum and ribbed copper dome with a lantern.
+        for a in (0, W-2.3):
+            cj = j+D-1.15
+            block(s, i+a, cj-1.15, 2.3, 2.3, CORNER, PALE, front(CORNER, 9))
+            band(s, i+a, cj-1.15, 2.3, 2.3, CORNER-2)
+            cylinder(s, i+a+1.15, cj, 1.0, 1.0, CORNER, 3, PALE,
+                     lambda u, v, lit: GLASS['dark'] if int(u) % 5 == 2 and v > .5 else None)
+            revolve(s, i+a+1.15, cj, 1.1, CORNER+3, 12, DOME, COPPER, ribs=1, segments=8)
+            cylinder(s, i+a+1.15, cj, .3, .3, CORNER+14, 4, PALE)
+            spire(s, i+a+1.15, cj, .32, CORNER+18, 6, COPPER)
+        # Central pavilion, projecting forward and rising a storey higher.
+        cw = 3.2
+        ca = i+(W-cw)/2
+        def centre(u, v, lit):
+            if lit and v < 13:
+                # Three tall arched carriage openings with rusticated piers.
+                c = int(u) % 9
+                o = arch_opening(c, v, 4.5, 2.8, 8, rgb('#4E4436'))
+                if o and 1 < u < cw*8-1:
+                    return o
+                return PALE['mid'] if int(v) % 3 == 0 else PALE['lit']
+            if int(u) % 9 in (0, 8):
+                return PALE['hi' if lit else 'mid']             # giant pilasters
+            return windows(PALE, CENTRE, 9, 10)(u, v, lit)
+        block(s, ca, j+1.4, cw, D-.9, CENTRE, PALE, centre)
+        band(s, ca, j+1.4, cw, D-.9, CENTRE-2)
+        # Tall curved (bell-shaped) copper roof with a lantern over the centre.
+        mansard(s, ca-.1, j+1.3, cw+.2, D-.7, CENTRE, 14, .9, COPPER, dome=True)
+        cylinder(s, ca+cw/2, j+D/2+.95, .32, .32, CENTRE+14, 4, PALE)
+        spire(s, ca+cw/2, j+D/2+.95, .36, CENTRE+18, 7, COPPER)
+        # Segmental pediment over the centre bay with the gilded arms, and attic figures.
+        fj = j+D+.52
+        n = 14
+        crest = [P(s, ca+.2+(cw-.4)*k/n, fj, CENTRE+8*math.sin(math.pi*k/n)) for k in range(n+1)]
+        poly(s, [P(s, ca+.2, fj, CENTRE)]+crest+[P(s, ca+cw-.2, fj, CENTRE)], lambda x, y: PALE['lit'])
+        for p, q in zip(crest, crest[1:]):
+            seg(s, p, q, PALE['hi'], 2)
+        cylinder(s, ca+cw/2, fj, .3, .1, CENTRE+1, 5, GOLD)
+        for k in range(3):
+            block(s, ca+.3, fj+k*.3, cw-.6, .32, 3-k, STONE)
     scene.add(i+j+W+D+2, draw)
 
 

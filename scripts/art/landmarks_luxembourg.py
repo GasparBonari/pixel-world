@@ -28,6 +28,20 @@ IRON, WOOD = rgb('#34404A'), rgb('#6C4E39')
 WATER = (rgb('#57878B'), rgb('#3C6A76'), rgb('#C4DCD0'))
 
 
+def lifted(scene, depth, draw, z=0):
+    """Queue a builder's draw z pixels up, for landmarks and houses on the raised plateaus."""
+    if not z:
+        scene.add(depth, draw)
+        return
+    def raised(s):
+        s.oy -= z
+        try:
+            draw(s)
+        finally:
+            s.oy += z
+    scene.add(depth, raised)
+
+
 def block(s, i, j, wi, wj, height, material=STONE, pattern=None, z=0):
     cover = facade(s, i, j, wi, wj, height, pattern or stone_courses(material, 4, 10), palette=material, z0=z)
     iso.fill(s, list(corners(s, i, j, wi, wj, z+height)), lambda x, y: material['mid'], cover)
@@ -64,7 +78,7 @@ def flag(s, i, j, z):
         poly(s, [P(s, i+a, j, z+13-n*2-b) for a,b in ((0,0),(1,0),(1,2),(0,2))],lambda x,y,c=color:c)
 
 
-def townhouse(scene, i, j, wi=2.5, wj=3, floors=3, seed=0):
+def townhouse(scene, i, j, wi=2.5, wj=3, floors=3, seed=0, z=0):
     """Ville Haute/Grund stucco: dressed sash windows, steep slate, dormers, iron and shops."""
     wall, H = palette_of(WALLS[seed % len(WALLS)]), floors*11+3
     base = windows(wall, H, 10, 11)
@@ -89,10 +103,10 @@ def townhouse(scene, i, j, wi=2.5, wj=3, floors=3, seed=0):
             hip_roof(s,i+.6,j+wj-.7,.75,.7,H+8,3,SLATE)
         block(s,i+wi-.65,j+.45,.42,.5,8,STONE,z=H+7)
         band(s,i+wi-.65,j+.45,.42,.5,H+14,SLATE)
-    scene.add(i+j+wi+wj,draw)
+    lifted(scene,i+j+wi+wj,draw,z)
 
 
-def palace(scene,i,j):
+def palace(scene,i,j,z=0):
     """Renaissance frontage: decorated pilasters, twin pointed turrets, stepped gable and balcony."""
     W,D,H=9,3.5,36
     def draw(s):
@@ -119,10 +133,10 @@ def palace(scene,i,j):
             seg(s,P(s,i+5.65+a*.22,j+D+.53,16),P(s,i+5.65+a*.22,j+D+.53,21),IRON)
         seg(s,P(s,i+5.6,j+D+.53,21),P(s,i+8.2,j+D+.53,21),IRON)
         flag(s,i+6.9,j+1.7,H+16)
-    scene.add(i+j+W+D+2,draw)
+    lifted(scene,i+j+W+D+2,draw,z)
 
 
-def cathedral(scene,i,j):
+def cathedral(scene,i,j,z=0):
     """Two tall slate spires and a slender copper crossing spire, Gothic transept, traceried glazing and carved portal."""
     W,D,H=6,8,31
     def draw(s):
@@ -152,7 +166,7 @@ def cathedral(scene,i,j):
         for a in (2,3,4):
             block(s,i+a-.11,fj+.2,.22,.3,13,PALE)
         for step in range(3):block(s,i+1.5,fj+.3+step*.28,3.1,.3,3-step,STONE)
-    scene.add(i+j+W+D+2,draw)
+    lifted(scene,i+j+W+D+2,draw,z)
 
 
 def adolphe_bridge(scene,i,j):
@@ -195,7 +209,7 @@ def adolphe_bridge(scene,i,j):
     scene.add(i+j+W+D+2,draw)
 
 
-def gelle_fra(scene,i,j):
+def gelle_fra(scene,i,j,z=0):
     """Granite obelisk, solid gilded woman holding a wreath, and bronze mourning soldiers."""
     def draw(s):
         for z,w in ((0,3.8),(2,3.1),(4,2.5)):
@@ -218,7 +232,7 @@ def gelle_fra(scene,i,j):
             extrude(s,[(i+a+u,9+v) for u,v in ((-.25,0),(.35,0),(.15,4),(.22,6),(-.12,7),(-.3,4))],j+3.4,.3,BRONZE)
         # Inscribed remembrance panel, deliberately no invented lettering.
         block(s,i+1.3,j+2.82,1.2,.08,3,BRONZE,z=8)
-    scene.add(i+j+8,draw)
+    lifted(scene,i+j+8,draw,z)
 
 
 def bock(scene,i,j):
@@ -311,7 +325,7 @@ def glass_peak(s,i,j,wi,wj,base,rise):
         seg(s,a,b,STEEL['lit']);seg(s,a,apex,STEEL['lit'])
 
 
-def mudam(scene,i,j):
+def mudam(scene,i,j,z=0):
     """Pei's honey limestone galleries, angular glass Grand Hall and faceted roof lantern."""
     W,D=9,6
     def glazing(u,v,lit):
@@ -333,10 +347,10 @@ def mudam(scene,i,j):
         # Broad recessed entrance and low stone stair.
         block(s,i+3.1,j+D,2.8,.3,14,GLAZE,lambda u,v,lit:STEEL['dark'] if int(u)%5==0 else GLAZE['dark'])
         for step in range(3):block(s,i+2.7,j+D+.3+step*.3,3.7,.35,3-step,STONE)
-    scene.add(i+j+W+D+3,draw)
+    lifted(scene,i+j+W+D+3,draw,z)
 
 
-def philharmonie(scene,i,j):
+def philharmonie(scene,i,j,z=0):
     """Elliptical white colonnade and sweeping shell of the chamber music hall."""
     ci,cj=i+4.5,j+3
     def draw(s):
@@ -373,7 +387,7 @@ def philharmonie(scene,i,j):
                     if m%2==0:seg(s,points[0],points[1],STEEL['mid'])
                     if n%3==0:seg(s,points[0],points[3],STEEL['mid'])
         for a in range(3):block(s,i+2+a*.8,j+5.5,.6,.2,9,GLAZE)
-    scene.add(i+j+18,draw)
+    lifted(scene,i+j+18,draw,z)
 
 
 STUDIES = [('palace',palace),('cathedral',cathedral),('adolphe-bridge',adolphe_bridge),

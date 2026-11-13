@@ -73,10 +73,27 @@ def cross(s,i,j,z,material=GOLD):
     seg(s,P(s,i-.25,j,z+5),P(s,i+.25,j,z+5),material['lit'])
 
 
+SLOVAK_ARMS = ("rrWrr",
+               "rWWWr",     # shorter upper bar of the double cross
+               "rrWrr",
+               "WWWWW",     # longer lower bar
+               "rrWrr",
+               "bbbbb",     # three blue hills
+               " bbb ")
+
+
 def flag(s,i,j,z):
-    seg(s,P(s,i,j,z),P(s,i,j,z+14),IRON)
-    for n,c in enumerate((WHITE['hi'],rgb('#5278A7'),rgb('#C76A60'))):
-        poly(s,[P(s,i+a,j,z+13-n*2-b) for a,b in ((0,0),(1,0),(1,2),(0,2))],lambda x,y,c=c:c)
+    """Slovak flag: white, blue and red stripes with the coat of arms (white double cross on three
+    blue hills, red shield, white border) toward the hoist, so it never reads as a plain tricolour."""
+    seg(s,P(s,i,j,z),P(s,i,j,z+16),IRON)
+    for n,c in enumerate((WHITE['hi'],rgb('#3B62A8'),rgb('#D2463C'))):
+        poly(s,[P(s,i+a,j,z+15-n*3-b) for a,b in ((0,0),(1.7,0),(1.7,3),(0,3))],lambda x,y,c=c:c)
+    x0,y0=P(s,i+.3,j,z+14)
+    colours={'W':WHITE['hi'],'r':rgb('#C8322E'),'b':rgb('#2F55A0')}
+    for dy,row in enumerate(SLOVAK_ARMS):
+        for dx,ch in enumerate(row):
+            if ch!=' ':
+                s.put(x0+dx,y0+dy+int(dx*.5),colours[ch])
 
 
 def townhouse(scene,i,j,wi=2.5,wj=3,floors=3,seed=0):

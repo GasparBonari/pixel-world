@@ -316,49 +316,84 @@ def vasa_museum(scene,i,j):
     scene.add(i+j+15,draw)
 
 
+GREY = tones('#F2EFE6', '#DDD8CB', '#C5BFB0', '#A39D8E', '#767060', '#ADA797', '#46423A')
+
+
+def helm(s, ci, cj, profile, material=COPPER):
+    """Square turned roof: (z, half-width) stages drawn back to front, with ribs and seams."""
+    for (z0, r0), (z1, r1) in zip(profile, profile[1:]):
+        a0 = [P(s, ci + di * r0, cj + dj * r0, z0) for di, dj in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+        a1 = [P(s, ci + di * r1, cj + dj * r1, z1) for di, dj in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+        # Faces: -j (T-R, dark), -i (T-L, mid), +i (R-B, dark), +j (L-B, lit).
+        for (p, q), key in (((0, 1), 'dark'), ((3, 0), 'mid'), ((1, 2), 'dark'), ((3, 2), 'lit')):
+            pts = [a0[p], a0[q], a1[q], a1[p]]
+            poly(s, pts, lambda x, y, key=key: material['line'] if int(y) % 4 == 0
+                 else material['hi'] if key == 'lit' and int(x) % 5 == 0 else material[key])
+        for k, key in ((3, 'hi'), (2, 'outline'), (1, 'deep')):
+            seg(s, a0[k], a1[k], material[key])
+
+
 def nordiska(scene,i,j):
-    """Castle-like museum hall, sculpted end gable, turrets and two staged copper spires."""
+    """Clason's Nordic-Renaissance palace: a long grey-stone front, stepped and volute end gables,
+    copper roofs, corner turrets and the great central tower with its copper helm and lantern."""
+    W,D,PW,H=12,4.6,2.4,80
+    def banded(pattern,bands):
+        def inner(u,v,lit):
+            if int(v) in bands:
+                return PALE['lit' if lit else 'dark']
+            return pattern(u,v,lit)
+        return inner
     def draw(s):
-        block(s,i,j,5.2,8.5,41,STONE,windows(STONE,41,bay=10,floor=13,arched=True))
-        gable_roof(s,i,j,5.2,8.5,41,29,IRON,STONE,'bell')
-        # Sandstone dressings and tall projecting buttresses down the long wall.
-        for b in (j+.4,j+2.3,j+4.2,j+6.2,j+8):
-            block(s,i+5.18,b,.24,.3,40,PALE)
-        for a,b in ((i+.1,j+7.1),(i+3.8,j+.6)):
-            block(s,a,b,1.3,1.3,65,STONE,windows(STONE,65,bay=8,floor=13,arched=True))
-            spire(s,a+.65,b+.65,1,65,49,COPPER,onion=True)
-            block(s,a-.1,b-.1,1.5,1.5,2,COPPER,z=72)
-            block(s,a-.02,b-.02,1.34,1.34,2,COPPER,z=85)
-            for di,dj in ((0,0),(1.3,0),(0,1.3),(1.3,1.3)):
-                spire(s,a+di,b+dj,.16,73,11,COPPER)
-        # Raised gable cartouche, three traceried lights and a dressed round entrance.
-        block(s,i+1.1,j+8.61,3,.16,2,PALE,z=46)
-        cylinder(s,i+2.6,j+8.65,.35,.08,54,5,PALE)
-        block(s,i+1.7,j+8.5,1.8,.4,15,PALE,
-              lambda u,v,lit:arch_opening(u,v,7,5,10,WOOD) if lit else None)
-        for k in range(5):
-            block(s,i+1.4,j+8.9+k*.2,2.4,.21,5-k,STONE)
-        for a,b in ((i+.2,j+.1),(i+4.8,j+8.3)):
-            spire(s,a,b,.45,44,23,COPPER)
-        # The broad sculpted end gable rises in rounded steps above the hall roof.
-        profile=[(0,0),(.06,.2),(.18,.24),(.18,.43),(.3,.48),(.3,.7),
-                 (.4,.74),(.4,.9),(.47,1),(.53,1),(.6,.9),(.6,.74),
-                 (.7,.7),(.7,.48),(.82,.43),(.82,.24),(.94,.2),(1,0)]
-        front=[P(s,i+.2+u*4.8,j+8.66,41+v*35) for u,v in profile]
-        back=[P(s,i+.2+u*4.8,j+8.5,41+v*35) for u,v in profile]
-        for a in range(len(profile)-1):
-            poly(s,[back[a],back[a+1],front[a+1],front[a]],lambda x,y:STONE['dark'])
-        foot=P(s,i+.2,j+8.66,41)
-        joints=stone_courses(STONE,4,9)
-        poly(s,front,lambda x,y:joints(x-foot[0],foot[1]+(x-foot[0])*.5-y,True) or STONE['lit'])
-        for a,b in zip(front,front[1:]):
-            seg(s,a,b,PALE['lit'])
-        for z,width in ((46,2.5),(53,1.7),(62,.8)):
-            block(s,i+2.6-width/2,j+8.68,width,.1,1.5,PALE,z=z)
-        for a,z in ((i+1.7,47),(i+3,47),(i+2.35,57)):
-            block(s,a,j+8.7,.45,.1,5,PALE,
-                  lambda u,v,lit:GLASS['dark'] if lit and 1<int(u)<3 and 1<v<4 else None,z=z)
-    scene.add(i+j+16,draw)
+        def pavilion(a,style):
+            block(s,a,j-.2,PW,D+.2,36,GREY,
+                  banded(windows(GREY,36,bay=9,floor=14,arched=True),(14,15,29)))
+            gable_roof(s,a,j-.2,PW,D+.2,36,22,COPPER,GREY,style)
+        pavilion(i,'step')
+        # The long hall between the end pavilions, under a steep copper roof with dormers.
+        block(s,i+PW,j+.4,W-2*PW,D-.8,30,GREY,banded(windows(GREY,30,bay=9,floor=14,arched=True),(14,15)))
+        hip_roof(s,i+PW-.1,j+.2,W-2*PW+.2,D-.4,30,17,COPPER)
+        for a in (i+PW+.5,i+W-PW-1.5):
+            block(s,a,j+D-1.4,1,.8,9,GREY,windows(GREY,9,bay=8,floor=9),z=30)
+            gable_roof(s,a,j+D-1.4,1,.8,39,6,COPPER,GREY,'step')
+        pavilion(i+W-PW,'neck')
+        # Copper-capped turrets on the outer front corners.
+        for a,b in ((i+.05,j+D-.05),(i+W-.05,j+D-.05)):
+            cylinder(s,a,b,.38,.38,0,44,GREY,stone_courses(GREY,4,6))
+            block(s,a-.44,b-.44,.88,.88,2,PALE,z=44)
+            spire(s,a,b,.55,46,20,COPPER)
+        # The great central tower: arched portal, stone stages, corner pinnacles and helm.
+        ti,tj,tw,td=i+W/2-1.05,j+D-1.8,2.1,2.4
+        upper=tower_windows(GREY,H,19,(60,71))
+        def tower(u,v,lit):
+            if int(v) in (20,21,38,39,55,56):
+                return PALE['lit' if lit else 'dark']
+            # Dressed quoins up both corners and a tall arched window over the portal.
+            edge=min(u,(tw if lit else td)*8-u)
+            if edge<(3 if int(v)//4%2 else 2):
+                return PALE['hi' if lit else 'mid'] if int(v)%4 else GREY['line']
+            if lit and 23<=v<=37 and abs(u-tw*4)<=3:
+                return (PALE['lit'] if abs(u-tw*4)>2.5 or int(v) in (23,30) or int(u)==int(tw*4)
+                        else GLASS['mid'])
+            if lit and v<20:
+                return (arch_opening(u,v,9.6,3.5,9,WOOD) or
+                        arch_opening(u,v,9.6,5,9,PALE['hi']) or stone_courses(GREY,4,6)(u,v,lit))
+            return upper(u,v,lit)
+        block(s,ti,tj,tw,td,H,GREY,tower)
+        block(s,ti-.15,tj-.15,tw+.3,td+.3,3,PALE,z=H)
+        ci,cj=ti+tw/2,tj+td/2
+        spire(s,ti,tj,.25,H+3,13,COPPER,conical=True)
+        # Bell-curved copper helm, an open lantern, an ogee cap and a gilded needle.
+        helm(s,ci,cj,[(H+3,1.45),(H+6,1.38),(H+11,1.15),(H+17,.82),(H+22,.6),(H+24,.5)])
+        block(s,ci-.55,cj-.55,1.1,1.1,1.5,COPPER,z=H+24)
+        for di,dj in ((-.5,-.5),(.35,-.5),(-.5,.35),(.35,.35)):
+            block(s,ci+di,cj+dj,.15,.15,9,COPPER,z=H+25)
+        helm(s,ci,cj,[(H+34,.62),(H+36,.55),(H+39,.4),(H+41,.2),(H+43,.12),(H+56,.02)])
+        cylinder(s,ci,cj,.13,.13,H+42,2,GOLD)
+        for di,dj in ((tw,0),(0,td),(tw,td)):
+            spire(s,ti+di,tj+dj,.25,H+3,13,COPPER,conical=True)
+        for k in range(4):
+            block(s,ti+.4,tj+td+k*.22,tw-.8,.23,4-k,GREY)
+    scene.add(i+j+W+D,draw)
 
 
 STUDIES = [('city-hall',city_hall),('royal-palace',royal_palace),('storkyrkan',storkyrkan),
