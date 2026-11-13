@@ -21,6 +21,73 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Slovakia marks Bratislava, spaced cities and Spiš Castle within its bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'bratislava');
+  assert.deepEqual(region.bounds, [16.8, 47.7, 22.6, 49.65]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
+  // Pinned Natural Earth capital and population order; the 75 km filter also
+  // excludes Prešov near Košice and Banská Bystrica near Zvolen.
+  const cities = [[17.117, 48.15], [21.25, 48.7304], [18.7494, 49.2198], [19.1332, 48.5837]];
+  assert.deepEqual(at(...cities[0]).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  for (const site of cities.slice(1, 3))
+    assert.deepEqual(at(...site).map((i) => icons.names[i[0]]).sort(), ['church', 'house', 'house']);
+  assert.deepEqual(at(...cities[3]).map((i) => icons.names[i[0]]), ['church']);
+  assert.equal(at(20.7683, 49.0006).filter((i) => icons.names[i[0]] === 'spis-castle').length, 1);
+  const trees = [[19.375, 49.375], [21.375, 49.375], [18.375, 48.875], [22.375, 48.875],
+    [17.375, 48.625], [19.875, 48.625], [18.375, 48.125]];
+  for (const site of trees)
+    assert.equal(at(...site).filter((i) => icons.names[i[0]] === 'oak').length, 1);
+  for (const [lon, lat] of [...cities, ...trees, [20.7683, 49.0006]]) {
+    const [w, south, e, north] = region.bounds;
+    assert.ok(w <= lon && lon <= e && south <= lat && lat <= north);
+  }
+  for (let a = 0; a < cities.length; a++) for (let b = a+1; b < cities.length; b++) {
+    const radians = (n) => n*Math.PI/180;
+    const [lon, lat] = cities[a], [otherLon, otherLat] = cities[b];
+    const h = Math.sin(radians(otherLat-lat)/2)**2 + Math.cos(radians(lat))*Math.cos(radians(otherLat))
+      * Math.sin(radians(otherLon-lon)/2)**2;
+    assert.ok(6371*2*Math.atan2(Math.sqrt(h), Math.sqrt(1-h)) >= 75);
+  }
+  assert.deepEqual(icons.frames[icons.names.indexOf('spis-castle')].slice(2), [50, 52]);
+  const [w, south, e, north] = region.bounds;
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat'
+    && w <= i[1] && i[1] <= e && south <= i[2] && i[2] <= north).length, 0);
+});
+
+test('Bratislava arrival and panning keep the selected scene beside Vienna', () => {
+  const city = scenes.find((s) => s.id === 'bratislava');
+  assert.equal(city.name, 'Bratislava');
+  assert.equal(city.country, 'Slovakia');
+  assert.deepEqual([city.width, city.height], [720, 520]);
+  assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(21.25, 48.7304), COUNTRY_ZOOM.max); // Košice remains country-only.
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens stays uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
+    const focal = globePoint(city.longitude, city.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom+.3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(camera.activeCapital(current).id, 'bratislava');
+    assert.equal(camera.activeCapital({ ...current, longitude: 16.3738, latitude: 48.2082 }).id, 'bratislava');
+    const arrived = globePoint(city.longitude, city.latitude, current, viewport);
+    assert.ok(Math.hypot(arrived.x-focal.x, arrived.y-focal.y) < 1);
+    for (const [dx, dy] of [[50, 0], [-50, 0], [0, 50], [0, -50]]) {
+      for (let step = 0; step < 100; step++)
+        current = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      assert.equal(camera.activeCapital(current).id, 'bratislava');
+      const rect = capitals.capitalRect(city, current, viewport, 2);
+      assert.ok(rect.x <= .5 && rect.y <= .5);
+      assert.ok(rect.x+rect.width >= viewport.width-.5 && rect.y+rect.height >= viewport.height-.5);
+      const beyond = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      const stopped = capitals.capitalRect(city, beyond, viewport, 2);
+      assert.ok(Math.abs(stopped.x-rect.x) < .01 && Math.abs(stopped.y-rect.y) < .01);
+    }
+    assert.equal(camera.activeCapital({ ...current, zoom: 6.2 }), undefined);
+  }
+});
+
 test('Luxembourg marks its capital, Vianden and only domestic decorations', () => {
   const region = COVERAGE.find((c) => c.id === 'luxembourg');
   assert.deepEqual(region.bounds, [5.7, 49.4, 6.55, 50.2]);

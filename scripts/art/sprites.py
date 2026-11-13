@@ -1967,6 +1967,43 @@ def vianden(seed=0):
     return scene.img
 
 
+def spis_castle(seed=0):
+    """Spiš Castle: roofless palas, round donjon and long irregular lower curtain on limestone."""
+    import iso
+    from landmarks_slovakia import block, STONE, ROCK, WHITE
+    from landmarks_paris import P, poly
+    from landmarks_iberia import crenellate, stone_courses
+    from landmarks_italy import cylinder
+
+    scene=iso.Scene(50,52,(27,31))
+    shadow=Sprite(50,52)
+    ground_shadow(shadow,25,49,21,1.2)
+    scene.img=shadow.image();scene.px=scene.img.load()
+    # Limestone promontory: higher upper ward to the west, lower terraces to the east.
+    top=[P(scene,a,b,z) for a,b,z in ((-1.5,-.6,4),(-.2,-.8,6),(2.1,-.1,2),(2.4,1.2,2),(.2,1.6,4),(-1.7,.8,4))]
+    base=[P(scene,a,b,0) for a,b in ((-1.8,-.8),(-.2,-1),(2.3,-.2),(2.6,1.4),(.2,1.9),(-2,.9))]
+    poly(scene,top,lambda x,y:ROCK['lit'])
+    for n,key in ((2,'dark'),(3,'dark'),(4,'lit'),(5,'lit')):
+        poly(scene,[top[n],top[(n+1)%6],base[(n+1)%6],base[n]],
+             lambda x,y,k=key:ROCK['line'] if (int(x)+int(y)*2)%7==0 else ROCK[k])
+    def slits(u,v,lit):
+        if int(u)%6 in (2,3) and 5<v<10:return STONE['deep']
+        return stone_courses(STONE,3,7)(u,v,lit)
+    # Roofless rectangular Romanesque palace, open square ward and broken wall tops.
+    for a,b,w,d in ((-1.3,-.5,1.45,.22),(-1.3,-.3,.22,1.1),(-.1,-.3,.25,1.1),(-1.1,.6,1.15,.22)):
+        cover=block(scene,a,b,w,d,13,STONE,slits,z=5)
+        crenellate(scene,a,b,w,d,18,STONE,cover,step=4,height=2)
+    cylinder(scene,.35,.35,.35,.35,5,16,STONE,slits,cap=False)
+    cylinder(scene,.35,.35,.37,.37,20,1,WHITE,cap=False)
+    # Round keep's dark open top, with a lit inner edge rather than a roof.
+    poly(scene,[P(scene,.35+.22*math.cos(t*math.tau/16),.35+.22*math.sin(t*math.tau/16),21) for t in range(16)],lambda x,y:STONE['deep'])
+    for a,b,w,d in ((.1,-.45,1.7,.18),(1.7,-.3,.22,1.4),(.1,1.08,1.8,.2)):
+        cover=block(scene,a,b,w,d,6,STONE,slits,z=2)
+        crenellate(scene,a,b,w,d,8,STONE,cover,step=4,height=2)
+    block(scene,1.4,.85,.4,.4,8,STONE,slits,z=2)
+    return scene.img
+
+
 FAUNA = {
     "deer": deer, "fox": fox, "elephant": elephant, "zebra": zebra, "panda": panda,
     "tiger": tiger, "bison": bison, "moose": moose, "jaguar": jaguar, "capybara": capybara,
@@ -1997,6 +2034,7 @@ ICONS = {
     "karlstejn": karlstejn,
     "malbork": malbork,
     "vianden": vianden,
+    "spis-castle": spis_castle,
     **FLORA, **FAUNA,
 }
 

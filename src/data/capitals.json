@@ -178,5 +178,14 @@
     "latitude": 49.6117,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "bratislava",
+    "name": "Bratislava",
+    "country": "Slovakia",
+    "longitude": 17.1077,
+    "latitude": 48.1486,
+    "width": 720,
+    "height": 520
   }
 ]

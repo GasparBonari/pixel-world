@@ -2503,6 +2503,110 @@ def luxembourg():
     return scene.img.convert('RGB')
 
 
+def bratislava():
+    import landmarks_slovakia as sk
+
+    scene=new_scene()
+
+    def tile(x,y):
+        return tile_of((x-WIDTH/2)/8,(y-scene.oy)/4)
+
+    # Danube along the i axis, with the bridge crossing squarely along j.
+    bridge_i,bridge_j=tile(135,465)
+    bridge_i-=1.4
+    bridge_j-=11
+    river_j=bridge_j+10
+    kinds={}
+    for i,j in visible_tiles(scene):
+        x,y=scene.screen(i+.5,j+.5)
+        distance=abs(j+.5-river_j)
+        if distance<4:kind='water'
+        elif distance<5.2:kind='quay'
+        elif distance<6.5:kind='promenade'
+        elif j>river_j or x<225 and y<310 or 345<x<510 and y<120:
+            kind='gravel' if i%9==0 or j%9==0 else 'grass'
+        elif i%11==0 or j%11==0:kind='cobble'
+        else:kind='lot'
+        kinds[(i,j)]=kind
+
+    reserved,protected,silhouette=set(),[],set()
+
+    def reserve(i,j,wi,wj):
+        for a in range(math.floor(i),math.ceil(i+wi)):
+            for b in range(math.floor(j),math.ceil(j+wj)):
+                reserved.add((a,b))
+                if kinds.get((a,b))=='lot':kinds[(a,b)]='pave'
+
+    def landmark(builder,x,y,wi,wj):
+        ci,cj=tile(x,y)
+        i,j=ci-wi/2,cj-wj/2
+        builder(scene,i,j)
+        reserve(i-1,j-1,wi+2,wj+2.5)
+        study=iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
+        builder(study,i,j);study.paint_objects()
+        left,top,right,bottom=(v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0<left<right<WIDTH and 0<top<bottom<HEIGHT,(builder.__name__,(left,top,right,bottom))
+        protected.append((left-4,top-4,right+4,bottom+5))
+        pixels=study.img.convert('RGB').load()
+        for sy in range(top+100,bottom+100):
+            for sx in range(left+100,right+100):
+                if pixels[sx,sy]!=(0,0,0):
+                    silhouette.update((sx-100+dx,sy-100+dy) for dx in range(-3,4) for dy in range(-3,4))
+
+    # Eight real anchors, compressed while retaining every lon/lat pair ordering.
+    landmark(sk.grassalkovich,430,90,11,3.5)
+    landmark(sk.michael_gate,325,170,3.8,3.5)
+    landmark(sk.primatial_palace,565,190,8.5,3.5)
+    landmark(sk.castle,130,320,10,8)
+    landmark(sk.town_hall,455,245,8,6)
+    landmark(sk.blue_church,650,300,5,6)
+    landmark(sk.cathedral,300,420,5,8)
+    landmark(sk.snp_bridge,135,465,2.8,22)
+
+    # Main Square, Primatial Square and Hodžovo Square have open paved forecourts.
+    for (i,j),kind in list(kinds.items()):
+        x,y=scene.screen(i+.5,j+.5)
+        if kind=='lot' and (390<x<520 and 245<y<290 or 505<x<620 and 190<y<225 or 365<x<495 and 90<y<130):
+            kinds[(i,j)]='cobble';reserved.add((i,j))
+    paint_ground(scene,{c:'pave' if k=='promenade' else k for c,k in kinds.items()},
+                 {},sk.WATER,sk.ROCK['dark'])
+
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            wi,wj=2.5,3
+            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):continue
+            seed=int(h01(li,lj,1701)*10000)
+            floors=2 if seed%3==0 else 3
+            x,y=scene.screen(li+wi/2,lj+wj/2)
+            half=(wi+wj)*4+7
+            if any(x+half>l and x-half<r and y+17>t and y-floors*10-30<b for l,t,r,b in protected):
+                ax,ay=scene.screen(li,lj)
+                x0,y0=math.floor(ax-50),math.floor(ay-80)
+                study=iso.Scene(100,140,(scene.ox-x0,scene.oy-y0))
+                sk.townhouse(study,li,lj,wi,wj,floors,seed);study.paint_objects()
+                l,t,r,b=study.img.convert('RGB').getbbox()
+                pixels=study.img.convert('RGB').load()
+                if any((sx+x0,sy+y0) in silhouette and pixels[sx,sy]!=(0,0,0)
+                       for sy in range(t,b) for sx in range(l,r)):continue
+            sk.townhouse(scene,li,lj,wi,wj,floors,seed)
+            reserved.update(cells)
+
+    trees=[round_tree(n,'#6D9959','#2D4B31') for n in range(3)]
+    for (i,j),kind in kinds.items():
+        x,y=scene.screen(i+.5,j+.5)
+        if (i,j) in reserved or any(l-12<x<r+12 and t-3<y<b+25 for l,t,r,b in protected):continue
+        if kind=='grass' and h01(i,j,1748)<.1 or kind=='promenade' and (i+j)%11==0:
+            scene.add(i+j+1.5,lambda s,x=x,y=y,tree=trees[(i+j)%3]:s.sprite(tree,x,y+4))
+    # River excursion boats retain the open water and stay clear of the bridge.
+    for offset in (-12,8):
+        bi,bj=bridge_i+offset,river_j+1
+        x,y=scene.screen(bi,bj)
+        scene.add(bi+bj,lambda s,x=x,y=y:s.sprite(bateau(1),x,y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -2544,6 +2648,8 @@ CAPITALS = [
      "render": warsaw},
     {"id": "luxembourg", "name": "Luxembourg City", "country": "Luxembourg", "longitude": 6.1319, "latitude": 49.6117,
      "render": luxembourg},
+    {"id": "bratislava", "name": "Bratislava", "country": "Slovakia", "longitude": 17.1077, "latitude": 48.1486,
+     "render": bratislava},
 ]
 
 

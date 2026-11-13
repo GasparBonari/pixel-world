@@ -20,4 +20,5 @@ export const CAPITAL_IMAGES = {
   prague: require('@/assets/world/capitals/prague.png'),
   warsaw: require('@/assets/world/capitals/warsaw.png'),
   luxembourg: require('@/assets/world/capitals/luxembourg.png'),
+  bratislava: require('@/assets/world/capitals/bratislava.png'),
 } as const;
