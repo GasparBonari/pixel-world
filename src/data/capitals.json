@@ -133,5 +133,14 @@
     "latitude": 46.948,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "vienna",
+    "name": "Vienna",
+    "country": "Austria",
+    "longitude": 16.3738,
+    "latitude": 48.2082,
+    "width": 720,
+    "height": 520
   }
 ]

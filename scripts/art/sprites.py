@@ -1793,6 +1793,43 @@ def chillon(seed=0):
     return scene.img
 
 
+def melk_abbey(seed=0):
+    """Melk's yellow Baroque abbey: twin onion belfries, great dome and cliff terrace."""
+    import iso
+    from landmarks_austria import block, windows, band, clock, STONE, PALE, YELLOW, COPPER, CLAY
+    from landmarks_iberia import hip_roof
+    from landmarks_belgium import dome
+    from landmarks_italy import cylinder
+    from landmarks_denmark import spire
+    from landmarks_paris import P, poly
+
+    scene = iso.Scene(46, 56, (24, 39))
+    shadow = Sprite(46, 56)
+    ground_shadow(shadow, 23, 52, 20, 2)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    # Native small geometry, not a resampled capital building. The cliff has two stone faces.
+    for pts, color in (([(-1.3, 0, 0), (1.3, 0, 0), (1.3, 1.5, 0), (-1.3, 1.5, 0)], YELLOW['deep']),
+                       ([(-1.2, 1.4, 5), (1.2, 1.4, 5), (1.3, 1.5, 0), (-1.3, 1.5, 0)], STONE['mid']),
+                       ([(1.2, -.1, 5), (1.2, 1.4, 5), (1.3, 1.5, 0), (1.3, 0, 0)], STONE['deep'])):
+        poly(scene, [P(scene, *p) for p in pts], lambda x, y, c=color: shade(c, -.1) if (int(x)+int(y)) % 7 == 0 else c)
+    block(scene, -1.15, -.1, 2.3, 1.4, 2, STONE, z=4)
+    for a,b,wi,wj in ((-.5,0,1.8,.45), (.7,.4,.6,.8), (-1.1,.2,.55,1)):
+        block(scene, a, b, wi, wj, 10, YELLOW, windows(YELLOW, 10, 7, 10), z=6)
+        hip_roof(scene, a-.05, b-.05, wi+.1, wj+.1, 16, 3, CLAY)
+    cylinder(scene, .2, -.25, .5, .5, 18, 5, YELLOW)
+    dome(scene, .2, -.25, .55, 23, 8, COPPER)
+    spire(scene, .2, -.25, .13, 31, 2, COPPER)
+    block(scene, -.8, .7, 1.3, .4, 13, YELLOW, windows(YELLOW, 13, 7, 10, arcade=True), z=6)
+    for a in (-1, .25):
+        block(scene, a, .85, .5, .5, 20, YELLOW,
+              lambda u,v,lit: STONE['deep'] if 1 <= int(u) % 4 <= 2 and 3 < v % 8 < 7 else None, z=6)
+        band(scene, a-.04, .81, .58, .58, 24, height=2)
+        clock(scene, a+.25, 1.39, 22, 2)
+        spire(scene, a+.25, 1.1, .35, 26, 8, COPPER, onion=True)
+    return scene.img
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1822,6 +1859,7 @@ ICONS = {
     "olavinlinna": olavinlinna,
     "gullfoss": gullfoss,
     "chillon": chillon,
+    "melk-abbey": melk_abbey,
     **FLORA, **FAUNA,
 }
 

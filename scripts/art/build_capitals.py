@@ -1915,6 +1915,117 @@ def bern():
     return scene.img.convert('RGB')
 
 
+def vienna():
+    import landmarks_austria as at
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # The Donaukanal runs northwest/southeast, northeast of the historic core.
+    # The Prater and its wheel sit beyond it; the main Danube is farther away.
+    def water(i, j):
+        return 12 < j < 16
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        ring = math.hypot((x-365)/235, (y-245)/145)
+        if water(i+.5, j+.5):
+            kind = 'water'
+        elif any(water(i+.5+di, j+.5+dj) for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+            kind = 'quay'
+        elif any(water(i+.5+di, j+.5+dj) for di, dj in ((3, 0), (-3, 0), (0, 3), (0, -3))):
+            kind = 'promenade'
+        elif ((x > 575 and y < 160) or (80 < x < 215 and 200 < y < 280)
+              or (x < 215 and y > 375) or (x > 560 and 340 < y < 430)
+              or (425 < x < 550 and y > 450)):
+            # Prater, Rathauspark, Schönbrunn/Belvedere parterres and Resselpark.
+            kind = 'gravel' if i % 7 == 0 or j % 7 == 0 else 'grass'
+        elif .94 < ring < 1.06 or i % 12 == 0 or j % 12 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected = set(), []
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[(a, b)] = 'pave'
+
+    def landmark(builder, x, y, wi, wj):
+        ci, cj = tile(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        builder(scene, i, j)
+        reserve(i-.8, j-.8, wi+1.6, wj+3.5)
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j)
+        study.paint_objects()
+        left, top, right, bottom = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, (left, top, right, bottom))
+        protected.append((left-4, top-3, right+4, bottom+5))
+
+    # Ground anchors retain every real east/west and north/south relationship.
+    landmark(at.riesenrad, 650, 130, 9.6, 4)
+    landmark(at.rathaus, 180, 185, 12, 4.6)
+    landmark(at.stephansdom, 515, 245, 5, 9)
+    landmark(at.hofburg, 300, 285, 12, 4.5)
+    landmark(at.opera, 370, 385, 8, 6)
+    landmark(at.karlskirche, 490, 430, 8.2, 5.2)
+    landmark(at.belvedere, 625, 465, 12, 4.2)
+    landmark(at.schonbrunn, 115, 470, 14, 4)
+    # Stephansplatz, Heldenplatz and Karlsplatz are low paved forecourts.
+    for x, y, wi, wj in ((505, 280, 6, 3), (275, 310, 8, 4), (470, 455, 6, 3)):
+        ci, cj = tile(x, y)
+        reserve(ci-wi/2, cj-wj/2, wi, wj)
+    for i in (35, 53):
+        lp.stone_bridge(scene, i, 10, 9, width=1.8, deck=7)
+        reserve(i-.4, 9.6, 2.6, 9.8)
+    paint_ground(scene, {c: 'pave' if k == 'promenade' else k for c, k in kinds.items()},
+                 {}, at.WATER, at.STONE['dark'])
+
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li+3) for b in range(lj, lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 337)*10000)
+            floors = 2 if seed % 3 == 0 else 3
+            x, y = scene.screen(li+wi/2, lj+wj/2)
+            half = (wi+wj)*4+6
+            top, bottom = y-floors*12-28, y+(wi+wj)*2+6
+            if any(x+half > l and x-half < r and bottom > t and top < b for l, t, r, b in protected):
+                continue
+            if any(water(li+wi/2+di, lj+wj/2+dj) for di, dj in ((4, 0), (-4, 0), (0, 4), (0, -4))):
+                continue
+            at.townhouse(scene, li, lj, wi, wj, floors, seed)
+            reserved.update(cells)
+
+    trees = [round_tree(n, '#71955A', '#304D33') for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i+.5, j+.5)
+        if (i, j) in reserved or any(l-11 < x < r+11 and t-2 < y < b+25 for l, t, r, b in protected):
+            continue
+        if kind == 'grass' and h01(i, j, 339) < .12 or kind == 'promenade' and (i+j) % 11 == 0:
+            scene.add(i+j+1.5, lambda s, x=x, y=y, tree=trees[(i+j) % 3]: s.sprite(tree, x, y+4))
+        # Formal beds, separated by gravel walks, around the two palace gardens.
+        if kind == 'grass' and (x < 215 and y > 390 or x > 560 and 350 < y < 425) and (i+j) % 4 == 0:
+            for dx in (-2, 0, 2):
+                scene.put(x+dx, y, at.RED['lit'] if i % 2 else at.PALE['hi'])
+    for i, j in ((14, 14), (26, 14), (45, 14), (59, 14)):
+        x, y = scene.screen(i, j)
+        image = bateau(0) if i % 2 else rowboat(i)
+        scene.add(i+j, lambda s, x=x, y=y, image=image: s.sprite(image, x, y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -1946,6 +2057,8 @@ CAPITALS = [
      "render": reykjavik},
     {"id": "bern", "name": "Bern", "country": "Switzerland", "longitude": 7.4474, "latitude": 46.9480,
      "render": bern},
+    {"id": "vienna", "name": "Vienna", "country": "Austria", "longitude": 16.3738, "latitude": 48.2082,
+     "render": vienna},
 ]
 
 

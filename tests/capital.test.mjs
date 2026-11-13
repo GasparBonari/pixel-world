@@ -24,7 +24,7 @@ const lisbon = scenes.find((s) => s.id === 'lisbon');
 test('detail allows deeper zoom only where it exists', () => {
   assert.equal(maxZoomAt(-9.14, 38.71), CAPITAL_ZOOM.full); // Lisbon
   assert.equal(maxZoomAt(-8.62, 41.15), COUNTRY_ZOOM.max); // Porto: Portugal, not the capital
-  assert.equal(maxZoomAt(16.3738, 48.2082), MAX_GLOBE_ZOOM); // Vienna: no detail yet
+  assert.equal(maxZoomAt(16.3738, 48.2082), CAPITAL_ZOOM.full); // Vienna
   assert.equal(maxZoomAt(2.35, 48.86), CAPITAL_ZOOM.full); // Paris
   assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens, outside covered country bounds
   assert.equal(constrainGlobe({ longitude: 20, latitude: 0, zoom: 7 }).zoom, MAX_GLOBE_ZOOM);
@@ -158,7 +158,7 @@ test('Berlin: country zoom, capital arrival and panning stay with the Berlin sce
   assert.equal(maxZoomAt(13.405, 52.52), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(9.99, 53.55), COUNTRY_ZOOM.max); // Hamburg
   assert.equal(maxZoomAt(11.58, 48.14), COUNTRY_ZOOM.max); // Munich
-  assert.equal(maxZoomAt(16.3738, 48.2082), MAX_GLOBE_ZOOM); // Vienna remains uncovered
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered
   const berlin = scenes.find((s) => s.id === 'berlin');
   assert.deepEqual([berlin.width, berlin.height], [720, 520]);
   let arriving = { longitude: 12.7, latitude: 52.3, zoom: 5 };
@@ -221,7 +221,7 @@ test('Amsterdam: focal zoom arrives at its own scene while Groningen keeps count
   assert.deepEqual([amsterdam.width, amsterdam.height], [720, 520]);
   assert.equal(maxZoomAt(4.8952, 52.3702), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(6.58, 53.22), COUNTRY_ZOOM.max); // Groningen, outside capital reach
-  assert.equal(maxZoomAt(16.3738, 48.2082), MAX_GLOBE_ZOOM); // Vienna remains uncovered
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered
   let arriving = { longitude: 5.3, latitude: 52.1, zoom: 5 };
   const focal = globePoint(amsterdam.longitude, amsterdam.latitude, arriving, view);
   for (let step = 0; step < 8; step++)
@@ -263,7 +263,7 @@ test('Brussels: focal zoom arrives at its scene, and Eupen keeps country detail'
   assert.deepEqual([brussels.width, brussels.height], [720, 520]);
   assert.equal(maxZoomAt(4.3517, 50.8503), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(6.03, 50.63), COUNTRY_ZOOM.max); // Eupen, beyond capital reach
-  assert.equal(maxZoomAt(16.3738, 48.2082), MAX_GLOBE_ZOOM); // Vienna remains uncovered
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered
   let arriving = { longitude: 4.8, latitude: 50.6, zoom: 5 };
   const focal = globePoint(brussels.longitude, brussels.latitude, arriving, view);
   for (let step = 0; step < 8; step++)
@@ -308,7 +308,7 @@ test('London: focal zoom reaches its scene while Scotland and Northern Ireland k
   assert.equal(maxZoomAt(-.1276, 51.5072), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(-4.2527, 55.8764), COUNTRY_ZOOM.max); // Glasgow
   assert.equal(maxZoomAt(-7.3086, 54.9975), COUNTRY_ZOOM.max); // Derry, outside Dublin's capital reach
-  assert.equal(maxZoomAt(16.3738, 48.2082), MAX_GLOBE_ZOOM); // Vienna stays uncovered
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens stays uncovered
   let arriving = { longitude: -.6, latitude: 51.8, zoom: 5 };
   const focal = globePoint(london.longitude, london.latitude, arriving, view);
   for (let step = 0; step < 8; step++)
@@ -375,7 +375,7 @@ test('Dublin: focal zoom arrives at its scene while Cork retains country detail'
   assert.deepEqual([dublin.width, dublin.height], [720, 520]);
   assert.equal(maxZoomAt(-6.2603, 53.3498), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(-8.4958, 51.8986), COUNTRY_ZOOM.max);
-  assert.equal(maxZoomAt(16.3738, 48.2082), MAX_GLOBE_ZOOM); // Vienna remains uncovered.
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered.
   let arriving = { longitude: -6.7, latitude: 53.1, zoom: 5 };
   const focal = globePoint(dublin.longitude, dublin.latitude, arriving, view);
   for (let step = 0; step < 8; step++)
@@ -426,7 +426,7 @@ test('Rome: focal arrival and all pan edges stay in its scene; Milan retains cou
   assert.equal(maxZoomAt(9.2031, 45.4719), COUNTRY_ZOOM.max);
   assert.equal(maxZoomAt(15.08, 37.5), COUNTRY_ZOOM.max); // Sicily
   assert.equal(maxZoomAt(9.12, 39.22), COUNTRY_ZOOM.max); // Sardinia
-  assert.equal(maxZoomAt(16.3738, 48.2082), MAX_GLOBE_ZOOM); // Vienna
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens
   let current = { longitude: 12.1, latitude: 42.2, zoom: 5 };
   const focal = globePoint(rome.longitude, rome.latitude, current, view);
   for (let step = 0; step < 8; step++)
@@ -797,4 +797,56 @@ test('capital panning reaches actual scene edges and zooms out gradually at phon
       }
     }
   }
+});
+
+
+test('Austria marks Vienna first, seven spaced cities and Melk Abbey within its own bounds', () => {
+  const austria = COVERAGE.find((c) => c.id === 'vienna');
+  assert.deepEqual(austria.bounds, [9.5, 46.35, 17.2, 49.05]);
+  const [w, s, e, n] = austria.bounds;
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1] - lon) < .001 && Math.abs(i[2] - lat) < .001);
+  const cities = [[16.3647, 48.202], [14.2888, 48.3192], [15.41, 47.0778],
+    [13.04, 47.8105], [11.41, 47.2804], [14.31, 46.6203], [9.7667, 47.5167]];
+  const sites = [...cities, [15.3315, 48.2286], [16.375, 48.625], [13.625, 47.625],
+    [10.625, 47.375], [12.375, 47.375], [14.625, 47.375], [16.375, 47.375], [12.875, 46.625]];
+  const country = sites.flatMap(([lon, lat]) => at(lon, lat));
+  assert.equal(country.length, 23);
+  for (const [, lon, lat] of country)
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Austria bounds`);
+  for (const [rank, [lon, lat]] of cities.entries()) {
+    const names = at(lon, lat).map((i) => icons.names[i[0]]);
+    assert.deepEqual(names, rank === 0 ? ['house', 'house', 'castle']
+      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const [otherLon, otherLat] of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
+        + Math.cos(lat * rad) * Math.cos(otherLat * rad) * Math.cos((lon - otherLon) * rad));
+      assert.ok(km >= 75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+  assert.equal(at(15.3315, 48.2286).filter((i) => icons.names[i[0]] === 'melk-abbey').length, 1);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length, 7);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'boat').length, 0, 'Austria is landlocked');
+  assert.equal(at(16.25, 47.816).length, 0, 'Wiener Neustadt respects Vienna spacing');
+  assert.equal(at(16.5333, 47.8333).length, 0, 'Eisenstadt respects Vienna spacing');
+});
+
+test('Vienna supports focal arrival while western and southern Austria retain country zoom', () => {
+  const vienna = scenes.find((s) => s.id === 'vienna');
+  assert.equal(vienna.name, 'Vienna');
+  assert.equal(vienna.country, 'Austria');
+  assert.deepEqual([vienna.width, vienna.height], [720, 520]);
+  assert.equal(maxZoomAt(vienna.longitude, vienna.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(11.41, 47.2804), COUNTRY_ZOOM.max); // Innsbruck
+  assert.equal(maxZoomAt(14.31, 46.6203), COUNTRY_ZOOM.max); // Klagenfurt
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens stays uncovered
+  let current = { longitude: 15.8, latitude: 48.6, zoom: 5 };
+  const focal = globePoint(vienna.longitude, vienna.latitude, current, view);
+  for (let step = 0; step < 8; step++)
+    current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, view);
+  assert.equal(current.zoom, CAPITAL_ZOOM.full);
+  assert.equal(current.capitalId, 'vienna');
+  const after = globePoint(vienna.longitude, vienna.latitude, current, view);
+  assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
 });
