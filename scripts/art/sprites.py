@@ -1830,6 +1830,31 @@ def melk_abbey(seed=0):
     return scene.img
 
 
+def gozo_citadel(seed=0):
+    """Gozo's limestone bastions, domeless cathedral, bell tower and entrance steps."""
+    import iso
+    from landmarks_malta import bastion, block, band, pediment, flat_roof, STONE, PALE, ROOF, RED
+    from landmarks_paris import P, seg
+
+    scene = iso.Scene(31, 34, (15, 21))
+    shadow = Sprite(31, 34)
+    ground_shadow(shadow, 15, 30, 12, 1.5)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    bastion(scene, [(-.7,-.3),(.5,-.45),(1,.2),(.7,.9),(-.55,.85),(-.95,.25)], 6)
+    block(scene,-.43,-.14,.8,.7,7,STONE,
+          lambda u,v,lit: RED['dark'] if 2 < u < 5 and v < 5 else None,z=6)
+    flat_roof(scene,-.43,-.14,.8,.7,13)
+    pediment(scene,-.47,.6,.9,13,3)
+    block(scene,.4,-.16,.32,.32,10,STONE,
+          lambda u,v,lit: STONE['deep'] if 7 < v < 10 and 1 < u < 3 else None,z=6)
+    band(scene,.36,-.2,.4,.4,16,height=1)
+    seg(scene,P(scene,.56,0,17),P(scene,.56,0,19),ROOF['deep'])
+    for n in range(3):
+        block(scene,-.3-n*.05,.67+n*.13,.7+n*.1,.14,1,PALE,z=5-n*1.5)
+    return scene.img
+
+
 def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
@@ -1860,6 +1885,7 @@ ICONS = {
     "gullfoss": gullfoss,
     "chillon": chillon,
     "melk-abbey": melk_abbey,
+    "gozo-citadel": gozo_citadel,
     **FLORA, **FAUNA,
 }
 

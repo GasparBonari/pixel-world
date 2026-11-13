@@ -2026,6 +2026,136 @@ def vienna():
     return scene.img.convert('RGB')
 
 
+def valletta():
+    import landmarks_malta as mt
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # Mount Sciberras points northeast: Marsamxett on the northwest, the Grand
+    # Harbour on the southeast. Distances are compressed, with north still up.
+    peninsula = set(iso.polygon_pixels([
+        (-30, 550), (-30, 375), (115, 235), (325, 100), (520, 65),
+        (635, 55), (705, 120), (605, 240), (535, 335), (485, 410), (475, 550),
+    ]))
+
+    def water(i, j):
+        x, y = scene.screen(i, j)
+        return (int(x), int(y)) not in peninsula
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        if water(i+.5, j+.5):
+            kind = 'water'
+        elif any(water(i+.5+di, j+.5+dj) for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+            kind = 'quay'
+        elif any(water(i+.5+di, j+.5+dj) for di, dj in ((3, 0), (-3, 0), (0, 3), (0, -3))):
+            kind = 'promenade'
+        elif 65 < x < 180 and 260 < y < 335:
+            kind = 'gravel' if i % 5 == 0 or j % 5 == 0 else 'grass'  # Hastings Gardens
+        elif i % 12 == 0 or j % 12 == 0 or abs(x+1.55*y-790) < 7:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected, silhouette = set(), [], set()
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[(a, b)] = 'pave'
+
+    def landmark(builder, x, y, wi, wj):
+        ci, cj = tile(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        builder(scene, i, j)
+        reserve(i-.45, j-.45, wi+.9, wj+1.6)
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j)
+        study.paint_objects()
+        left, top, right, bottom = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, (left, top, right, bottom))
+        protected.append((left-4, top-3, right+4, bottom+5))
+        pixels = study.img.convert('RGB').load()
+        for sy in range(top+100,bottom+100):
+            for sx in range(left+100,right+100):
+                if pixels[sx,sy] != (0,0,0):
+                    silhouette.update((sx-100+dx,sy-100+dy) for dx in range(-3,4) for dy in range(-3,4))
+
+    # Coordinates and ordering are recorded in the Phase 4 landmark table.
+    landmark(mt.fort_st_elmo, 620, 110, 10, 8)
+    landmark(mt.st_paul, 270, 180, 6, 7.5)
+    landmark(mt.carmelite, 390, 195, 6, 6.5)
+    landmark(mt.grandmaster, 550, 285, 9, 7.2)
+    landmark(mt.st_john, 430, 340, 6, 7.5)
+    landmark(mt.parliament, 100, 395, 9.4, 6.5)
+    landmark(mt.castille, 230, 435, 9.2, 6.8)
+    landmark(mt.upper_barrakka, 370, 465, 8.8, 8)
+
+    paint_ground(scene, {c: 'pave' if k == 'promenade' else k for c, k in kinds.items()},
+                 {}, mt.WATER, mt.STONE['dark'])
+
+    # Paint a continuous eight-pixel retaining cliff below the land surface.
+    # Sharing the target image but lowering this painter's origin keeps every
+    # ground anchor fixed; neighbouring land tiles cover all internal faces.
+    land_scene = iso.Scene(WIDTH, HEIGHT, (scene.ox, scene.oy+8))
+    land_scene.img, land_scene.px = scene.img, scene.px
+    land_kinds = {c: 'pave' if k == 'promenade' else k for c,k in kinds.items() if k != 'water'}
+    paint_ground(land_scene,land_kinds,{c:8 for c in land_kinds},mt.WATER,mt.STONE['dark'])
+
+    for li in range(-12, 112):
+        for lj in range(-12, 112):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li+3) for b in range(lj, lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 467)*10000)
+            floors = 2 if seed % 3 == 0 else 3
+            x, y = scene.screen(li+wi/2, lj+wj/2)
+            half = (wi+wj)*4+6
+            top, bottom = y-floors*11-20, y+(wi+wj)*2+6
+            if any(x+half > l and x-half < r and bottom > t and top < b for l, t, r, b in protected):
+                # Test the actual projected shape near a monument. A narrow spire's
+                # large bounding box should not empty the streets beside its shaft.
+                ax,ay=scene.screen(li,lj)
+                x0,y0=math.floor(ax-50),math.floor(ay-70)
+                study=iso.Scene(100,120,(scene.ox-x0,scene.oy-y0))
+                mt.townhouse(study,li,lj,wi,wj,floors,seed)
+                study.paint_objects()
+                left,upper,right,lower=study.img.convert('RGB').getbbox()
+                pixels=study.img.convert('RGB').load()
+                if any((sx+x0,sy+y0) in silhouette and pixels[sx,sy] != (0,0,0)
+                       for sy in range(upper,lower) for sx in range(left,right)):
+                    continue
+            if any(water(li+wi/2+di, lj+wj/2+dj) for di,dj in ((2,0),(-2,0),(0,2),(0,-2))):
+                continue
+            mt.townhouse(scene,li,lj,wi,wj,floors,seed)
+            reserved.update(cells)
+
+    trees = [round_tree(n, '#718B50', '#30462D') for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i+.5, j+.5)
+        if (i,j) in reserved or any(l-11 < x < r+11 and t-2 < y < b+25 for l,t,r,b in protected):
+            continue
+        if kind == 'grass' and h01(i,j,469) < .15 or kind == 'promenade' and (i+j) % 12 == 0:
+            scene.add(i+j+1.5,lambda s,x=x,y=y,tree=trees[(i+j)%3]:s.sprite(tree,x,y+4))
+
+    # Dgħajsa harbour craft and sailing boats stay on water, outside all silhouettes.
+    for x,y in ((115,115),(205,75),(540,395),(600,325),(660,225),(585,465)):
+        i,j=tile(x,y)
+        assert water(i,j)
+        image = rowboat(int(x)) if x < 600 else bateau(0)
+        scene.add(i+j,lambda s,x=x,y=y,image=image:s.sprite(image,x,y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -2059,6 +2189,8 @@ CAPITALS = [
      "render": bern},
     {"id": "vienna", "name": "Vienna", "country": "Austria", "longitude": 16.3738, "latitude": 48.2082,
      "render": vienna},
+    {"id": "valletta", "name": "Valletta", "country": "Malta", "longitude": 14.5146, "latitude": 35.8992,
+     "render": valletta},
 ]
 
 

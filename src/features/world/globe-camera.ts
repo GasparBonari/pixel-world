@@ -30,6 +30,7 @@ export const COVERAGE = [
   { id: 'reykjavik', country: 'Iceland', longitude: -21.9426, latitude: 64.1466, bounds: [-24.6, 63.2, -13.4, 66.6] },
   { id: 'bern', country: 'Switzerland', longitude: 7.4474, latitude: 46.948, bounds: [5.95, 45.8, 10.55, 47.85] },
   { id: 'vienna', country: 'Austria', longitude: 16.3738, latitude: 48.2082, bounds: [9.5, 46.35, 17.2, 49.05] },
+  { id: 'valletta', country: 'Malta', longitude: 14.5146, latitude: 35.8992, bounds: [14.05, 35.75, 14.65, 36.12] },
 ] as const;
 
 /** Keep the visited capital while panning across overlapping capital areas. Zooming out releases it. */

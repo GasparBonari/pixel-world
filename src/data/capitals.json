@@ -142,5 +142,14 @@
     "latitude": 48.2082,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "valletta",
+    "name": "Valletta",
+    "country": "Malta",
+    "longitude": 14.5146,
+    "latitude": 35.8992,
+    "width": 720,
+    "height": 520
   }
 ]

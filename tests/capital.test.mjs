@@ -850,3 +850,46 @@ test('Vienna supports focal arrival while western and southern Austria retain co
   const after = globePoint(vienna.longitude, vienna.latitude, current, view);
   assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
 });
+
+test('Malta marks Valletta and Gozo Citadel, with island decorations inside its own bounds', () => {
+  const malta = COVERAGE.find((c) => c.id === 'valletta');
+  assert.deepEqual(malta.bounds, [14.05, 35.75, 14.65, 36.12]);
+  const [w, s, e, n] = malta.bounds;
+  const tier = icons.icons.filter((i) => i[5] === 1 && w <= i[1] && i[1] <= e && s <= i[2] && i[2] <= n);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
+  // Pinned Natural Earth spelling/site. No other city in this small archipelago
+  // clears the unchanged 75 km city-spacing rule.
+  assert.deepEqual(at(14.5147, 35.8997).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'castle').length, 1);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'house').length, 2);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'church').length, 0);
+  assert.equal(at(14.2394, 36.0464).filter((i) => icons.names[i[0]] === 'gozo-citadel').length, 1);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'olive').length, 2);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat').length, 2);
+  assert.equal(tier.length, 8);
+  for (const [lon, lat, kind] of [[14.3875,35.9125,'olive'], [14.5125,35.7875,'olive'],
+    [14.6375,35.9625,'boat'], [14.3625,35.7625,'boat']])
+    assert.equal(at(lon,lat).filter((i) => icons.names[i[0]] === kind).length, 1);
+});
+
+test('Valletta supports focal arrival within Malta and keeps its capital visit while panning', () => {
+  const valletta = scenes.find((s) => s.id === 'valletta');
+  assert.equal(valletta.name, 'Valletta');
+  assert.equal(valletta.country, 'Malta');
+  assert.deepEqual([valletta.width, valletta.height], [720, 520]);
+  assert.equal(maxZoomAt(valletta.longitude,valletta.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(14.2394,36.0464), CAPITAL_ZOOM.full); // Gozo shares the standard 1.5° reach.
+  assert.equal(maxZoomAt(23.7275,37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered.
+  let current = { longitude: 14.35, latitude: 35.98, zoom: 5 };
+  const focal = globePoint(valletta.longitude,valletta.latitude,current,view);
+  for (let step = 0; step < 8; step++)
+    current = zoomGlobe(current,current.zoom+.3,focal.x,focal.y,view);
+  assert.equal(current.zoom,CAPITAL_ZOOM.full);
+  assert.equal(current.capitalId,'valletta');
+  const after = globePoint(valletta.longitude,valletta.latitude,current,view);
+  assert.ok(Math.hypot(after.x-focal.x,after.y-focal.y) < 1);
+  for (let step = 0; step < 100; step++)
+    current = capitals.clampToCapitals(camera.rotateGlobe(current,50,40,view),scenes,view,2);
+  assert.equal(current.capitalId,'valletta');
+  assert.equal(camera.activeCapital(current).id,'valletta');
+});

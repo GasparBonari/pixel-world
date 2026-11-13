@@ -97,6 +97,11 @@ COUNTRY_TIER = [
      "trees": 7,
      # The abbey church and monastery on the rocky terrace above Melk.
      "landmarks": [("melk-abbey", 15.3315, 48.2286)]},
+    {"adm0": "MLT", "bounds": (14.05, 35.75, 14.65, 36.12), "capital": "Valletta", "cities": 9,
+     # The whole archipelago is smaller than the standard city/decoration spacings.
+     # City spacing stays 75 km; only decoration samples use the native source pixels.
+     "trees": 2, "decoration_grid": 0.025, "decoration_km": 9,
+     "landmarks": [("gozo-citadel", 14.2394, 36.0464)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -123,6 +128,7 @@ VARIANTS = {
     "gullfoss": 1,
     "chillon": 1,
     "melk-abbey": 1,
+    "gozo-citadel": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -182,6 +188,17 @@ def main():
     continents = [f["properties"]["CONTINENT"] for f in country_features]
     codes = [f["properties"]["ADM0_A3"] for f in country_features]
     country = Image.open(BOARD).getchannel("R").resize((width, height), Image.NEAREST).load()
+    native_board = Image.open(BOARD).getchannel("R")
+    native_land = Image.open(GLOBE).getchannel("R")
+
+    def native_country(lon, lat):
+        index = native_board.getpixel((int((lon+180)/360*native_board.width) % native_board.width,
+                                       min(native_board.height-1, max(0, int((90-lat)/180*native_board.height)))))
+        return codes[index-1] if index else None
+
+    def native_is_land(lon, lat):
+        return native_land.getpixel((int((lon+180)/360*native_land.width) % native_land.width,
+                                     min(native_land.height-1, max(0, int((90-lat)/180*native_land.height))))) >= 128
 
     def continent_at(x, y):
         index = country[x % width, y]
@@ -342,11 +359,23 @@ def main():
             building(kind, lon, lat, 0, 0)
             towns.append((lon, lat))
         trees, boats = [], []
-        for y in range(int((90 - n) / GRID), int((90 - s_) / GRID)):
-            for x in range(int((w + 180) / GRID), int((e + 180) / GRID)):
-                lon, lat = cell_center(x, y)
+        step = spec.get("decoration_grid", GRID)
+        for y in range(int((90 - n) / step), int((90 - s_) / step)):
+            for x in range(int((w + 180) / step), int((e + 180) / step)):
+                lon, lat = -180+(x+.5)*step, 90-(y+.5)*step
                 if not (w <= lon <= e and s_ <= lat <= n):
                     continue  # grid rounding can reach half a cell outside the bounds
+                if step != GRID:
+                    # Tiny islands disappear in the averaged 0.25° land mask. Keep
+                    # the same country-index and land filters at source resolution.
+                    if native_is_land(lon, lat) and native_country(lon, lat) == spec["adm0"]:
+                        trees.append((lon, lat))
+                    elif not native_is_land(lon, lat) and any(
+                        native_country(lon+dx*step, lat+dy*step) == spec["adm0"]
+                        for dx in (-3, 0, 3) for dy in (-3, 0, 3)
+                    ):
+                        boats.append((lon, lat))
+                    continue
                 if is_land(x, y) and country_code(x, y) == spec["adm0"]:
                     trees.append((lon, lat))
                 elif not is_land(x, y) and any(country_code(x + dx, y + dy) == spec["adm0"]
@@ -354,7 +383,8 @@ def main():
                     boats.append((lon, lat))
         # Italy spans Alpine forests and Mediterranean islands: distribute its seven trees
         # across three latitude bands rather than letting one seeded cluster fill the north.
-        tree_sites = spread(trees, spec.get("trees", 7 if spec["adm0"] == "PRT" else 12), 70, 51, towns, 45)
+        tree_sites = spread(trees, spec.get("trees", 7 if spec["adm0"] == "PRT" else 12),
+                            spec.get("decoration_km", 70), 51, towns, spec.get("decoration_km", 45))
         if spec["adm0"] == "ITA":
             tree_sites = []
             for south, north, count in ((44, 48, 2), (40, 44, 2), (35, 40, 3)):
@@ -380,7 +410,7 @@ def main():
                 continue
             kind = "pine" if lat > 40.5 else "olive" if lat < 38.8 else "oak"
             building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
-        for lon, lat in spread(boats, 2, 150, 53):
+        for lon, lat in spread(boats, 2, spec.get("decoration_km", 75)*2, 53):
             building("boat", lon, lat, 0, 0)
 
     icons.sort(key=lambda i: (-i[2] + i[4] * 0.01, i[1]))
