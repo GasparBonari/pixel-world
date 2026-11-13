@@ -2033,6 +2033,32 @@ def tihany_abbey(seed=0):
     return scene.img
 
 
+def kuressaare(seed=0):
+    """Saaremaa's square episcopal castle: tall keep, lower tower and clay-roofed ranges."""
+    import iso
+    from landmarks_estonia import STONE, WHITE, CLAY, windows
+    from landmarks_slovakia import block, band
+    from landmarks_iberia import hip_roof
+    from landmarks_paris import P, poly
+    scene = iso.Scene(56, 68, (28, 46))
+    shadow = Sprite(56, 68)
+    ground_shadow(shadow, 28, 62, 23)
+    scene.img = shadow.image(); scene.px = scene.img.load()
+    # Low moat, grassy bastion and limestone retaining edge.
+    poly(scene, [P(scene,a,b) for a,b in ((-2,-1),(1.6,-1),(2,1.3),(-1.6,1.4))],
+         lambda x,y:hex_rgb('#477E91') if int(y)%3 else hex_rgb('#75A7AE'))
+    block(scene,-1.5,-.8,2.8,1.9,3,STONE)
+    for a,b,w,d in ((-1.2,-.65,2.3,.5),(-1.2,-.15,.5,1.15),
+                    (.6,-.15,.5,1.15),(-.7,.55,1.3,.45)):
+        block(scene,a,b,w,d,13,STONE,windows(STONE,13,6,10),z=3)
+        hip_roof(scene,a,b,w,d,16,7,CLAY)
+    for a,b,h in ((-.95,-.55,26),(.45,.4,19)):
+        block(scene,a,b,.65,.65,h,STONE,windows(STONE,h,5,10),z=3)
+        band(scene,a,b,.65,.65,h+2,WHITE)
+        hip_roof(scene,a-.04,b-.04,.73,.73,h+3,8,CLAY)
+    return scene.img
+
+
 FAUNA = {
     "deer": deer, "fox": fox, "elephant": elephant, "zebra": zebra, "panda": panda,
     "tiger": tiger, "bison": bison, "moose": moose, "jaguar": jaguar, "capybara": capybara,
@@ -2065,6 +2091,7 @@ ICONS = {
     "vianden": vianden,
     "spis-castle": spis_castle,
     "tihany-abbey": tihany_abbey,
+    "kuressaare": kuressaare,
     **FLORA, **FAUNA,
 }
 

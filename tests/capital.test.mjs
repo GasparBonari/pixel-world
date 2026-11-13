@@ -21,6 +21,65 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Estonia marks Tallinn, five spaced cities and Kuressaare within its bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'tallinn');
+  assert.deepEqual(region.bounds, [21.7, 57.45, 28.25, 59.85]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
+  // Pinned Natural Earth coordinates and population order, after the 75 km filter.
+  const cities = [[24.728, 59.4339], [26.7099, 58.3839], [28.1603, 59.3776],
+    [24.5136, 58.3747], [23.5414, 58.9431]];
+  const sites = [...cities, [22.4792, 58.247], [26.875, 59.375], [22.625, 59.125],
+    [25.625, 59.125], [25.375, 58.375], [24.375, 57.875], [26.375, 57.875],
+    [27.875, 57.875], [27.125, 59.625], [22.125, 58.625]];
+  const country = sites.flatMap((site) => at(...site));
+  assert.equal(country.length, 22);
+  for (const [, lon, lat] of country) {
+    const [w, s, e, n] = region.bounds;
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Estonia bounds`);
+  }
+  for (const [rank, site] of cities.entries()) {
+    assert.deepEqual(at(...site).map((i) => icons.names[i[0]]).sort(), rank === 0
+      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
+        : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const other of cities.slice(rank+1)) {
+      const radians = (n) => n*Math.PI/180;
+      const h = Math.sin(radians(other[1]-site[1])/2)**2 + Math.cos(radians(site[1]))
+        * Math.cos(radians(other[1])) * Math.sin(radians(other[0]-site[0])/2)**2;
+      assert.ok(6371*2*Math.atan2(Math.sqrt(h), Math.sqrt(1-h)) >= 75);
+    }
+  }
+  assert.equal(at(22.4792, 58.247).filter((i) => icons.names[i[0]] === 'kuressaare').length, 1);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length, 7);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'boat').length, 2);
+});
+
+test('Tallinn supports focal arrival and retains its scene beside Helsinki', () => {
+  const city = scenes.find((s) => s.id === 'tallinn');
+  assert.equal(city.name, 'Tallinn');
+  assert.equal(city.country, 'Estonia');
+  assert.deepEqual([city.longitude, city.latitude, city.width, city.height], [24.7536, 59.437, 720, 520]);
+  assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(26.7099, 58.3839), COUNTRY_ZOOM.max); // Tartu
+  assert.equal(maxZoomAt(28.1603, 59.3776), COUNTRY_ZOOM.max); // Narva
+  assert.equal(maxZoomAt(22.4792, 58.247), COUNTRY_ZOOM.max); // Saaremaa
+  assert.equal(maxZoomAt(24.5136, 58.3747), CAPITAL_ZOOM.full); // Pärnu shares the standard 1.5° reach.
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: 25, latitude: 59.2, zoom: 5 };
+    const focal = globePoint(city.longitude, city.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom+.3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(camera.activeCapital(current).id, 'tallinn');
+    const after = globePoint(city.longitude, city.latitude, current, viewport);
+    assert.ok(Math.hypot(after.x-focal.x, after.y-focal.y) < 1);
+    assert.equal(camera.activeCapital({ ...current, longitude: 24.9384, latitude: 60.1699 }).id, 'tallinn');
+    assert.equal(camera.activeCapital({ longitude: 24.9384, latitude: 60.1699, zoom: 7 }).id, 'helsinki');
+    assert.equal(camera.activeCapital({ ...current, zoom: 6.2 }), undefined);
+  }
+});
+
 test('Hungary marks Budapest, spaced cities and Tihany Abbey within its bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'budapest');
   assert.deepEqual(region.bounds, [16.05, 45.7, 22.95, 48.65]);

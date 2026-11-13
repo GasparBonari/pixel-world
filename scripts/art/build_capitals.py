@@ -2719,6 +2719,109 @@ def budapest():
     return scene.img.convert('RGB')
 
 
+def tallinn():
+    import landmarks_estonia as ee
+
+    scene=new_scene()
+
+    def tile(x,y):
+        return tile_of((x-WIDTH/2)/8,(y-scene.oy)/4)
+
+    # Tallinn Bay and the harbour are north of Old Town. Every shore segment
+    # follows a tile axis; the lower town has no invented river.
+    coast=[(-40,-25),(140,65),(280,-5),(420,65),(520,15),(720,115),(800,75)]
+
+    def shore(x):
+        for (ax,ay),(bx,by) in zip(coast,coast[1:]):
+            if ax<=x<=bx:return ay+(by-ay)*(x-ax)/(bx-ax)
+        return -25
+
+    kinds={}
+    for i,j in visible_tiles(scene):
+        x,y=scene.screen(i+.5,j+.5)
+        distance=y-shore(x)
+        if distance<0:kind='water'
+        elif distance<9:kind='quay'
+        elif distance<22:kind='promenade'
+        elif x<265 and y>330 or x>530 and 180<y<330:
+            kind='gravel' if i%10==0 or j%10==0 else 'grass'
+        elif i%11==0 or j%11==0:kind='cobble'
+        else:kind='lot'
+        kinds[(i,j)]=kind
+
+    reserved,protected,silhouette=set(),[],set()
+
+    def reserve(i,j,wi,wj):
+        for a in range(math.floor(i),math.ceil(i+wi)):
+            for b in range(math.floor(j),math.ceil(j+wj)):
+                reserved.add((a,b))
+                if kinds.get((a,b))=='lot':kinds[(a,b)]='pave'
+
+    for _,builder,(wi,wj),_,(x,y) in ee.SITES:
+        ci,cj=tile(x,y)
+        i,j=ci-wi/2,cj-wj/2
+        builder(scene,i,j)
+        reserve(i-1,j-1,wi+2,wj+2.5)
+        study=iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
+        builder(study,i,j);study.paint_objects()
+        left,top,right,bottom=(v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0<left<right<WIDTH and 0<top<bottom<HEIGHT,(builder.__name__,(left,top,right,bottom))
+        protected.append((left-4,top-4,right+4,bottom+5))
+        pixels=study.img.convert('RGB').load()
+        for sy in range(top+100,bottom+100):
+            for sx in range(left+100,right+100):
+                if pixels[sx,sy]!=(0,0,0):
+                    silhouette.update((sx-100+dx,sy-100+dy) for dx in range(-3,4) for dy in range(-3,4))
+
+    # Raekoja plats opens north of the hall; Viru street and Lossi plats are paved.
+    for (i,j),kind in list(kinds.items()):
+        x,y=scene.screen(i+.5,j+.5)
+        if kind=='lot' and (370<x<500 and 270<y<355 or 475<x<635 and 355<y<415):
+            kinds[(i,j)]='cobble';reserved.add((i,j))
+    paint_ground(scene,{c:'pave' if k=='promenade' else k for c,k in kinds.items()},
+                 {},ee.WATER,ee.STONE['dark'])
+
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            wi,wj=2.5,3
+            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):continue
+            seed=int(h01(li,lj,1901)*10000)
+            floors=2 if seed%3 else 3
+            x,y=scene.screen(li+wi/2,lj+wj/2)
+            half=(wi+wj)*4+7
+            if any(x+half>l and x-half<r and y+17>t and y-floors*10-33<b for l,t,r,b in protected):
+                ax,ay=scene.screen(li,lj)
+                x0,y0=math.floor(ax-50),math.floor(ay-90)
+                study=iso.Scene(100,150,(scene.ox-x0,scene.oy-y0))
+                ee.townhouse(study,li,lj,wi,wj,floors,seed);study.paint_objects()
+                l,t,r,b=study.img.convert('RGB').getbbox()
+                pixels=study.img.convert('RGB').load()
+                if any((sx+x0,sy+y0) in silhouette and pixels[sx,sy]!=(0,0,0)
+                       for sy in range(t,b) for sx in range(l,r)):continue
+            ee.townhouse(scene,li,lj,wi,wj,floors,seed)
+            reserved.update(cells)
+
+    trees=[round_tree(n,'#789664','#304E3B') for n in range(3)]
+    for (i,j),kind in kinds.items():
+        x,y=scene.screen(i+.5,j+.5)
+        if (i,j) in reserved or any(l-12<x<r+12 and t-3<y<b+25 for l,t,r,b in protected):continue
+        if kind=='grass' and h01(i,j,1948)<.12 or kind=='promenade' and (i+j)%11==0:
+            scene.add(i+j+1.5,lambda s,x=x,y=y,tree=trees[(i+j)%3]:s.sprite(tree,x,y+4))
+    # Kadriorg's formal flower beds, each low enough to leave the palace visible.
+    for x,y in ((565,285),(585,300),(605,315),(670,310)):
+        i,j=tile(x,y)
+        if any(l-5<x<r+5 and t-5<y<b+10 for l,t,r,b in protected):continue
+        iso.fill(scene,list(lp.corners(scene,i,j,1.8,1.8,1)),
+                 lambda px,py:ee.RED['lit'] if h01(px,py,1950)<.22 else ee.DARK['lit'])
+    for px,py in ((190,30),(680,75)):
+        bi,bj=tile(px,py)
+        x,y=scene.screen(bi,bj)
+        if y<shore(x):scene.add(bi+bj,lambda s,x=x,y=y:s.sprite(bateau(1),x,y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -2764,6 +2867,8 @@ CAPITALS = [
      "render": bratislava},
     {"id": "budapest", "name": "Budapest", "country": "Hungary", "longitude": 19.0402, "latitude": 47.4979,
      "render": budapest},
+    {"id": "tallinn", "name": "Tallinn", "country": "Estonia", "longitude": 24.7536, "latitude": 59.4370,
+     "render": tallinn},
 ]
 
 

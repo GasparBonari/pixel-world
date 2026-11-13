@@ -196,5 +196,14 @@
     "latitude": 47.4979,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "tallinn",
+    "name": "Tallinn",
+    "country": "Estonia",
+    "longitude": 24.7536,
+    "latitude": 59.437,
+    "width": 720,
+    "height": 520
   }
 ]
