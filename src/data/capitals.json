@@ -169,5 +169,14 @@
     "latitude": 52.2297,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "luxembourg",
+    "name": "Luxembourg City",
+    "country": "Luxembourg",
+    "longitude": 6.1319,
+    "latitude": 49.6117,
+    "width": 720,
+    "height": 520
   }
 ]

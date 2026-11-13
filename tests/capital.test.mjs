@@ -21,6 +21,57 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Luxembourg marks its capital, Vianden and only domestic decorations', () => {
+  const region = COVERAGE.find((c) => c.id === 'luxembourg');
+  assert.deepEqual(region.bounds, [5.7, 49.4, 6.55, 50.2]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
+  // The pinned Natural Earth capital is named Luxembourg. Its other two cities
+  // are less than 75 km away, so the existing city-spacing rule retains only it.
+  assert.deepEqual(at(6.13, 49.6117).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  assert.equal(at(6.2022, 49.935).filter((i) => icons.names[i[0]] === 'vianden').length, 1);
+  for (const [lon, lat] of [[6.1667, 49.8833], [6.3333, 49.7]])
+    assert.equal(at(lon, lat).length, 0, 'nearby towns must respect the 75 km spacing rule');
+  const [w, s, e, n] = region.bounds;
+  const own = tier.filter((i) => w <= i[1] && i[1] <= e && s <= i[2] && i[2] <= n);
+  // Belgium's pre-existing Arlon group also lies in these rectangular bounds.
+  assert.equal(own.filter((i) => icons.names[i[0]] === 'boat').length, 0, 'Luxembourg is landlocked');
+  for (const [lon, lat] of [[5.9125, 49.9125], [5.9875, 49.7875], [5.8125, 49.7625]])
+    assert.equal(at(lon, lat).filter((i) => icons.names[i[0]] === 'oak').length, 1);
+  const frame = icons.frames[icons.names.indexOf('vianden')];
+  assert.deepEqual(frame.slice(2), [38, 46]);
+});
+
+test('Luxembourg supports focal arrival and keeps its visit across neighbouring coverage', () => {
+  const city = scenes.find((s) => s.id === 'luxembourg');
+  assert.equal(city.name, 'Luxembourg City');
+  assert.equal(city.country, 'Luxembourg');
+  assert.deepEqual([city.width, city.height], [720, 520]);
+  assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: 6.4, latitude: 49.8, zoom: 5 };
+    const focal = globePoint(city.longitude, city.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom+.3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(current.capitalId, 'luxembourg');
+    const arrived = globePoint(city.longitude, city.latitude, current, viewport);
+    assert.ok(Math.hypot(arrived.x-focal.x, arrived.y-focal.y) < 1);
+    for (const [dx, dy] of [[50, 0], [-50, 0], [0, 50], [0, -50]]) {
+      for (let step = 0; step < 100; step++)
+        current = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      assert.equal(camera.activeCapital(current).id, 'luxembourg');
+      const rect = capitals.capitalRect(city, current, viewport, 2);
+      assert.ok(rect.x <= .5 && rect.y <= .5);
+      assert.ok(rect.x+rect.width >= viewport.width-.5 && rect.y+rect.height >= viewport.height-.5);
+      const beyond = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      const stopped = capitals.capitalRect(city, beyond, viewport, 2);
+      assert.ok(Math.abs(stopped.x-rect.x) < .01 && Math.abs(stopped.y-rect.y) < .01);
+    }
+  }
+});
+
 test('Poland marks Warsaw, spaced city groups and Malbork inside its own bounds', () => {
   const poland = COVERAGE.find((c) => c.id === 'warsaw');
   assert.deepEqual(poland.bounds, [14.05, 49.0, 24.2, 55.1]);
@@ -379,11 +430,11 @@ test("Belgium marks Brussels, spaced cities and Gravensteen within its own bound
   assert.ok(w <= landmark[1] && landmark[1] <= e && s <= landmark[2] && landmark[2] <= n);
 });
 
-test('Brussels: focal zoom arrives at its scene, and Eupen keeps country detail', () => {
+test('Brussels: focal zoom arrives at its scene, and De Panne keeps country detail', () => {
   const brussels = scenes.find((s) => s.id === 'brussels');
   assert.deepEqual([brussels.width, brussels.height], [720, 520]);
   assert.equal(maxZoomAt(4.3517, 50.8503), CAPITAL_ZOOM.full);
-  assert.equal(maxZoomAt(6.03, 50.63), COUNTRY_ZOOM.max); // Eupen, beyond capital reach
+  assert.equal(maxZoomAt(2.59, 51.10), COUNTRY_ZOOM.max); // De Panne, beyond Brussels/Luxembourg reach
   assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered
   let arriving = { longitude: 4.8, latitude: 50.6, zoom: 5 };
   const focal = globePoint(brussels.longitude, brussels.latitude, arriving, view);

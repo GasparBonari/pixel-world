@@ -110,6 +110,11 @@ COUNTRY_TIER = [
      "trees": 7,
      # The Teutonic brick castle on the east bank of the Nogat at Malbork.
      "landmarks": [("malbork", 19.02778, 54.03972)]},
+    {"adm0": "LUX", "bounds": (5.7, 49.4, 6.55, 50.2), "capital": "Luxembourg", "cities": 9,
+     # The populated places are within 75 km of the capital. Keep that rule;
+     # sample a few broadleaf trees at native country-index resolution.
+     "trees": 3, "decoration_grid": .025, "decoration_km": 12,
+     "landmarks": [("vianden", 6.20222, 49.935)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -139,6 +144,7 @@ VARIANTS = {
     "gozo-citadel": 1,
     "karlstejn": 1,
     "malbork": 1,
+    "vianden": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -410,7 +416,7 @@ def main():
                 kind = "pine" if lat >= 44 else "oak" if lat >= 40 else "olive"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
-            if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL", "DNK", "CZE", "POL"):
+            if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL", "DNK", "CZE", "POL", "LUX"):
                 kind = "pine" if (spec["adm0"] in ("DEU", "POL") and lat > 53 or spec["adm0"] in ("GBR", "DNK") and lat > 56) else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue

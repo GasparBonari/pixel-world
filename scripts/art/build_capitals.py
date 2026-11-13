@@ -2384,6 +2384,125 @@ def warsaw():
     return scene.img.convert('RGB')
 
 
+def luxembourg():
+    import landmarks_luxembourg as lu
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # Compressed Alzette bends around the Bock/Grund on alternating isometric axes.
+    path = [tile(x,y) for x,y in ((650,200),(530,260),(610,300),(410,400),(490,440),(650,520))]
+    bridge_i, bridge_j = tile(75,475)
+    stream_i = bridge_i
+
+    def alzette(i,j,margin=0):
+        for (a,b),(c,d) in zip(path,path[1:]):
+            if abs(a-c)<.01 and min(b,d)-margin < j < max(b,d)+margin and abs(i-a)<.8+margin:
+                return True
+            if abs(b-d)<.01 and min(a,c)-margin < i < max(a,c)+margin and abs(j-b)<.8+margin:
+                return True
+        return False
+
+    def water(i,j):
+        return alzette(i,j) or abs(i-stream_i)<.7 and j>bridge_j-24
+
+    kinds={}
+    for i,j in visible_tiles(scene):
+        x,y=scene.screen(i+.5,j+.5)
+        petrusse=abs(i-stream_i)<3.8 and j>bridge_j-24
+        if water(i+.5,j+.5):kind='water'
+        elif alzette(i+.5,j+.5,1):kind='quay'
+        elif alzette(i+.5,j+.5,2.5):kind='promenade'
+        elif petrusse or x>510 and y<190 or x<160 and y<230:
+            kind='gravel' if i%11==0 or j%11==0 else 'grass'
+        elif i%12==0 or j%12==0:kind='cobble'
+        else:kind='lot'
+        kinds[(i,j)]=kind
+
+    reserved,protected,silhouette=set(),[],set()
+
+    def reserve(i,j,wi,wj):
+        for a in range(math.floor(i),math.ceil(i+wi)):
+            for b in range(math.floor(j),math.ceil(j+wj)):
+                reserved.add((a,b))
+                if kinds.get((a,b))=='lot':kinds[(a,b)]='pave'
+
+    def landmark(builder,x,y,wi,wj):
+        ci,cj=tile(x,y)
+        i,j=ci-wi/2,cj-wj/2
+        builder(scene,i,j)
+        reserve(i-.8,j-.8,wi+1.6,wj+2)
+        study=iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
+        builder(study,i,j);study.paint_objects()
+        left,top,right,bottom=(v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0<left<right<WIDTH and 0<top<bottom<HEIGHT,(builder.__name__,(left,top,right,bottom))
+        protected.append((left-4,top-4,right+4,bottom+5))
+        pixels=study.img.convert('RGB').load()
+        for sy in range(top+100,bottom+100):
+            for sx in range(left+100,right+100):
+                if pixels[sx,sy]!=(0,0,0):
+                    silhouette.update((sx-100+dx,sy-100+dy) for dx in range(-3,4) for dy in range(-3,4))
+
+    # Relative coordinate order is preserved in both axes, with distance compressed.
+    landmark(lu.philharmonie,635,85,9,6)
+    landmark(lu.mudam,530,165,9,6)
+    landmark(lu.bock,465,255,10,4.5)
+    landmark(lu.palace,290,275,9,3.5)
+    landmark(lu.abbey,425,375,10,7)
+    landmark(lu.cathedral,250,405,6,8)
+    landmark(lu.gelle_fra,170,430,3.8,3.8)
+    landmark(lu.adolphe_bridge,75,475,12,2.6)
+
+    # Open Place de la Constitution, palace forecourt and the Corniche promenade.
+    for (i,j),kind in list(kinds.items()):
+        x,y=scene.screen(i+.5,j+.5)
+        if kind=='lot' and (120<x<210 and 350<y<450 or 210<x<350 and 275<y<305):
+            kinds[(i,j)]='cobble';reserved.add((i,j))
+    paint_ground(scene,{c:'pave' if k=='promenade' else k for c,k in kinds.items()},
+                 {},lu.WATER,lu.ROCK['dark'])
+
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            wi,wj=2.5,3
+            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):continue
+            seed=int(h01(li,lj,613)*10000)
+            floors=2 if seed%3==0 else 3
+            x,y=scene.screen(li+wi/2,lj+wj/2)
+            half=(wi+wj)*4+7
+            if any(x+half>l and x-half<r and y+17>t and y-floors*11-30<b for l,t,r,b in protected):
+                ax,ay=scene.screen(li,lj)
+                x0,y0=math.floor(ax-50),math.floor(ay-80)
+                study=iso.Scene(100,140,(scene.ox-x0,scene.oy-y0))
+                lu.townhouse(study,li,lj,wi,wj,floors,seed)
+                study.paint_objects()
+                l,t,r,b=study.img.convert('RGB').getbbox()
+                pixels=study.img.convert('RGB').load()
+                if any((sx+x0,sy+y0) in silhouette and pixels[sx,sy]!=(0,0,0)
+                       for sy in range(t,b) for sx in range(l,r)):
+                    continue
+            lu.townhouse(scene,li,lj,wi,wj,floors,seed)
+            reserved.update(cells)
+
+    trees=[round_tree(n,'#78975F','#304C36') for n in range(3)]
+    for (i,j),kind in kinds.items():
+        x,y=scene.screen(i+.5,j+.5)
+        if (i,j) in reserved or any(l-12<x<r+12 and t-3<y<b+25 for l,t,r,b in protected):continue
+        if kind=='grass' and h01(i,j,617)<.14 or kind=='promenade' and (i+j)%13==0:
+            scene.add(i+j+1.5,lambda s,x=x,y=y,tree=trees[(i+j)%3]:s.sprite(tree,x,y+4))
+    # One small rowing boat on the Alzette, away from the narrow Pétrusse stream.
+    bi,bj=tile(570,240)
+    x,y=scene.screen(bi,bj)
+    scene.add(bi+bj,lambda s:s.sprite(rowboat(0),x,y))
+    # A low square-crossing bridge in Grund, separate from the high Adolphe bridge.
+    ai,aj=path[4]
+    lp.stone_bridge(scene,ai-2,aj-2,4,width=1.2,deck=5)
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -2423,6 +2542,8 @@ CAPITALS = [
      "render": prague},
     {"id": "warsaw", "name": "Warsaw", "country": "Poland", "longitude": 21.0122, "latitude": 52.2297,
      "render": warsaw},
+    {"id": "luxembourg", "name": "Luxembourg City", "country": "Luxembourg", "longitude": 6.1319, "latitude": 49.6117,
+     "render": luxembourg},
 ]
 
 

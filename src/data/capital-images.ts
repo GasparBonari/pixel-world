@@ -19,4 +19,5 @@ export const CAPITAL_IMAGES = {
   valletta: require('@/assets/world/capitals/valletta.png'),
   prague: require('@/assets/world/capitals/prague.png'),
   warsaw: require('@/assets/world/capitals/warsaw.png'),
+  luxembourg: require('@/assets/world/capitals/luxembourg.png'),
 } as const;

@@ -1928,6 +1928,45 @@ def malbork(seed=0):
     return scene.img
 
 
+def vianden(seed=0):
+    """Vianden's hilltop Romanesque/Gothic residence, paired halls, chapel and curtain."""
+    import iso
+    from landmarks_luxembourg import block, STONE, ROCK, SLATE, PALE, GLAZE
+    from landmarks_iberia import hip_roof, crenellate, stone_courses
+    from landmarks_amsterdam import gable_roof
+    from landmarks_italy import cylinder
+    from landmarks_denmark import spire
+
+    def openings(u, v, lit):
+        c, level = int(u) % 5, int(v) % 8
+        if c in (1, 2) and 3 <= level <= 5:
+            return GLAZE['deep']
+        if c in (0, 3) and 2 <= level <= 6 or level == 2 and c in (1, 2):
+            return PALE['lit' if lit else 'dark']
+        return stone_courses(STONE, 4, 7)(u, v, lit)
+
+    scene = iso.Scene(38, 46, (20, 34))
+    shadow = Sprite(38, 46)
+    ground_shadow(shadow, 19, 43, 16, 1.3)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    block(scene,-1.1,-.7,2.3,1.8,6,ROCK)
+    # The two contiguous palas have very steep, long slate roofs.
+    for a,b,w,d,h in ((-.8,-.45,1.25,.7,14),(.15,-.5,1.15,.8,15)):
+        block(scene,a,b,w,d,h,STONE,openings,z=6)
+        gable_roof(scene,a,b,w,d,h+6,8,SLATE,STONE,'point')
+    # Romanesque chapel's polygonal end, separate round defensive tower and cap.
+    cylinder(scene,-.7,.55,.4,.4,6,12,PALE,openings)
+    hip_roof(scene,-1.1,.15,.8,.8,18,5,SLATE)
+    cylinder(scene,-1,.1,.25,.25,2,17,STONE,openings)
+    spire(scene,-1,.1,.28,19,5,SLATE,conical=True)
+    cover=block(scene,-.7,.8,1.8,.3,6,STONE)
+    crenellate(scene,-.7,.8,1.8,.3,6,STONE,cover,step=3,height=2)
+    block(scene,.7,.35,.5,.65,9,STONE,openings)
+    hip_roof(scene,.67,.32,.56,.71,9,4,SLATE)
+    return scene.img
+
+
 FAUNA = {
     "deer": deer, "fox": fox, "elephant": elephant, "zebra": zebra, "panda": panda,
     "tiger": tiger, "bison": bison, "moose": moose, "jaguar": jaguar, "capybara": capybara,
@@ -1957,6 +1996,7 @@ ICONS = {
     "gozo-citadel": gozo_citadel,
     "karlstejn": karlstejn,
     "malbork": malbork,
+    "vianden": vianden,
     **FLORA, **FAUNA,
 }
 
