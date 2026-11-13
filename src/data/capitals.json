@@ -187,5 +187,14 @@
     "latitude": 48.1486,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "budapest",
+    "name": "Budapest",
+    "country": "Hungary",
+    "longitude": 19.0402,
+    "latitude": 47.4979,
+    "width": 720,
+    "height": 520
   }
 ]

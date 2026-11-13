@@ -21,6 +21,72 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Hungary marks Budapest, spaced cities and Tihany Abbey within its bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'budapest');
+  assert.deepEqual(region.bounds, [16.05, 45.7, 22.95, 48.65]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
+  // Pinned Natural Earth order, retaining the existing 75 km city-spacing rule.
+  const cities = [[19.0814, 47.502], [20.78, 48.1004], [21.63, 47.5305],
+    [20.15, 46.2504], [18.22, 46.0804], [17.63, 47.7004], [19.7, 46.9],
+    [16.6287, 47.2253], [21.101, 46.672]];
+  assert.deepEqual(at(...cities[0]).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  for (const site of cities.slice(1, 3))
+    assert.deepEqual(at(...site).map((i) => icons.names[i[0]]).sort(), ['church', 'house', 'house']);
+  for (const [rank, site] of cities.entries()) {
+    if (rank > 2) assert.deepEqual(at(...site).map((i) => icons.names[i[0]]), rank % 2 ? ['church'] : ['house', 'house']);
+    const [west, south, east, north] = region.bounds;
+    assert.ok(west <= site[0] && site[0] <= east && south <= site[1] && site[1] <= north);
+    for (const other of cities.slice(rank+1)) {
+      const radians = (n) => n*Math.PI/180;
+      const h = Math.sin(radians(other[1]-site[1])/2)**2 + Math.cos(radians(site[1]))
+        * Math.cos(radians(other[1])) * Math.sin(radians(other[0]-site[0])/2)**2;
+      assert.ok(6371*2*Math.atan2(Math.sqrt(h), Math.sqrt(1-h)) >= 75);
+    }
+  }
+  assert.equal(at(17.8894, 46.9139).filter((i) => icons.names[i[0]] === 'tihany-abbey').length, 1);
+  const [west, south, east, north] = region.bounds;
+  const own = tier.filter((i) => west <= i[1] && i[1] <= east && south <= i[2] && i[2] <= north);
+  assert.equal(own.filter((i) => icons.names[i[0]] === 'boat').length, 0, 'Hungary is landlocked');
+  for (const site of [[20.625, 48.625], [18.875, 48.125], [19.875, 47.875],
+    [16.875, 47.625], [20.875, 47.625], [18.875, 46.875], [16.625, 46.625]])
+    assert.equal(at(...site).filter((i) => icons.names[i[0]] === 'oak').length, 1);
+});
+
+test('Budapest supports focal arrival and retains its scene while panning near Slovakia', () => {
+  const city = scenes.find((s) => s.id === 'budapest');
+  assert.equal(city.name, 'Budapest');
+  assert.equal(city.country, 'Hungary');
+  assert.deepEqual([city.width, city.height], [720, 520]);
+  assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(21.63, 47.5305), COUNTRY_ZOOM.max); // Debrecen stays country-only.
+  assert.equal(maxZoomAt(20.15, 46.2504), CAPITAL_ZOOM.full); // Szeged lies inside the shared 1.5° reach.
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens stays uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: 19.3, latitude: 47.7, zoom: 5 };
+    const focal = globePoint(city.longitude, city.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom+.3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(camera.activeCapital(current).id, 'budapest');
+    const arrived = globePoint(city.longitude, city.latitude, current, viewport);
+    assert.ok(Math.hypot(arrived.x-focal.x, arrived.y-focal.y) < 1);
+    assert.equal(camera.activeCapital({ ...current, longitude: 17.1077, latitude: 48.1486 }).id, 'budapest');
+    for (const [dx, dy] of [[50, 0], [-50, 0], [0, 50], [0, -50]]) {
+      for (let step = 0; step < 100; step++)
+        current = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      assert.equal(camera.activeCapital(current).id, 'budapest');
+      const rect = capitals.capitalRect(city, current, viewport, 2);
+      assert.ok(rect.x <= .5 && rect.y <= .5);
+      assert.ok(rect.x+rect.width >= viewport.width-.5 && rect.y+rect.height >= viewport.height-.5);
+      const beyond = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      const stopped = capitals.capitalRect(city, beyond, viewport, 2);
+      assert.ok(Math.abs(stopped.x-rect.x) < .01 && Math.abs(stopped.y-rect.y) < .01);
+    }
+    assert.equal(camera.activeCapital({ ...current, zoom: 6.2 }), undefined);
+  }
+});
+
 test('Slovakia marks Bratislava, spaced cities and Spiš Castle within its bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'bratislava');
   assert.deepEqual(region.bounds, [16.8, 47.7, 22.6, 49.65]);

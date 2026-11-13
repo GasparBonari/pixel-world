@@ -2004,6 +2004,35 @@ def spis_castle(seed=0):
     return scene.img
 
 
+def tihany_abbey(seed=0):
+    """Tihany's twin Baroque onion towers, red-roofed abbey and Balaton peninsula bluff."""
+    import iso
+    from landmarks_hungary import block, band, windows, STONE, WHITE, RED, SLATE, HILL_GRASS
+    from landmarks_paris import P, poly
+    from landmarks_iberia import hip_roof
+    from landmarks_denmark import spire
+    scene=iso.Scene(46,68,(23,49))
+    shadow=Sprite(46,68)
+    ground_shadow(shadow,23,64,19,1.3)
+    scene.img=shadow.image();scene.px=scene.img.load()
+    # Actual peninsula landform, rather than an invented sea surrounding the abbey.
+    poly(scene,[P(scene,a,b,z) for a,b,z in ((-1.5,-.8,0),(1.4,-.8,0),(1.8,1,0),(-1,1.5,0))],
+         lambda x,y:STONE['dark'] if int(y)%3 else STONE['line'])
+    poly(scene,[P(scene,a,b,4) for a,b in ((-1.4,-.7),(1.3,-.7),(1.5,.9),(-1,1.2))],
+         lambda x,y:HILL_GRASS)
+    for a,b,w,d in ((-.9,-.65,1.8,.6),(.6,-.1,.5,1),(-.9,.6,2,.45)):
+        block(scene,a,b,w,d,10,WHITE,windows(WHITE,10,5,8),z=4)
+        hip_roof(scene,a,b,w,d,14,6,RED)
+    # Long church nave behind its paired western towers.
+    block(scene,-1,-.4,.8,1.45,16,WHITE,windows(WHITE,16,5,10),z=4)
+    hip_roof(scene,-1,-.4,.8,1.45,20,8,RED)
+    for a in (-1.1,.1):
+        block(scene,a,.8,.58,.65,26,WHITE,windows(WHITE,26,5,10),z=4)
+        for z in (6,19,29):band(scene,a,.8,.58,.65,z,WHITE)
+        spire(scene,a+.29,1.125,.44,31,12,SLATE,onion=True)
+    return scene.img
+
+
 FAUNA = {
     "deer": deer, "fox": fox, "elephant": elephant, "zebra": zebra, "panda": panda,
     "tiger": tiger, "bison": bison, "moose": moose, "jaguar": jaguar, "capybara": capybara,
@@ -2035,6 +2064,7 @@ ICONS = {
     "malbork": malbork,
     "vianden": vianden,
     "spis-castle": spis_castle,
+    "tihany-abbey": tihany_abbey,
     **FLORA, **FAUNA,
 }
 

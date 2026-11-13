@@ -2607,6 +2607,118 @@ def bratislava():
     return scene.img.convert('RGB')
 
 
+def budapest():
+    import landmarks_hungary as hu
+
+    scene=new_scene()
+
+    def tile(x,y):
+        return tile_of((x-WIDTH/2)/8,(y-scene.oy)/4)
+
+    # Compressed Danube bends use only tile axes. The local reach through the
+    # Chain Bridge follows j, so the deck crosses the water squarely along i.
+    river_path=[tile(x,y) for x,y in [(325,-40),(165,40),(365,140),(225,210),
+                                      (365,280),(285,320),(445,400),(345,450),(485,520)]]
+
+    def river_distance(i,j):
+        best=1e9
+        for (ai,aj),(bi,bj) in zip(river_path,river_path[1:]):
+            di,dj=bi-ai,bj-aj
+            t=max(0,min(1,((i-ai)*di+(j-aj)*dj)/(di*di+dj*dj)))
+            best=min(best,math.hypot(i-ai-t*di,j-aj-t*dj))
+        return best
+    kinds={}
+    for i,j in visible_tiles(scene):
+        x,y=scene.screen(i+.5,j+.5)
+        distance=river_distance(i+.5,j+.5)
+        if distance<3.2:kind='water'
+        elif distance<4.2:kind='quay'
+        elif distance<5.5:kind='promenade'
+        elif x<210 and y>220 or x>480 and y<210:
+            kind='gravel' if i%9==0 or j%9==0 else 'grass'
+        elif i%11==0 or j%11==0:kind='cobble'
+        else:kind='lot'
+        kinds[(i,j)]=kind
+
+    reserved,protected,silhouette=set(),[],set()
+
+    def reserve(i,j,wi,wj):
+        for a in range(math.floor(i),math.ceil(i+wi)):
+            for b in range(math.floor(j),math.ceil(j+wj)):
+                reserved.add((a,b))
+                if kinds.get((a,b))=='lot':kinds[(a,b)]='pave'
+
+    def landmark(builder,x,y,wi,wj):
+        ci,cj=tile(x,y)
+        i,j=ci-wi/2,cj-wj/2
+        builder(scene,i,j)
+        reserve(i-1,j-1,wi+2,wj+2.5)
+        study=iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
+        builder(study,i,j);study.paint_objects()
+        left,top,right,bottom=(v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0<left<right<WIDTH and 0<top<bottom<HEIGHT,(builder.__name__,(left,top,right,bottom))
+        protected.append((left-4,top-4,right+4,bottom+5))
+        pixels=study.img.convert('RGB').load()
+        for sy in range(top+100,bottom+100):
+            for sx in range(left+100,right+100):
+                if pixels[sx,sy]!=(0,0,0):
+                    silhouette.update((sx-100+dx,sy-100+dy) for dx in range(-3,4) for dy in range(-3,4))
+
+    # Real north/east order, compressed; footprints/silhouettes reserve their squares.
+    landmark(hu.szechenyi_baths,625,112,11,8)
+    landmark(hu.heroes_square,590,215,11,7)
+    landmark(hu.parliament,450,290,12,5)
+    landmark(hu.fishermans_bastion,180,315,11,4.5)
+    landmark(hu.matthias_church,70,365,5,7)
+    landmark(hu.st_stephen,570,395,7,6)
+    landmark(hu.chain_bridge,375,435,18,2.5)
+    landmark(hu.buda_castle,210,480,12,4.5)
+
+    # Kossuth Square and St Stephen's Square stay open in front of their monuments.
+    for (i,j),kind in list(kinds.items()):
+        x,y=scene.screen(i+.5,j+.5)
+        if kind=='lot' and (325<x<450 and 290<y<325 or 560<x<655 and 390<y<430):
+            kinds[(i,j)]='cobble';reserved.add((i,j))
+    paint_ground(scene,{c:'pave' if k=='promenade' else k for c,k in kinds.items()},
+                 {},hu.WATER,hu.STONE['dark'])
+
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            wi,wj=2.5,3
+            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):continue
+            seed=int(h01(li,lj,1801)*10000)
+            floors=2 if seed%3==0 else 3
+            x,y=scene.screen(li+wi/2,lj+wj/2)
+            half=(wi+wj)*4+7
+            if any(x+half>l and x-half<r and y+17>t and y-floors*10-30<b for l,t,r,b in protected):
+                ax,ay=scene.screen(li,lj)
+                x0,y0=math.floor(ax-50),math.floor(ay-80)
+                study=iso.Scene(100,140,(scene.ox-x0,scene.oy-y0))
+                hu.townhouse(study,li,lj,wi,wj,floors,seed);study.paint_objects()
+                l,t,r,b=study.img.convert('RGB').getbbox()
+                pixels=study.img.convert('RGB').load()
+                if any((sx+x0,sy+y0) in silhouette and pixels[sx,sy]!=(0,0,0)
+                       for sy in range(t,b) for sx in range(l,r)):continue
+            hu.townhouse(scene,li,lj,wi,wj,floors,seed)
+            reserved.update(cells)
+
+    trees=[round_tree(n,'#6D9959','#2D4B31') for n in range(3)]
+    for (i,j),kind in kinds.items():
+        x,y=scene.screen(i+.5,j+.5)
+        if (i,j) in reserved or any(l-12<x<r+12 and t-3<y<b+25 for l,t,r,b in protected):continue
+        if kind=='grass' and h01(i,j,1848)<.1 or kind=='promenade' and (i+j)%11==0:
+            scene.add(i+j+1.5,lambda s,x=x,y=y,tree=trees[(i+j)%3]:s.sprite(tree,x,y+4))
+    # Excursion boats along open Danube reaches, away from bridge piers.
+    for px,py in ((310,285),(415,485)):
+        bi,bj=tile(px,py)
+        x,y=scene.screen(bi,bj)
+        if any(l-15<x<r+15 and t-5<y<b+10 for l,t,r,b in protected):continue
+        scene.add(bi+bj,lambda s,x=x,y=y:s.sprite(bateau(1),x,y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -2650,6 +2762,8 @@ CAPITALS = [
      "render": luxembourg},
     {"id": "bratislava", "name": "Bratislava", "country": "Slovakia", "longitude": 17.1077, "latitude": 48.1486,
      "render": bratislava},
+    {"id": "budapest", "name": "Budapest", "country": "Hungary", "longitude": 19.0402, "latitude": 47.4979,
+     "render": budapest},
 ]
 
 
