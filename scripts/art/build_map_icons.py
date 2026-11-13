@@ -102,6 +102,10 @@ COUNTRY_TIER = [
      # City spacing stays 75 km; only decoration samples use the native source pixels.
      "trees": 2, "decoration_grid": 0.025, "decoration_km": 9,
      "landmarks": [("gozo-citadel", 14.2394, 36.0464)]},
+    {"adm0": "CZE", "bounds": (12.05, 48.5, 18.9, 51.1), "capital": "Prague", "cities": 9,
+     "trees": 7,
+     # Karlštejn Castle, southwest of Prague, at the castle rather than the village.
+     "landmarks": [("karlstejn", 14.18806, 49.93944)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -129,6 +133,7 @@ VARIANTS = {
     "chillon": 1,
     "melk-abbey": 1,
     "gozo-citadel": 1,
+    "karlstejn": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -400,7 +405,7 @@ def main():
                 kind = "pine" if lat >= 44 else "oak" if lat >= 40 else "olive"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
-            if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL", "DNK"):
+            if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL", "DNK", "CZE"):
                 kind = "pine" if (spec["adm0"] == "DEU" and lat > 53 or spec["adm0"] in ("GBR", "DNK") and lat > 56) else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue

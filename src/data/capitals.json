@@ -151,5 +151,14 @@
     "latitude": 35.8992,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "prague",
+    "name": "Prague",
+    "country": "Czechia",
+    "longitude": 14.4378,
+    "latitude": 50.0755,
+    "width": 720,
+    "height": 520
   }
 ]

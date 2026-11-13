@@ -1859,6 +1859,38 @@ def shade(color, amount):
     target = 255 if amount > 0 else 0
     return tuple(int(c + (target - c) * abs(amount)) for c in color)
 
+def karlstejn(seed=0):
+    """Karlštejn's stepped rocky hill, Great/Marian Towers and slate-roofed Imperial Palace."""
+    import iso
+    from landmarks_czechia import block, windows, band, STONE, PALE, GOTHIC, SLATE
+    from landmarks_iberia import hip_roof, crenellate
+    from landmarks_paris import P, poly
+
+    scene = iso.Scene(34, 42, (18, 32))
+    shadow = Sprite(34, 42)
+    ground_shadow(shadow, 17, 39, 14, 1.5)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    # Native small geometry, with no resampling of the capital-scale castle.
+    for points, material in (([(-.9, -.3, 5), (-.9, 1.05, 5), (.9, 1.05, 5), (.75, 1.2, 0), (-.98, 1.13, 0)], STONE['dark']),
+                             ([(.9, -.3, 5), (.9, 1.05, 5), (.75, 1.2, 0), (1.05, -.23, 0)], GOTHIC['deep'])):
+        poly(scene, [P(scene, *p) for p in points], lambda x, y, c=material: shade(c, -.13) if int(x+y) % 6 == 0 else c)
+    block(scene, -.9, -.3, 1.8, 1.35, 5, STONE, z=2)
+    # Great Tower above the lower Imperial Palace and Marian Tower.
+    block(scene, -.41, -.53, .71, .71, 15, PALE, windows(PALE, 15, 5, 7), z=7)
+    band(scene, -.41, -.53, .71, .71, 20, GOTHIC)
+    hip_roof(scene, -.5, -.62, .89, .89, 22, 6, SLATE)
+    for aa, bb in ((-.49, -.56), (.32, -.56), (-.49, .24), (.32, .24)):
+        block(scene, aa, bb, .1, .1, 3, SLATE, z=22)
+    block(scene, .26, .08, .6, .64, 12, PALE, windows(PALE, 12, 5, 6), z=6)
+    hip_roof(scene, .18, -.01, .77, .8, 18, 5, SLATE)
+    block(scene, -.71, .53, 1.28, .49, 8, PALE, windows(PALE, 8, 5, 7), z=5)
+    hip_roof(scene, -.77, .47, 1.4, .61, 13, 4, SLATE)
+    block(scene, -.86, .94, 1.73, .19, 4, STONE, z=4)
+    crenellate(scene, -.86, .94, 1.73, .19, 8, STONE, set(), step=3, height=2)
+    return scene.img
+
+
 FAUNA = {
     "deer": deer, "fox": fox, "elephant": elephant, "zebra": zebra, "panda": panda,
     "tiger": tiger, "bison": bison, "moose": moose, "jaguar": jaguar, "capybara": capybara,
@@ -1886,6 +1918,7 @@ ICONS = {
     "chillon": chillon,
     "melk-abbey": melk_abbey,
     "gozo-citadel": gozo_citadel,
+    "karlstejn": karlstejn,
     **FLORA, **FAUNA,
 }
 

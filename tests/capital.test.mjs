@@ -21,6 +21,61 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Czechia marks Prague, spaced city groups and Karlštejn inside its country bounds', () => {
+  const czechia = COVERAGE.find((c) => c.id === 'prague');
+  assert.deepEqual(czechia.bounds, [12.05, 48.5, 18.9, 51.1]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
+  // Names/sites from the pinned Natural Earth populated places, including its 'Pizen' spelling.
+  const cities = [[14.464, 50.0853], [18.25, 49.8304], [16.61, 49.2004], [13.36, 49.7404],
+    [17.65, 49.2304], [15.76, 50.0404], [15.08, 50.8], [14.46, 48.98]];
+  for (const [rank, [lon, lat]] of cities.entries()) {
+    const names = at(lon, lat).map((i) => icons.names[i[0]]).sort();
+    assert.deepEqual(names, rank === 0 ? ['castle', 'house', 'house']
+      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const [otherLon, otherLat] of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(lat*rad)*Math.sin(otherLat*rad)
+        + Math.cos(lat*rad)*Math.cos(otherLat*rad)*Math.cos((lon-otherLon)*rad));
+      assert.ok(km >= 75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+  assert.equal(at(14.1881, 49.9394).filter((i) => icons.names[i[0]] === 'karlstejn').length, 1);
+  const trees = [[13.625, 50.375], [12.375, 50.125], [17.625, 49.875], [15.125, 49.375],
+    [18.375, 49.375], [13.375, 49.125], [16.125, 48.875]];
+  for (const [lon, lat] of trees) assert.equal(at(lon, lat).filter((i) => icons.names[i[0]] === 'oak').length, 1);
+  const country = [...cities, ...trees, [14.1881, 49.9394]].flatMap(([lon, lat]) => at(lon, lat));
+  assert.equal(country.length, 24);
+  const [w, s, e, n] = czechia.bounds;
+  for (const [, lon, lat] of country) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat'
+    && w <= i[1] && i[1] <= e && s <= i[2] && i[2] <= n).length, 0, 'Czechia is landlocked');
+  for (const [lon, lat] of [[14.081, 50.663], [15.812, 50.206], [17.25, 49.63], [15.5833, 49.4004]])
+    assert.equal(at(lon, lat).length, 0, 'nearby cities respect the 75 km spacing rule');
+});
+
+test('Prague supports focal arrival and retains its visit across overlapping country coverage', () => {
+  const prague = scenes.find((s) => s.id === 'prague');
+  assert.equal(prague.name, 'Prague');
+  assert.equal(prague.country, 'Czechia');
+  assert.deepEqual([prague.width, prague.height], [720, 520]);
+  assert.equal(maxZoomAt(prague.longitude, prague.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(18.25, 49.8304), COUNTRY_ZOOM.max); // Ostrava
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered
+  let current = { longitude: 14.9, latitude: 50.4, zoom: 5 };
+  const focal = globePoint(prague.longitude, prague.latitude, current, view);
+  for (let step = 0; step < 8; step++)
+    current = zoomGlobe(current, current.zoom+.3, focal.x, focal.y, view);
+  assert.equal(current.zoom, CAPITAL_ZOOM.full);
+  assert.equal(current.capitalId, 'prague');
+  const after = globePoint(prague.longitude, prague.latitude, current, view);
+  assert.ok(Math.hypot(after.x-focal.x, after.y-focal.y) < 1);
+  for (let step = 0; step < 100; step++)
+    current = capitals.clampToCapitals(camera.rotateGlobe(current, 50, 40, view), scenes, view, 2);
+  assert.equal(current.capitalId, 'prague');
+  assert.equal(camera.activeCapital(current).id, 'prague');
+});
+
 test('detail allows deeper zoom only where it exists', () => {
   assert.equal(maxZoomAt(-9.14, 38.71), CAPITAL_ZOOM.full); // Lisbon
   assert.equal(maxZoomAt(-8.62, 41.15), COUNTRY_ZOOM.max); // Porto: Portugal, not the capital

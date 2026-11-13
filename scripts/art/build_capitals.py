@@ -2156,6 +2156,107 @@ def valletta():
     return scene.img.convert('RGB')
 
 
+def prague():
+    import landmarks_czechia as cz
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # Compressed Vltava bends follow alternating isometric axes. The northern reach
+    # passes east of Hradčany/Malá Strana; the southern reach passes west of New Town.
+    def water(i, j):
+        return (i <= 36 and 29 < j < 35 or 33 < i < 39 and 29 < j < 56
+                or 36 <= i <= 58 and 50 < j < 56 or j >= 50 and 55 < i < 61)
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        if water(i+.5, j+.5):
+            kind = 'water'
+        elif any(water(i+.5+di, j+.5+dj) for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+            kind = 'quay'
+        elif any(water(i+.5+di, j+.5+dj) for di, dj in ((3, 0), (-3, 0), (0, 3), (0, -3))):
+            kind = 'promenade'
+        elif (x < 190 and y < 270) or (x < 220 and y > 350) or (x > 585 and y > 410):
+            kind = 'gravel' if i % 9 == 0 or j % 9 == 0 else 'grass'
+        elif i % 12 == 0 or j % 12 == 0 or (455 < x < 655 and 210 < y < 320):
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected = set(), []
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[(a, b)] = 'pave'
+
+    def landmark(builder, x, y, wi, wj):
+        ci, cj = tile(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        builder(scene, i, j)
+        reserve(i-.8, j-.8, wi+1.6, wj+3)
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j)
+        study.paint_objects()
+        left, top, right, bottom = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, (left, top, right, bottom))
+        protected.append((left-4, top-3, right+4, bottom+5))
+
+    # North-up geographic order, with distances compressed independently on each axis.
+    landmark(cz.prague_castle, 115, 135, 13, 8)
+    landmark(cz.st_nicholas, 225, 220, 7.5, 5.2)
+    landmark(cz.charles_bridge, 360, 365, 2.3, 14)
+    landmark(cz.old_town_hall, 555, 345, 6.5, 3.6)
+    landmark(cz.tyn_church, 595, 245, 6.8, 4.6)
+    landmark(cz.powder_gate, 675, 290, 3.8, 3.2)
+    landmark(cz.national_theatre, 415, 445, 8, 5.8)
+    landmark(cz.dancing_house, 530, 490, 7, 5)
+    # Old Town Square and the theatre forecourt stay paved and low.
+    for x, y, wi, wj in ((535, 365, 9, 6), (435, 460, 6, 3)):
+        ci, cj = tile(x, y)
+        reserve(ci-wi/2, cj-wj/2, wi, wj)
+    paint_ground(scene, {c: 'pave' if k == 'promenade' else k for c, k in kinds.items()},
+                 {}, cz.WATER, cz.STONE['dark'])
+
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li+3) for b in range(lj, lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 367)*10000)
+            floors = 2 if seed % 3 == 0 else 3
+            x, y = scene.screen(li+wi/2, lj+wj/2)
+            half = (wi+wj)*4+6
+            top, bottom = y-floors*11-30, y+(wi+wj)*2+6
+            if any(x+half > l and x-half < r and bottom > t and top < b for l, t, r, b in protected):
+                continue
+            if any(water(li+wi/2+di, lj+wj/2+dj) for di, dj in ((4, 0), (-4, 0), (0, 4), (0, -4))):
+                continue
+            cz.townhouse(scene, li, lj, wi, wj, floors, seed)
+            reserved.update(cells)
+
+    trees = [round_tree(n, '#739858', '#304C30') for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i+.5, j+.5)
+        if (i, j) in reserved or any(l-12 < x < r+12 and t-3 < y < b+25 for l, t, r, b in protected):
+            continue
+        if kind == 'grass' and h01(i, j, 369) < .11 or kind == 'promenade' and (i+j) % 11 == 0:
+            scene.add(i+j+1.5, lambda s, x=x, y=y, tree=trees[(i+j) % 3]: s.sprite(tree, x, y+4))
+    for i, j in ((16, 32), (36, 43), (58, 67), (58, 81)):
+        x, y = scene.screen(i, j)
+        image = bateau(0) if j % 2 else rowboat(i)
+        scene.add(i+j, lambda s, x=x, y=y, image=image: s.sprite(image, x, y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -2191,6 +2292,8 @@ CAPITALS = [
      "render": vienna},
     {"id": "valletta", "name": "Valletta", "country": "Malta", "longitude": 14.5146, "latitude": 35.8992,
      "render": valletta},
+    {"id": "prague", "name": "Prague", "country": "Czechia", "longitude": 14.4378, "latitude": 50.0755,
+     "render": prague},
 ]
 
 
