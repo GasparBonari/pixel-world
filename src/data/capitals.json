@@ -160,5 +160,14 @@
     "latitude": 50.0755,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "warsaw",
+    "name": "Warsaw",
+    "country": "Poland",
+    "longitude": 21.0122,
+    "latitude": 52.2297,
+    "width": 720,
+    "height": 520
   }
 ]

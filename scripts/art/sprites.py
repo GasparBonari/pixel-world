@@ -1891,6 +1891,43 @@ def karlstejn(seed=0):
     return scene.img
 
 
+def malbork(seed=0):
+    """Malbork's brick High Castle, steep red roofs, Grand Masters' Palace and curtain towers."""
+    import iso
+    from landmarks_poland import block, band, windows, BRICK, CLAY, STONE, SLATE
+    from landmarks_iberia import hip_roof, crenellate, stone_courses
+    from landmarks_amsterdam import gable_roof
+    from landmarks_denmark import spire
+    from landmarks_italy import cylinder
+
+    scene = iso.Scene(40, 44, (22, 32))
+    shadow = Sprite(40, 44)
+    ground_shadow(shadow, 20, 41, 17, 1.2)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    block(scene, -1.3, -.45, 2.6, 1.5, 2, STONE)
+    # The broad High Castle's roof dominates; its little church gable has pinnacles.
+    block(scene, -.07, -.4, 1.2, .8, 12, BRICK, windows(BRICK, 12, 5, 8), z=2)
+    gable_roof(scene, -.1, -.43, 1.26, .86, 14, 8, CLAY, BRICK, 'point')
+    for a, H in ((.04, 3), (.28, 5), (.51, 7), (.75, 5), (.98, 3)):
+        block(scene, a, .42, .08, .1, H, BRICK, z=15)
+    block(scene, .9, -.33, .27, .27, 15, BRICK, windows(BRICK, 15, 4, 8), z=2)
+    crenellate(scene, .9, -.33, .27, .27, 17, BRICK, set(), step=3, height=2)
+    # Grand Masters' Palace, lower outer ward and the Nogat-facing curtain.
+    block(scene, -1.2, -.23, .87, 1.13, 9, BRICK, windows(BRICK, 9, 5, 8), z=2)
+    hip_roof(scene, -1.25, -.28, .97, 1.23, 11, 6, CLAY)
+    block(scene, -1.2, .8, 2.4, .2, 4, BRICK, stone_courses(BRICK, 3, 6), z=2)
+    crenellate(scene, -1.2, .8, 2.4, .2, 6, BRICK, set(), step=4, height=2)
+    for a, b, radius, H in ((-1, .87, .22, 7), (1.07, .6, .23, 8)):
+        cylinder(scene, a, b, radius, radius, 2, H, BRICK,
+                 lambda u, v, lit: BRICK['deep'] if int(u) % 5 == 2 and 3 < v < 6 else None)
+        band(scene, a-radius, b-radius, radius*2, radius*2, H+2, STONE, 1)
+        spire(scene, a, b, radius+.08, H+3, 5, CLAY, conical=True)
+    block(scene, -1.2, .07, .3, .33, 10, BRICK, windows(BRICK, 10, 4, 8), z=2)
+    hip_roof(scene, -1.25, .02, .4, .43, 12, 4, SLATE)
+    return scene.img
+
+
 FAUNA = {
     "deer": deer, "fox": fox, "elephant": elephant, "zebra": zebra, "panda": panda,
     "tiger": tiger, "bison": bison, "moose": moose, "jaguar": jaguar, "capybara": capybara,
@@ -1919,6 +1956,7 @@ ICONS = {
     "melk-abbey": melk_abbey,
     "gozo-citadel": gozo_citadel,
     "karlstejn": karlstejn,
+    "malbork": malbork,
     **FLORA, **FAUNA,
 }
 

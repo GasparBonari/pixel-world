@@ -2257,6 +2257,133 @@ def prague():
     return scene.img.convert('RGB')
 
 
+def warsaw():
+    import landmarks_poland as pl
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # The Vistula passes east of the Old Town and leaves the compressed scene to
+    # the east. Its visible northern reach follows +i; Łazienki's lake is separate.
+    lake_i, lake_j = tile(505, 435)
+    lake_i, lake_j = lake_i-4, lake_j-2.4
+
+    def water(i, j):
+        river = 1 < j < 8
+        lake = (lake_i-3 < i < lake_i+11 and lake_j-2 < j < lake_j+8
+                and not (lake_i-.7 < i < lake_i+8.7 and lake_j-.7 < j < lake_j+5.5))
+        return river or lake
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        if water(i+.5, j+.5):
+            kind = 'water'
+        elif any(water(i+.5+di, j+.5+dj) for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+            kind = 'quay'
+        elif any(water(i+.5+di, j+.5+dj) for di, dj in ((3, 0), (-3, 0), (0, 3), (0, -3))):
+            kind = 'promenade'
+        elif (x > 270 and y > 380) or (x > 555 and y > 350) or (x < 170 and y < 150):
+            kind = 'gravel' if i % 9 == 0 or j % 9 == 0 else 'grass'
+        elif i % 12 == 0 or j % 12 == 0 or abs(x+1.6*y-1050) < 8:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected, silhouette = set(), [], set()
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[(a, b)] = 'pave'
+
+    def landmark(builder, x, y, wi, wj):
+        ci, cj = tile(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        builder(scene, i, j)
+        reserve(i-.7, j-.7, wi+1.4, wj+2)
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j)
+        study.paint_objects()
+        left, top, right, bottom = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, (left, top, right, bottom))
+        protected.append((left-4, top-3, right+4, bottom+5))
+        pixels = study.img.convert('RGB').load()
+        for sy in range(top+100, bottom+100):
+            for sx in range(left+100, right+100):
+                if pixels[sx, sy] != (0, 0, 0):
+                    silhouette.update((sx-100+dx, sy-100+dy) for dx in range(-3, 4) for dy in range(-3, 4))
+
+    # Real longitude and latitude orders, compressed independently. Palace on the
+    # Isle lies slightly north and east of Chopin; Wilanów is farther southeast.
+    landmark(pl.barbican, 100, 95, 8, 6)
+    landmark(pl.old_town_square, 225, 165, 10, 8)
+    landmark(pl.st_john, 355, 205, 6.3, 7)
+    landmark(pl.royal_castle, 400, 335, 10, 8)
+    landmark(pl.culture_palace, 95, 385, 10, 8)
+    landmark(pl.palace_isle, 505, 435, 8, 4.8)
+    landmark(pl.chopin_monument, 415, 470, 7, 6)
+    landmark(pl.wilanow, 635, 475, 11, 5)
+
+    # Defilad Square, Castle Square and the Royal Route remain distinct paving.
+    for (i, j), kind in list(kinds.items()):
+        x, y = scene.screen(i+.5, j+.5)
+        if kind == 'lot' and (10 < x < 190 and 265 < y < 420 or 310 < x < 450 and 335 < y < 380):
+            kinds[(i, j)] = 'cobble'
+            reserved.add((i, j))
+    paint_ground(scene, {c: 'pave' if k == 'promenade' else k for c, k in kinds.items()},
+                 {}, pl.WATER, pl.STONE['dark'])
+
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li+3) for b in range(lj, lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 557)*10000)
+            floors = 2 if seed % 3 == 0 else 3
+            x, y = scene.screen(li+wi/2, lj+wj/2)
+            if any(water(li+wi/2+di, lj+wj/2+dj) for di, dj in ((4, 0), (-4, 0), (0, 4), (0, -4))):
+                continue
+            half, top, bottom = (wi+wj)*4+6, y-floors*11-28, y+(wi+wj)*2+6
+            if any(x+half > l and x-half < r and bottom > t and top < b for l, t, r, b in protected):
+                ax, ay = scene.screen(li, lj)
+                x0, y0 = math.floor(ax-50), math.floor(ay-80)
+                study = iso.Scene(100, 140, (scene.ox-x0, scene.oy-y0))
+                pl.townhouse(study, li, lj, wi, wj, floors, seed, ornate=seed % 3 == 0)
+                study.paint_objects()
+                l, t, r, b = study.img.convert('RGB').getbbox()
+                pixels = study.img.convert('RGB').load()
+                if any((sx+x0, sy+y0) in silhouette and pixels[sx, sy] != (0, 0, 0)
+                       for sy in range(t, b) for sx in range(l, r)):
+                    continue
+            pl.townhouse(scene, li, lj, wi, wj, floors, seed, ornate=seed % 3 == 0)
+            reserved.update(cells)
+
+    trees = [round_tree(n, '#7D965F', '#344D34') for n in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i+.5, j+.5)
+        if (i, j) in reserved or any(l-12 < x < r+12 and t-3 < y < b+25 for l, t, r, b in protected):
+            continue
+        if kind == 'grass' and h01(i, j, 559) < .12 or kind == 'promenade' and (i+j) % 11 == 0:
+            scene.add(i+j+1.5, lambda s, x=x, y=y, tree=trees[(i+j) % 3]: s.sprite(tree, x, y+4))
+        # Formal rose beds in the two southern palace gardens.
+        if kind == 'grass' and y > 400 and h01(i, j, 561) < .05:
+            for dx in (-2, 0, 2):
+                scene.put(x+dx, y, pl.SALMON['lit'] if i % 2 else pl.PALE['hi'])
+    for i, j in ((29, 4), (42, 5)):
+        x, y = scene.screen(i, j)
+        image = bateau(0) if i % 2 else rowboat(i)
+        scene.add(i+j, lambda s, x=x, y=y, image=image: s.sprite(image, x, y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -2294,6 +2421,8 @@ CAPITALS = [
      "render": valletta},
     {"id": "prague", "name": "Prague", "country": "Czechia", "longitude": 14.4378, "latitude": 50.0755,
      "render": prague},
+    {"id": "warsaw", "name": "Warsaw", "country": "Poland", "longitude": 21.0122, "latitude": 52.2297,
+     "render": warsaw},
 ]
 
 

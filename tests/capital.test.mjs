@@ -21,6 +21,72 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Poland marks Warsaw, spaced city groups and Malbork inside its own bounds', () => {
+  const poland = COVERAGE.find((c) => c.id === 'warsaw');
+  assert.deepEqual(poland.bounds, [14.05, 49.0, 24.2, 55.1]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1] - lon) < .0001 && Math.abs(i[2] - lat) < .0001);
+  // Pinned Natural Earth names/sites: Warsaw, Katowice, Łódź, Gdańsk, Wrocław,
+  // Poznań, Szczecin, Bydgoszcz and Lublin. The capital is selected first.
+  const cities = [[20.9981, 52.2519], [19.02, 50.2604], [19.4494, 51.7769],
+    [18.64, 54.36], [17.03, 51.1104], [16.8999, 52.4058], [14.53, 53.4204],
+    [18.01, 53.1204], [22.5727, 51.2504]];
+  for (const [rank, [lon, lat]] of cities.entries()) {
+    const names = at(lon, lat).map((i) => icons.names[i[0]]).sort();
+    assert.deepEqual(names, rank === 0 ? ['castle', 'house', 'house']
+      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const [otherLon, otherLat] of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
+        + Math.cos(lat * rad) * Math.cos(otherLat * rad) * Math.cos((lon - otherLon) * rad));
+      assert.ok(km >= 75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+  assert.equal(at(19.0278, 54.0397).filter((i) => icons.names[i[0]] === 'malbork').length, 1);
+  const trees = [[19.125, 53.375], [20.375, 52.875], [23.875, 52.875], [22.125, 51.875],
+    [16.375, 51.625], [17.875, 50.875], [23.875, 50.625]];
+  for (const [lon, lat] of trees)
+    assert.equal(at(lon, lat).filter((i) => icons.names[i[0]] === (lat > 53 ? 'pine' : 'oak')).length, 1);
+  const boats = [[15.375, 54.625], [19.625, 54.625]];
+  for (const [lon, lat] of boats) assert.equal(at(lon, lat).filter((i) => icons.names[i[0]] === 'boat').length, 1);
+  const country = [...cities, ...trees, ...boats, [19.0278, 54.0397]].flatMap(([lon, lat]) => at(lon, lat));
+  assert.equal(country.length, 28);
+  const [w, s, e, n] = poland.bounds;
+  for (const [, lon, lat] of country) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
+});
+
+test('Warsaw supports focal arrival and stops panning at all scene edges', () => {
+  const warsaw = scenes.find((s) => s.id === 'warsaw');
+  assert.equal(warsaw.name, 'Warsaw');
+  assert.equal(warsaw.country, 'Poland');
+  assert.deepEqual([warsaw.width, warsaw.height], [720, 520]);
+  assert.equal(maxZoomAt(warsaw.longitude, warsaw.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(18.64, 54.36), COUNTRY_ZOOM.max); // Gdańsk
+  assert.equal(maxZoomAt(17.03, 51.1104), COUNTRY_ZOOM.max); // Wrocław
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens stays uncovered
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: 21.7, latitude: 52.8, zoom: 5 };
+    const focal = globePoint(warsaw.longitude, warsaw.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(current.capitalId, 'warsaw');
+    const after = globePoint(warsaw.longitude, warsaw.latitude, current, viewport);
+    assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+    for (const [dx, dy] of [[50, 0], [-50, 0], [0, 50], [0, -50]]) {
+      for (let step = 0; step < 100; step++)
+        current = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      assert.equal(camera.activeCapital(current).id, 'warsaw');
+      const rect = capitals.capitalRect(warsaw, current, viewport, 2);
+      assert.ok(rect.x <= .5 && rect.y <= .5);
+      assert.ok(rect.x + rect.width >= viewport.width - .5 && rect.y + rect.height >= viewport.height - .5);
+      const beyond = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      const stopped = capitals.capitalRect(warsaw, beyond, viewport, 2);
+      assert.ok(Math.abs(stopped.x - rect.x) < .01 && Math.abs(stopped.y - rect.y) < .01);
+    }
+  }
+});
+
 test('Czechia marks Prague, spaced city groups and Karlštejn inside its country bounds', () => {
   const czechia = COVERAGE.find((c) => c.id === 'prague');
   assert.deepEqual(czechia.bounds, [12.05, 48.5, 18.9, 51.1]);
@@ -544,7 +610,7 @@ test('Copenhagen: focal arrival and pan edges keep its scene; Jutland and Bornho
   assert.equal(maxZoomAt(9.9166, 57.0337), COUNTRY_ZOOM.max); // Aalborg
   assert.equal(maxZoomAt(8.45, 55.467), COUNTRY_ZOOM.max); // Esbjerg
   assert.equal(maxZoomAt(14.7, 55.1), COUNTRY_ZOOM.max); // Bornholm
-  assert.equal(maxZoomAt(21.0122, 52.2297), MAX_GLOBE_ZOOM); // Warsaw stays outside covered bounds.
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens stays outside covered bounds.
   let current = { longitude: 12.1, latitude: 55.9, zoom: 5 };
   const focal = globePoint(copenhagen.longitude, copenhagen.latitude, current, view);
   for (let step = 0; step < 8; step++)
@@ -608,7 +674,7 @@ test('Stockholm: focal arrival and pan edges keep its scene; northern Sweden and
   assert.equal(maxZoomAt(20.24, 63.83), COUNTRY_ZOOM.max); // Umeå
   assert.equal(maxZoomAt(20.225, 67.855), COUNTRY_ZOOM.max); // Kiruna
   assert.equal(maxZoomAt(18.3, 57.6), COUNTRY_ZOOM.max); // Gotland
-  assert.equal(maxZoomAt(21.0122, 52.2297), MAX_GLOBE_ZOOM); // Warsaw remains outside covered bounds.
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains outside covered bounds.
   let current = { longitude: 17.7, latitude: 59.6, zoom: 5 };
   const focal = globePoint(stockholm.longitude, stockholm.latitude, current, view);
   for (let step = 0; step < 8; step++)
