@@ -2129,6 +2129,55 @@ def trakai(seed=0):
     return scene.img
 
 
+def bled(seed=0):
+    """Bled Island in its lake: wooded island, Baroque stair from the south landing, white
+    pilgrimage church with clay roof and the slender bell tower under its steep spire."""
+    import iso
+    from landmarks_slovenia import WHITE, CLAY, STONE, WATER, ROOF, GOLD
+    from landmarks_slovakia import block, band
+    from landmarks_iberia import hip_roof, arch_opening, palette_of
+    from landmarks_italy import cylinder
+    from landmarks_paris import P, poly, seg
+
+    scene = iso.Scene(52, 64, (26, 46))
+    shadow = Sprite(52, 64)
+    ground_shadow(shadow, 26, 58, 21)
+    scene.img = shadow.image(); scene.px = scene.img.load()
+    poly(scene, [P(scene, a, b) for a, b in ((-1.45, -1.45), (1.45, -1.45), (1.45, 1.45), (-1.45, 1.45))],
+         lambda x, y: WATER[2] if (int(x)*3+int(y)) % 11 == 0 else WATER[0] if (int(x)+int(y)) % 4 else WATER[1])
+    # Low island: stone shore, lawn, and a wooded rim around the church.
+    cylinder(scene, 0, 0, 1.25, 1.15, 0, 2, STONE)
+    cylinder(scene, 0, 0, 1.15, 1.05, 2, 1, palette_of(hex_rgb('#6E9B4E')))
+    leaf = ramp('#5C8F45', '#203C21')[0]
+    def tree(a, b):
+        x, y = P(scene, a, b, 3)
+        for dx in range(-3, 4):
+            for dy in range(-7, 1):
+                if dx*dx/10 + (dy+3.5)**2/12 <= 1:
+                    scene.put(x+dx, y+dy, leaf[0] if dx*dx/10+(dy+3.5)**2/12 > .7 else leaf[1] if dx > 0 else leaf[2])
+        scene.put(x, y+1, C['bark'])
+    for a, b in ((-.95, -.55), (.55, -.85), (.9, -.2)):
+        tree(a, b)
+    # Church nave and apse, then the west bell tower and the stair down to the landing.
+    block(scene, -.45, -.55, .75, 1.05, 9, WHITE,
+          lambda u, v, lit: arch_opening(int(u) % 5, v, 2.5, 1, 5, WHITE['deep']) if 2 < v < 8 else None, z=3)
+    hip_roof(scene, -.5, -.6, .85, 1.15, 12, 5, CLAY)
+    block(scene, -.36, .45, .34, .34, 22, WHITE,
+          lambda u, v, lit: WHITE['deep'] if int(u) % 4 == 1 and 15 < v < 19 else None, z=3)
+    band(scene, -.36, .45, .34, .34, 18, WHITE)
+    T, R, B, L = [P(scene, a, b, 25) for a, b in ((-.38, .43), (0, .43), (0, .81), (-.38, .81))]
+    apex = P(scene, -.19, .62, 40)
+    poly(scene, [L, B, apex], lambda x, y: ROOF['lit'] if int(y) % 3 else ROOF['line'])
+    poly(scene, [B, R, apex], lambda x, y: ROOF['dark'] if int(y) % 3 else ROOF['deep'])
+    seg(scene, B, apex, ROOF['hi'])
+    seg(scene, apex, (apex[0], apex[1]-3), GOLD['lit'])
+    for a, b in ((-1.0, .55), (.75, .6)):
+        tree(a, b)
+    for k in range(4):
+        block(scene, -.3+k*.02, .95+k*.12, .45, .16, 3-k*.7, STONE)
+    return scene.img
+
+
 FAUNA = {
     "deer": deer, "fox": fox, "elephant": elephant, "zebra": zebra, "panda": panda,
     "tiger": tiger, "bison": bison, "moose": moose, "jaguar": jaguar, "capybara": capybara,
@@ -2164,6 +2213,7 @@ ICONS = {
     "kuressaare": kuressaare,
     "rundale": rundale,
     "trakai": trakai,
+    "bled": bled,
     **FLORA, **FAUNA,
 }
 

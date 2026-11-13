@@ -134,6 +134,11 @@ COUNTRY_TIER = [
      "trees": 7,
      # Island Castle in Lake Galvė, rather than Trakai town or its tourism office.
      "landmarks": [("trakai", 24.93306, 54.6525)]},
+    {"adm0": "SVN", "bounds": (13.35, 45.4, 16.65, 46.9), "capital": "Ljubljana", "cities": 9,
+     # Small and heavily forested: decorations keep 40 km apart instead of 70 km.
+     "trees": 5, "decoration_km": 40,
+     # The pilgrimage church on Bled Island, rather than the lake's centre or Bled town.
+     "landmarks": [("bled", 14.09004, 46.36223)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -169,6 +174,7 @@ VARIANTS = {
     "kuressaare": 1,
     "rundale": 1,
     "trakai": 1,
+    "bled": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -440,8 +446,9 @@ def main():
                 kind = "pine" if lat >= 44 else "oak" if lat >= 40 else "olive"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
-            if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL", "DNK", "CZE", "POL", "LUX", "SVK", "HUN"):
-                kind = "pine" if (spec["adm0"] in ("DEU", "POL") and lat > 53 or spec["adm0"] in ("GBR", "DNK") and lat > 56) else "oak"
+            if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL", "DNK", "CZE", "POL", "LUX", "SVK", "HUN", "SVN"):
+                kind = "pine" if (spec["adm0"] in ("DEU", "POL") and lat > 53 or spec["adm0"] in ("GBR", "DNK") and lat > 56
+                                  or spec["adm0"] == "SVN" and lat > 46.2) else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if lat > 47.5 and spec["adm0"] == "FRA":

@@ -21,6 +21,54 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Slovenia marks Ljubljana, Maribor and Bled Island within its bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'ljubljana');
+  assert.deepEqual(region.bounds, [13.35, 45.4, 16.65, 46.9]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
+  // Natural Earth lists only Ljubljana and Maribor in Slovenia; both keep the 75 km rule.
+  const cities = [[14.515, 46.0553], [15.65, 46.5405]];
+  const sites = [...cities, [14.09, 46.3622], [15.125, 46.125], [13.625, 45.625], [14.375, 45.625]];
+  const country = sites.flatMap((site) => at(...site));
+  assert.equal(country.length, 10);
+  for (const [, lon, lat] of country) {
+    const [w, s, e, n] = region.bounds;
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Slovenia bounds`);
+  }
+  assert.deepEqual(at(...cities[0]).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  assert.deepEqual(at(...cities[1]).map((i) => icons.names[i[0]]).sort(), ['church', 'house', 'house']);
+  const radians = (n) => n*Math.PI/180;
+  const h = Math.sin(radians(cities[1][1]-cities[0][1])/2)**2 + Math.cos(radians(cities[0][1]))
+    * Math.cos(radians(cities[1][1])) * Math.sin(radians(cities[1][0]-cities[0][0])/2)**2;
+  assert.ok(6371*2*Math.atan2(Math.sqrt(h), Math.sqrt(1-h)) >= 75);
+  assert.equal(at(14.09, 46.3622).filter((i) => icons.names[i[0]] === 'bled').length, 1);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'oak').length, 3);
+});
+
+test('Ljubljana supports focal arrival, bounded panning and release at country zoom', () => {
+  const city = scenes.find((s) => s.id === 'ljubljana');
+  assert.equal(city.name, 'Ljubljana');
+  assert.equal(city.country, 'Slovenia');
+  assert.deepEqual([city.longitude, city.latitude, city.width, city.height], [14.5061, 46.0514, 720, 520]);
+  assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(15.65, 46.5405), CAPITAL_ZOOM.full); // Maribor is within Ljubljana's arrival reach.
+  assert.equal(maxZoomAt(16.4519, 46.5631), COUNTRY_ZOOM.max); // Lendava, beyond every capital reach
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
+    const focal = globePoint(city.longitude, city.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom+.3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(camera.activeCapital(current).id, 'ljubljana');
+    const after = globePoint(city.longitude, city.latitude, current, viewport);
+    assert.ok(Math.hypot(after.x-focal.x, after.y-focal.y) < 1);
+    assert.equal(camera.activeCapital({ ...current, longitude: 13.77, latitude: 45.65 }).id, 'ljubljana');
+    assert.equal(camera.activeCapital({ longitude: 16.3738, latitude: 48.2082, zoom: 7 }).id, 'vienna');
+    assert.equal(camera.activeCapital({ ...current, zoom: 6.2 }), undefined);
+  }
+});
+
 test('Lithuania marks Vilnius, spaced cities and Trakai Island Castle within its bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'vilnius');
   assert.deepEqual(region.bounds, [20.85, 53.85, 26.85, 56.5]);
@@ -1315,7 +1363,7 @@ test('Vienna supports focal arrival while western and southern Austria retain co
   assert.deepEqual([vienna.width, vienna.height], [720, 520]);
   assert.equal(maxZoomAt(vienna.longitude, vienna.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(11.41, 47.2804), COUNTRY_ZOOM.max); // Innsbruck
-  assert.equal(maxZoomAt(14.31, 46.6203), COUNTRY_ZOOM.max); // Klagenfurt
+  assert.equal(maxZoomAt(12.7694, 46.8297), COUNTRY_ZOOM.max); // Lienz; Klagenfurt now reaches Ljubljana.
   assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens stays uncovered
   let current = { longitude: 15.8, latitude: 48.6, zoom: 5 };
   const focal = globePoint(vienna.longitude, vienna.latitude, current, view);

@@ -3054,6 +3054,172 @@ def vilnius():
     return scene.img.convert('RGB')
 
 
+def ljubljana():
+    import landmarks_slovenia as sl
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # The Ljubljanica crosses the scene along the j axis (south-west to north-east), so the Triple
+    # and Dragon bridges cross it squarely along i. Castle Hill rises in the south-east.
+    river_i = tile(240, 300)[0]
+    plaza = tile(282, 247)  # Prešeren Square's radial paving centres on the monument.
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        d = i+.5-river_i
+        hill = ((x-560)/190)**2+((y-480)/105)**2 < 1
+        if abs(d) < 2.2:
+            kind = 'water'
+        elif abs(d) < 3:
+            kind = 'quay'
+        elif abs(d) < 4.8:
+            kind = 'promenade'
+        elif hill:
+            kind = 'grass'
+        elif i % 11 == 0 or j % 11 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected, silhouette = set(), [], set()
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[(a, b)] = 'pave'
+
+    # Castle Hill: a raised grass plateau with rock walls, below the castle's 20 px platform.
+    castle = next(site for site in sl.SITES if site[0] == 'castle')
+    hi, hj = tile(*castle[4])
+    hw, hd = castle[2]
+    elev = {}
+    for (i, j), kind in kinds.items():
+        di = max(hi-hw/2-i-.5, i+.5-hi-hw/2, 0)
+        dj = max(hj-hd/2-j-.5, j+.5-hj-hd/2, 0)
+        if kind in ('grass', 'lot', 'cobble') and max(di, dj) < 4.5:
+            kinds[(i, j)] = 'grass'
+            elev[(i, j)] = 10
+            reserved.add((i, j))
+    # The funicular climbs the north-west slope from Krekov trg to the castle.
+    sl.funicular(scene, hi-hw/2-7, hj+.5, 7, 20)
+    reserve(hi-hw/2-7, hj+.5, 7, 1)
+
+    for _, builder, (wi, wj), _, (x, y) in sl.SITES:
+        ci, cj = tile(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        builder(scene, i, j)
+        reserve(i-1, j-1, wi+2, wj+2.5)
+        # Measure the projected silhouette, including spires, flags and dragon wings.
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j)
+        study.paint_objects()
+        left, top, right, bottom = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, (left, top, right, bottom))
+        protected.append((left-4, top-4, right+4, bottom+5))
+        pixels = study.img.convert('RGB').load()
+        for sy in range(top+100, bottom+100):
+            for sx in range(left+100, right+100):
+                if pixels[sx, sy] != (0, 0, 0):
+                    silhouette.update((sx-100+dx, sy-100+dy) for dx in range(-3, 4) for dy in range(-3, 4))
+
+    # Prešeren Square (radial granite), Town Square before the Town Hall, Cyril-Methodius Square
+    # at the cathedral and Vodnik Square's open market behind the colonnade.
+    squares = {}
+    for (i, j), kind in list(kinds.items()):
+        x, y = scene.screen(i+.5, j+.5)
+        if kind not in ('lot', 'cobble'):
+            continue
+        if (i+.5-plaza[0])**2+(j+.5-plaza[1])**2 < 30 and i+.5 < river_i-4:
+            squares[(i, j)] = 'radial'
+        elif 210 < x < 330 and 395 < y < 470 or 330 < x < 470 and 345 < y < 380 or 440 < x < 545 and 245 < y < 320:
+            squares[(i, j)] = 'cobble'
+        else:
+            continue
+        kinds[(i, j)] = squares[(i, j)]
+        reserved.add((i, j))
+
+    for (i, j) in sorted(kinds, key=lambda t: (t[0]+t[1], t[0])):
+        kind = kinds[(i, j)]
+        if kind == 'radial':
+            cx, cy = scene.screen(plaza[0], plaza[1])
+            def color(x, y, cx=cx, cy=cy):
+                dx, dy = x-cx, (y-cy)*2
+                r, a = math.hypot(dx, dy), math.atan2(dy, dx)
+                if abs(r-26) < 1.2 or abs(r-44) < 1.2 or r > 8 and abs((a*16/math.tau) % 1-.5) > .45:
+                    return rgb('#EEE9DD')
+                return C['cobble_dark'] if (x+2*(y % 2)) % 4 == 0 else rgb('#C9C1B2')
+            iso.ground_tile(scene, i, j, color)
+            continue
+        k = 'pave' if kind == 'promenade' else kind
+        e = elev.get((i, j), 0)
+        def color(x, y, k=k):
+            if k == 'water':
+                if h01(x//3, y, 9) < .02:
+                    return sl.WATER[2]
+                return sl.WATER[1] if h01(x//6, y//2, 4) < .3 else sl.WATER[0]
+            if k == 'quay':
+                return rgb('#D9D2C0') if (x+y) % 6 else rgb('#B5AC98')
+            return ground_color('pave' if k == 'lot' else k, x, y)
+        iso.ground_tile(scene, i, j, color, e, iso.stone_wall(sl.ROCK['mid']) if e else None)
+
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            wi, wj = 2.5, 3
+            cells = [(a, b) for a in range(li, li+3) for b in range(lj, lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li, lj, 2301)*10000)
+            floors = 2 if seed % 3 == 0 else 3
+            x, y = scene.screen(li+wi/2, lj+wj/2)
+            half = (wi+wj)*4+7
+            if any(x+half > l and x-half < r and y+17 > t and y-floors*10-33 < b for l, t, r, b in protected):
+                ax, ay = scene.screen(li, lj)
+                x0, y0 = math.floor(ax-50), math.floor(ay-90)
+                study = iso.Scene(100, 150, (scene.ox-x0, scene.oy-y0))
+                sl.townhouse(study, li, lj, wi, wj, floors, seed)
+                study.paint_objects()
+                l, t, r, b = study.img.convert('RGB').getbbox()
+                pixels = study.img.convert('RGB').load()
+                if any((sx+x0, sy+y0) in silhouette and pixels[sx, sy] != (0, 0, 0)
+                       for sy in range(t, b) for sx in range(l, r)):
+                    continue
+            sl.townhouse(scene, li, lj, wi, wj, floors, seed)
+            reserved.update(cells)
+
+    # Vodnik Square's open-air stalls between the cathedral and the colonnade.
+    n = 0
+    for x, y in ((470, 262), (500, 276), (478, 292), (510, 302), (455, 285)):
+        si, sj = tile(x, y)
+        if not any(l-2 < x < r+2 and t < y < b+6 for l, t, r, b in protected):
+            sl.stall(scene, si, sj, n)
+            n += 1
+
+    trees = [round_tree(k, '#6F9B57', '#2C4A30') for k in range(3)]
+    forest = [round_tree(k, '#557F45', '#21391F', 1.1) for k in range(3)]
+    for (i, j), kind in kinds.items():
+        x, y = scene.screen(i+.5, j+.5)
+        if (i, j) in reserved or any(l-12 < x < r+12 and t-3 < y < b+25 for l, t, r, b in protected):
+            continue
+        if kind == 'grass' and h01(i, j, 2302) < .32:
+            y -= elev.get((i, j), 0)
+            scene.add(i+j+1.5, lambda s, x=x, y=y, tree=forest[(i+j) % 3]: s.sprite(tree, x, y+4))
+        elif kind == 'promenade' and (i+j) % 3 == 0 and abs(i+.5-river_i) > 3.6:
+            scene.add(i+j+1.5, lambda s, x=x, y=y, tree=trees[(i+j) % 3]: s.sprite(tree, x, y+4))
+    # Tour boats on the river, clear of both bridges.
+    for bj in (tile(140, 350)[1], tile(430, 205)[1]):
+        x, y = scene.screen(river_i, bj)
+        scene.add(river_i+bj, lambda s, x=x, y=y: s.sprite(rowboat(2), x, y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -3105,6 +3271,8 @@ CAPITALS = [
      "render": riga},
     {"id": "vilnius", "name": "Vilnius", "country": "Lithuania", "longitude": 25.2797, "latitude": 54.6872,
      "render": vilnius},
+    {"id": "ljubljana", "name": "Ljubljana", "country": "Slovenia", "longitude": 14.5061, "latitude": 46.0514,
+     "render": ljubljana},
 ]
 
 
