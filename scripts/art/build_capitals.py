@@ -2932,6 +2932,128 @@ def riga():
     return scene.img.convert('RGB')
 
 
+def vilnius():
+    import landmarks_lithuania as lt
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # The Neris passes north of the castle hill and Old Town along an isometric
+    # axis. Its southern bank stays open; the two hill parks have separate lawns.
+    def river_bank(x):
+        return .5*x-170
+
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        bank = y-river_bank(x)
+        castle_hill = ((x-480)/72)**2+((y-147)/48)**2 < 1
+        crosses_hill = ((x-649)/64)**2+((y-202)/52)**2 < 1
+        if -38 < bank < 0:
+            kind = 'water'
+        elif -48 < bank <= -38 or 0 <= bank < 10:
+            kind = 'quay'
+        elif -65 < bank <= -48 or 10 <= bank < 25:
+            kind = 'promenade'
+        elif castle_hill or crosses_hill or x > 615 and 210 < y < 410:
+            kind = 'grass'
+        elif i % 11 == 0 or j % 11 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected, silhouette = set(), [], set()
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[(a, b)] = 'pave'
+
+    for _, builder, (wi, wj), _, (x, y) in lt.SITES:
+        ci, cj = tile(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        builder(scene, i, j)
+        reserve(i-1, j-1, wi+2, wj+2.5)
+        # Measure the actual projected sculpture/roof silhouette, including tall spires.
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j)
+        study.paint_objects()
+        left, top, right, bottom = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < left < right < WIDTH and 0 < top < bottom < HEIGHT, (builder.__name__, (left,top,right,bottom))
+        protected.append((left-4, top-4, right+4, bottom+5))
+        pixels = study.img.convert('RGB').load()
+        for sy in range(top+100, bottom+100):
+            for sx in range(left+100, right+100):
+                if pixels[sx,sy] != (0,0,0):
+                    silhouette.update((sx-100+dx, sy-100+dy) for dx in range(-3,4) for dy in range(-3,4))
+
+    # Cathedral Square, university forecourt, Town Hall Square, Pilies/Didžioji
+    # and the gate's approach are distinct paving, kept open in front of monuments.
+    for (i,j), kind in list(kinds.items()):
+        x,y = scene.screen(i+.5,j+.5)
+        square = (90<x<295 and 305<y<380 or 45<x<205 and 455<y<520
+                  or 275<x<415 and 420<y<487 or 405<x<525 and 475<y<520)
+        pilies = 195<y<470 and abs(x-(290+.25*(y-280)))<11
+        if kind == 'lot' and (square or pilies):
+            kinds[(i,j)] = 'cobble'
+            reserved.add((i,j))
+    paint_ground(scene, {c:'pave' if k=='promenade' else k for c,k in kinds.items()}, {}, lt.WATER, lt.STONE['dark'])
+
+    # A stone crossing perpendicular to the northern river, away from the skyline.
+    bi,bj = tile(525,river_bank(525)-8)
+    lp.stone_bridge(scene,bi-.85,bj-5,10,width=1.7,deck=6)
+
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            wi,wj = 2.5,3
+            cells = [(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li,lj,2201)*10000)
+            floors = 2 if seed%3 else 3
+            x,y = scene.screen(li+wi/2,lj+wj/2)
+            half = (wi+wj)*4+7
+            if any(x+half>l and x-half<r and y+17>t and y-floors*10-33<b for l,t,r,b in protected):
+                ax,ay = scene.screen(li,lj)
+                x0,y0 = math.floor(ax-50),math.floor(ay-90)
+                study = iso.Scene(100,150,(scene.ox-x0,scene.oy-y0))
+                lt.townhouse(study,li,lj,wi,wj,floors,seed)
+                study.paint_objects()
+                l,t,r,b = study.img.convert('RGB').getbbox()
+                pixels = study.img.convert('RGB').load()
+                if any((sx+x0,sy+y0) in silhouette and pixels[sx,sy]!=(0,0,0)
+                       for sy in range(t,b) for sx in range(l,r)):
+                    continue
+            lt.townhouse(scene,li,lj,wi,wj,floors,seed)
+            reserved.update(cells)
+
+    trees = [round_tree(n,'#789361','#304C36') for n in range(3)]
+    for (i,j),kind in kinds.items():
+        x,y = scene.screen(i+.5,j+.5)
+        if (i,j) in reserved or any(l-12<x<r+12 and t-3<y<b+25 for l,t,r,b in protected):
+            continue
+        if kind=='grass' and h01(i,j,2202)<.15 or kind=='promenade' and (i+j)%9==0:
+            scene.add(i+j+1.5,lambda s,x=x,y=y,tree=trees[(i+j)%3]:s.sprite(tree,x,y+4))
+    # Bernardine Garden east of St Anne's: gravel paths and small flower beds.
+    for x,y in ((665,290),(678,335),(660,405)):
+        gi,gj = tile(x,y)
+        if any(l-8<x<r+8 and t-5<y<b+15 for l,t,r,b in protected):
+            continue
+        iso.fill(scene,list(lp.corners(scene,gi,gj,1.7,1.7,1)),
+                 lambda px,py:lt.BRICK['lit'] if h01(px,py,2203)<.22 else lt.COPPER['dark'])
+    for px,py in ((395,4),(650,120)):
+        bi,bj = tile(px,py)
+        if py<river_bank(px):
+            scene.add(bi+bj,lambda s,x=px,y=py:s.sprite(rowboat(2),x,y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -2981,6 +3103,8 @@ CAPITALS = [
      "render": tallinn},
     {"id": "riga", "name": "Riga", "country": "Latvia", "longitude": 24.1052, "latitude": 56.9496,
      "render": riga},
+    {"id": "vilnius", "name": "Vilnius", "country": "Lithuania", "longitude": 25.2797, "latitude": 54.6872,
+     "render": vilnius},
 ]
 
 

@@ -2091,6 +2091,44 @@ def rundale(seed=0):
     return scene.img
 
 
+def trakai(seed=0):
+    """Compact island fortress, leaving nearby Vilnius's capital castle visible."""
+    import iso
+    from landmarks_lithuania import BRICK, CLAY, STONE, WATER
+    from landmarks_slovakia import block
+    from landmarks_iberia import hip_roof, palette_of
+    from landmarks_italy import cylinder
+    from landmarks_denmark import spire
+    from landmarks_paris import P, poly, seg
+
+    def openings(u,v,lit):
+        if int(u)%5 in (2,3) and 2<v<5:
+            return BRICK['deep']
+        return None
+    scene=iso.Scene(44,29,(23,16))
+    shadow=Sprite(44,29)
+    ground_shadow(shadow,23,24,17)
+    scene.img=shadow.image();scene.px=scene.img.load()
+    poly(scene,[P(scene,a,b) for a,b in ((-1.5,-.9),(1.4,-.9),(1.4,1.2),(-1.5,1.2))],
+         lambda x,y:WATER[2] if (int(x)+int(y))%7==0 else WATER[0])
+    block(scene,-1.15,-.65,2.3,1.5,1,STONE)
+    # Low ducal hall and taller keep, behind the open outer courtyard.
+    block(scene,-.9,-.5,1.3,.55,4,BRICK,openings,z=1)
+    hip_roof(scene,-.9,-.5,1.3,.55,5,2,CLAY)
+    block(scene,-.55,-.4,.5,.55,7,BRICK,openings,z=1)
+    hip_roof(scene,-.6,-.45,.6,.65,8,3,CLAY)
+    for a,b,w,d in ((-1.1,.05,.3,.7),(.8,.05,.3,.7),(-.8,.65,1.6,.25)):
+        block(scene,a,b,w,d,3,BRICK,openings,z=1)
+        hip_roof(scene,a,b,w,d,4,2,CLAY)
+    for a,b in ((-.95,.75),(.95,.75),(.95,-.5)):
+        cylinder(scene,a,b,.23,.23,1,5,BRICK,openings)
+        spire(scene,a,b,.3,6,3,CLAY,conical=True)
+    block(scene,-.22,.9,.44,.8,1,palette_of(hex_rgb('#886348')),z=.5)
+    for a in (-.22,.22):
+        seg(scene,P(scene,a,.9,2.5),P(scene,a,1.7,2.5),C['bark_ol'])
+    return scene.img
+
+
 FAUNA = {
     "deer": deer, "fox": fox, "elephant": elephant, "zebra": zebra, "panda": panda,
     "tiger": tiger, "bison": bison, "moose": moose, "jaguar": jaguar, "capybara": capybara,
@@ -2125,6 +2163,7 @@ ICONS = {
     "tihany-abbey": tihany_abbey,
     "kuressaare": kuressaare,
     "rundale": rundale,
+    "trakai": trakai,
     **FLORA, **FAUNA,
 }
 

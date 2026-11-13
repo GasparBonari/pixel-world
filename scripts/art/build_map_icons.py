@@ -130,6 +130,10 @@ COUNTRY_TIER = [
      "trees": 7,
      # Rastrelli's palace at Pilsrundāle; museum-published entrance GPS.
      "landmarks": [("rundale", 24.026048, 56.414819)]},
+    {"adm0": "LTU", "bounds": (20.85, 53.85, 26.85, 56.5), "capital": "Vilnius", "cities": 9,
+     "trees": 7,
+     # Island Castle in Lake Galvė, rather than Trakai town or its tourism office.
+     "landmarks": [("trakai", 24.93306, 54.6525)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -164,6 +168,7 @@ VARIANTS = {
     "tihany-abbey": 1,
     "kuressaare": 1,
     "rundale": 1,
+    "trakai": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -427,8 +432,8 @@ def main():
                               and all(great_circle_km(t, other) >= 70 for other in tree_sites)]
                 tree_sites += spread(candidates, count, 70, 51, towns, 45)
         for lon, lat in tree_sites:
-            if spec["adm0"] in ("SWE", "NOR", "FIN", "EST", "LVA"):
-                kind = "pine" if lat > 60 or spec["adm0"] in ("EST", "LVA") else "oak"
+            if spec["adm0"] in ("SWE", "NOR", "FIN", "EST", "LVA", "LTU"):
+                kind = "pine" if lat > 60 or spec["adm0"] in ("EST", "LVA", "LTU") else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if spec["adm0"] == "ITA":
