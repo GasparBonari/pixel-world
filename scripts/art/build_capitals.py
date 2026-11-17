@@ -3928,6 +3928,120 @@ def belgrade():
     return scene.img.convert('RGB')
 
 
+def podgorica():
+    import landmarks_montenegro as rs
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # Morača flows south through its rocky channel. Ribnica joins from the east below
+    # Stara Varoš; the two actual bridges span their respective rivers squarely.
+    moraca = [(350,-40),(470,20),(290,110),(470,200),(230,320),(330,370),(210,430),(30,520)]
+    ribnica = [(800,355),(630,440),(510,380),(430,420),(270,340)]
+    segments = [(tile(*a),tile(*b),width) for path,width in ((moraca,2.1),(ribnica,1.05))
+                for a,b in zip(path,path[1:])]
+
+    def water_distance(i, j):
+        result = float('inf')
+        for (a,b),(c,d),width in segments:
+            di,dj = c-a,d-b
+            t = max(0,min(1,((i-a)*di+(j-b)*dj)/(di*di+dj*dj)))
+            result = min(result, math.hypot(i-a-t*di,j-b-t*dj)-width)
+        return result
+
+    kinds, elev = {}, {}
+    for i,j in visible_tiles(scene):
+        x,y = scene.screen(i+.5,j+.5)
+        distance = water_distance(i+.5,j+.5)
+        # Both riverbanks rise above the bed. Gorica rises north of its church, while
+        # Kruševac is a park terrace west of Morača, not a building in the water.
+        z = 12
+        if x > 540 and y < 190:
+            z = 20 if y > 135 else 28 if y > 80 else 38
+        if distance < 0:
+            kind,z = 'water',0
+        elif distance < .8:
+            kind,z = 'quay',5
+        elif distance < 1.7:
+            kind = 'grass'
+        elif x > 535 and y < 230 or x < 255 and 320 < y < 475:
+            kind = 'grass'
+        elif i % 10 == 0 or j % 9 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        elev[(i,j)] = z
+        kinds[(i,j)] = kind
+
+    reserved, protected, silhouette = set(), [], set()
+
+    def reserve(i,j,wi,wj):
+        for a in range(math.floor(i),math.ceil(i+wi)):
+            for b in range(math.floor(j),math.ceil(j+wj)):
+                reserved.add((a,b))
+                if kinds.get((a,b)) == 'lot':kinds[(a,b)] = 'square'
+
+    for name,builder,(wi,wj),_,(x,y),z in rs.SITES:
+        ci,cj = tile(x,y)
+        i,j = ci-wi/2,cj-wj/2
+        builder(scene,i,j,z=z)
+        reserve(i-1,j-1,wi+2,wj+2)
+        # Raise the entire footprint before drawing: each landmark rests on its bank or Gorica terrace.
+        if z:
+            for a in range(math.floor(i-1),math.ceil(i+wi+1)):
+                for b in range(math.floor(j-1),math.ceil(j+wj+1)):
+                    elev[(a,b)] = z
+                    kinds[(a,b)] = 'grass' if name == 'st-george' else 'square'
+        study = iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
+        builder(study,i,j,z=z)
+        study.paint_objects()
+        l,t,r,b = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < l < r < WIDTH and 0 < t < b < HEIGHT,(name,l,t,r,b)
+        protected.append((l-5,t-5,r+5,b+7))
+        pixels = study.img.convert('RGB').load()
+        silhouette.update((sx-100,sy-100) for sy in range(t+100,b+100) for sx in range(l+100,r+100)
+                          if pixels[sx,sy] != (0,0,0))
+
+    for (i,j) in sorted(kinds,key=lambda p:(p[0]+p[1],p[0])):
+        kind,z = kinds[(i,j)],elev.get((i,j),0)
+        def color(x,y,kind=kind):
+            if kind == 'water':
+                return rs.WATER[2] if h01(x//3,y,8301) < .025 else rs.WATER[int(h01(x//5,y//2,8302) < .28)]
+            if kind == 'square':return rs.GROUND['square'] if (x+2*(y%3))%8 else rs.GROUND['joint']
+            if kind == 'cobble':return rs.GROUND['cobble'] if (x+2*(y%2))%4 else rs.GROUND['cobble_joint']
+            if kind == 'grass':return rs.GROUND['garden_light'] if h01(x,y,8303)<.14 else rs.GROUND['garden']
+            return ground_color('pave' if kind == 'lot' else kind,x,y)
+        iso.ground_tile(scene,i,j,color,z,iso.stone_wall(rs.ROCK['mid']) if z else None)
+
+    # Low limestone and shuttered stucco houses remain subordinate to the monuments. Open squares and
+    # measured image bounds protect the complete silhouette, not only each ground footprint.
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            cells = [(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved and elev.get(c) == 12 for c in cells):continue
+            x,y = scene.screen(li+1.25,lj+1.5,12)
+            seed = int(h01(li,lj,8304)*10000)
+            floors = 1+seed%2
+            if any(x+32>l and x-32<r and y+18>t and y-floors*10-29<b for l,t,r,b in protected):continue
+            rs.townhouse(scene,li,lj,floors=floors,seed=seed,z=12)
+            reserved.update(cells)
+
+    trees = [round_tree(k,'#64864C','#2D452D') for k in range(3)]
+    for (i,j),kind in kinds.items():
+        if kind not in ('grass','quay') or (i,j) in reserved or h01(i,j,8305) > (.2 if kind == 'grass' else .08):continue
+        z = elev.get((i,j),0)
+        x,y = scene.screen(i+.5,j+.5,z)
+        if any((sx,sy) in silhouette for sx in range(int(x)-10,int(x)+11) for sy in range(int(y)-20,int(y)+6)):continue
+        scene.add(i+j+1.5,lambda s,x=x,y=y,im=trees[(i+j)%3]:s.sprite(im,x,y+3))
+    for x,y,seed in ((350,80,0),(160,455,1)):
+        i,j = tile(x,y)
+        scene.add(i+j,lambda s,x=x,y=y,im= rowboat(seed):s.sprite(im,x,y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -3987,6 +4101,8 @@ CAPITALS = [
      "render": sarajevo},
     {"id": "belgrade", "name": "Belgrade", "country": "Serbia", "longitude": 20.4600, "latitude": 44.8125,
      "render": belgrade},
+    {"id": "podgorica", "name": "Podgorica", "country": "Montenegro", "longitude": 19.2628, "latitude": 42.4414,
+     "render": podgorica},
 ]
 
 

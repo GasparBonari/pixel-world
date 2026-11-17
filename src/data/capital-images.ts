@@ -29,4 +29,5 @@ export const CAPITAL_IMAGES = {
   zagreb: require('@/assets/world/capitals/zagreb.png'),
   sarajevo: require('@/assets/world/capitals/sarajevo.png'),
   belgrade: require('@/assets/world/capitals/belgrade.png'),
+  podgorica: require('@/assets/world/capitals/podgorica.png'),
 } as const;

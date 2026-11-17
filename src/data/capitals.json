@@ -259,5 +259,14 @@
     "latitude": 44.8125,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "podgorica",
+    "name": "Podgorica",
+    "country": "Montenegro",
+    "longitude": 19.2628,
+    "latitude": 42.4414,
+    "width": 720,
+    "height": 520
   }
 ]

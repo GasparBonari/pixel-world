@@ -2317,6 +2317,46 @@ def golubac(seed=0):
     return scene.img
 
 
+def ostrog(seed=0):
+    """Upper Ostrog's white arcaded cliff monastery, at native country-icon resolution."""
+    import iso
+    from landmarks_montenegro import ROCK, WHITE, CLAY, GOLD, IRON
+    from landmarks_slovakia import block, band
+    from landmarks_iberia import hip_roof, arch_opening, stone_courses
+    from landmarks_paris import poly, P
+
+    scene = iso.Scene(48, 60, (24, 46))
+    shadow = Sprite(48, 60)
+    ground_shadow(shadow, 24, 55, 20, 2)
+    scene.img = shadow.image(); scene.px = scene.img.load()
+    # The upper monastery is embedded in a much taller, overhanging limestone escarpment.
+    poly(scene, [(5,53),(3,20),(10,8),(19,4),(25,2),(38,9),(44,27),(42,51),(25,57)],
+         lambda x,y: ROCK['line'] if (x+2*y)%13 == 0 else ROCK['lit' if x<24 else 'dark'])
+    poly(scene, [(7,27),(14,16),(32,14),(40,25),(36,44),(13,46)],
+         lambda x,y: ROCK['deep'] if x>17 else ROCK['dark'])
+    # Low terraced plinth; two white storeys and their shaded end face project out of the cave.
+    block(scene,-1.8,-.1,3.4,1.5,6,ROCK,stone_courses(ROCK,3,8))
+    def arcade(u,v,lit):
+        c = int(u)%6
+        if int(v)%8 == 0:return WHITE['hi' if lit else 'mid']
+        opening = arch_opening(c,v%8-1,3,1.6,3,IRON)
+        if opening and 1<v<15:return opening
+        return None
+    block(scene,-1.6,-.15,3.2,1.25,17,WHITE,arcade,z=6)
+    for zz in (6,14,22):band(scene,-1.6,-.15,3.2,1.25,zz,WHITE)
+    hip_roof(scene,-1.7,-.2,3.4,1.35,23,3,CLAY)
+    # Upper icon recesses nestle immediately beneath the rock, with a small square bell stage.
+    block(scene,-.75,-.25,1.6,.8,10,WHITE,
+          lambda u,v,lit: arch_opening(int(u)%5,v,2.5,1.5,5,GOLD['dark']) if lit else None,z=23)
+    hip_roof(scene,-.85,-.3,1.8,.9,33,3,CLAY)
+    block(scene,1.05,.1,.65,.7,12,WHITE,
+          lambda u,v,lit: IRON if 6<v<10 and 1<int(u)%5<4 else None,z=22)
+    hip_roof(scene,1,.05,.75,.8,34,3,CLAY)
+    segs=[((1.38,.45,37),(1.38,.45,41)),((1.2,.45,39),(1.56,.45,39))]
+    for a,b in segs:iso.line(scene,P(scene,*a),P(scene,*b),GOLD['lit'])
+    return scene.img
+
+
 WHITE_FALL = (hex_rgb('#FFFFFF'), hex_rgb('#DDF3F4'), hex_rgb('#B6E2E6'))
 
 
@@ -2359,6 +2399,7 @@ ICONS = {
     "plitvice": plitvice,
     "stari-most": stari_most,
     "golubac": golubac,
+    "ostrog": ostrog,
     **FLORA, **FAUNA,
 }
 

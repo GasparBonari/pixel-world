@@ -21,6 +21,61 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Montenegro marks Podgorica and Upper Ostrog with decorations inside its bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'podgorica');
+  assert.deepEqual(region.bounds, [18.4, 41.8, 20.4, 43.6]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
+  const kinds = (site) => at(...site).map((i) => icons.names[i[0]]).sort();
+  // The pinned Natural Earth layer contains only Podgorica for MNE. Its point differs
+  // from the curated scene centre; keep the real source point and the universal city spacing.
+  const capital = [19.2663, 42.466];
+  const monastery = [19.0292, 42.675];
+  const trees = [[19.375,43.325], [19.225,43.175], [19.575,42.975], [20.125,42.925],
+    [19.725,42.825], [18.925,42.375], [19.025,42.125]];
+  const boats = [[18.675,42.275], [19.025,42.025]];
+  assert.deepEqual(kinds(capital), ['castle', 'house', 'house']);
+  assert.deepEqual(kinds(monastery), ['ostrog']);
+  const country = [capital,monastery,...trees,...boats].flatMap((site) => at(...site));
+  assert.equal(country.length, 13);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length, 5);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'olive').length, 2);
+  for (const boat of boats) assert.deepEqual(kinds(boat), ['boat']);
+  for (const [,lon,lat] of country) {
+    const [w,s,e,n] = region.bounds;
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat}: Montenegro bounds`);
+  }
+});
+
+test('Podgorica supports focal arrival, bounded panning and release beside Sarajevo', () => {
+  const city = scenes.find((s) => s.id === 'podgorica');
+  assert.equal(city.country, 'Montenegro');
+  assert.deepEqual([city.longitude,city.latitude,city.width,city.height], [19.2628,42.4414,720,520]);
+  assert.equal(maxZoomAt(city.longitude,city.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(23.7275,37.9838), MAX_GLOBE_ZOOM); // Athens stays uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
+    const focal = globePoint(city.longitude,city.latitude,current,viewport);
+    for (let step = 0; step < 8; step++) current = zoomGlobe(current,current.zoom+.3,focal.x,focal.y,viewport);
+    assert.equal(current.zoom,CAPITAL_ZOOM.full);
+    assert.equal(camera.activeCapital(current).id,'podgorica');
+    const after = globePoint(city.longitude,city.latitude,current,viewport);
+    assert.ok(Math.hypot(after.x-focal.x,after.y-focal.y) < 1);
+    // Sarajevo's 1.5° arrival rectangle overlaps Montenegro: retain an active Podgorica visit.
+    assert.equal(camera.activeCapital({ ...current, longitude: 18.8, latitude: 43.2 }).id,'podgorica');
+    for (const [dx,dy] of [[100,0],[-100,0],[0,100],[0,-100]]) {
+      for (let step = 0; step < 100; step++)
+        current = capitals.clampToCapitals(camera.rotateGlobe(current,dx,dy,viewport),scenes,viewport,2);
+      const edge = capitals.clampToCapitals(camera.rotateGlobe(current,dx,dy,viewport),scenes,viewport,2);
+      assert.ok(Math.abs(edge.longitude-current.longitude) < 1e-9);
+      assert.ok(Math.abs(edge.latitude-current.latitude) < 1e-9);
+      assert.equal(camera.activeCapital(current).id,'podgorica');
+    }
+    assert.equal(camera.activeCapital({ ...current, zoom: 6.2 }),undefined);
+    assert.equal(camera.activeCapital({ longitude: 18.4131, latitude: 43.8564, zoom: 7 }).id,'sarajevo');
+  }
+});
+
 test('Serbia marks Belgrade, spaced cities and Golubac within its bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'belgrade');
   assert.deepEqual(region.bounds, [18.8, 42.2, 23.1, 46.2]);

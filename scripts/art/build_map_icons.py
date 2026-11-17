@@ -153,6 +153,11 @@ COUNTRY_TIER = [
      "trees": 7,
      # Golubac Fortress itself on the Danube, not Golubac town.
      "landmarks": [("golubac", 21.6784847, 44.6611873)]},
+    {"adm0": "MNE", "bounds": (18.4, 41.8, 20.4, 43.6), "capital": "Podgorica", "cities": 9,
+     "trees": 7, "decoration_grid": .05, "decoration_km": 20,
+     "boat_bounds": (18.4, 41.8, 19.4, 42.4),
+     # Upper Ostrog itself in its cliff, not the lower monastery or Danilovgrad.
+     "landmarks": [("ostrog", 19.02917, 42.67500)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -192,6 +197,7 @@ VARIANTS = {
     "plitvice": 1,
     "stari-most": 1,
     "golubac": 1,
+    "ostrog": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -471,6 +477,10 @@ def main():
             if spec["adm0"] == "HRV":
                 # Olives on the Dalmatian coast and islands, pines in Istria, Gorski kotar and Lika, oaks inland.
                 kind = "olive" if lat < 44.3 else "pine" if lon < 15.8 and lat < 45.5 else "oak"
+                building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+                continue
+            if spec["adm0"] == "MNE":
+                kind = "olive" if lat < 42.4 else "pine"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if spec["adm0"] in ("BIH", "SRB"):
