@@ -2425,6 +2425,52 @@ def kaneo(seed=0):
     return scene.img
 
 
+def meteora(seed=0):
+    """Holy Trinity, Meteora: a clay-roofed monastery on its sheer sandstone pillar."""
+    import iso
+    from landmarks_greece import ROCK, MARBLE, WHITE, CLAY, WOOD, GROUND
+    from landmarks_slovakia import block
+    from landmarks_bosnia import cylinder
+    from landmarks_iberia import hip_roof, stone_courses, arch_opening
+    from landmarks_slovenia import revolve, DOME
+    from landmarks_paris import poly, P, seg
+
+    scene=iso.Scene(52,72,(26,60))
+    shadow=Sprite(52,72);ground_shadow(shadow,26,68,21,2)
+    scene.img=shadow.image();scene.px=scene.img.load()
+    # Unequal polygonal strata keep this a weathered rock pillar, not a castle pedestal.
+    base=[(-1.5,-.7),(-.5,-1.4),(1,-1.05),(1.65,.2),(1.1,1.15),(-.7,1.3),(-1.6,.3)]
+    top=[(-1.4,-.6),(-.5,-1.2),(1.1,-.9),(1.45,.25),(.9,1.05),(-.6,1.15),(-1.4,.3)]
+    faces=[]
+    for k in range(len(base)):
+        a,b=base[k],base[(k+1)%len(base)];c,d=top[k],top[(k+1)%len(base)]
+        faces.append((sum(a+b),[P(scene,*a,0),P(scene,*b,0),P(scene,*d,34),P(scene,*c,34)],k))
+    for _,pts,k in sorted(faces):
+        poly(scene,pts,lambda x,y,k=k:ROCK['line'] if (x*3+y//5)%13==0 else
+             ROCK['lit' if k in (4,5) else 'dark' if k in (2,3) else 'mid'])
+    poly(scene,[P(scene,*p,34) for p in top],lambda x,y:GROUND['dust'])
+    # Terraced stair cut into the southern rock, without an invented bridge.
+    for n in range(13):
+        a=-.75+n*.11;b=.85
+        seg(scene,P(scene,a,b,3+n*2.15),P(scene,a+.32,b+.25,3+n*2.15),MARBLE['lit'])
+    def openings(u,v,lit):
+        c=int(u)%7
+        if 3<v<9:
+            return arch_opening(c,v-2,3,1.4,6,WOOD['deep']) or stone_courses(MARBLE,3,8)(u,v,lit)
+        return stone_courses(MARBLE,3,8)(u,v,lit)
+    # Low cells along the rock edge, enclosing a small court.
+    for a,b,w,d in ((-1.2,-.9,2.25,.65),(-1.2,-.3,.65,1.3),(.45,-.2,.65,1.1)):
+        block(scene,a,b,w,d,10,MARBLE,openings,z=34)
+        hip_roof(scene,a-.08,b-.08,w+.16,d+.16,44,4,CLAY)
+    block(scene,-.4,-.1,.8,.95,10,WHITE,openings,z=34)
+    hip_roof(scene,-.48,-.18,.96,1.11,44,4,CLAY)
+    cylinder(scene,0,.35,.32,.32,47,5,MARBLE,openings,segments=8)
+    revolve(scene,0,.35,.39,52,3,DOME,CLAY,ribs=2,segments=12)
+    seg(scene,P(scene,0,.35,55),P(scene,0,.35,59),WHITE['dark'])
+    seg(scene,P(scene,-.13,.35,57),P(scene,.13,.35,57),WHITE['lit'])
+    return scene.img
+
+
 WHITE_FALL = (hex_rgb('#FFFFFF'), hex_rgb('#DDF3F4'), hex_rgb('#B6E2E6'))
 
 
@@ -2470,6 +2516,7 @@ ICONS = {
     "ostrog": ostrog,
     "kruje": kruje,
     "kaneo": kaneo,
+    "meteora": meteora,
     **FLORA, **FAUNA,
 }
 

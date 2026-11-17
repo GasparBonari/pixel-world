@@ -286,5 +286,14 @@
     "latitude": 42.000006,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "athens",
+    "name": "Athens",
+    "country": "Greece",
+    "longitude": 23.7275,
+    "latitude": 37.9838,
+    "width": 720,
+    "height": 520
   }
 ]

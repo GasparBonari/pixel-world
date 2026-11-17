@@ -167,6 +167,10 @@ COUNTRY_TIER = [
      "trees": 7, "decoration_grid": .1, "decoration_km": 30,
      # St John at Kaneo itself on the cliff above Lake Ohrid. Landlocked: no offshore boats.
      "landmarks": [("kaneo", 20.7887653, 41.1111244)]},
+    {"adm0": "GRC", "bounds": (19.3, 34.7, 29.7, 41.8), "capital": "Athens", "cities": 9,
+     "trees": 7,
+     # Holy Trinity Monastery itself on its sandstone pillar at Meteora, above Kalambaka.
+     "landmarks": [("meteora", 21.6358, 39.7132)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -209,6 +213,7 @@ VARIANTS = {
     "ostrog": 1,
     "kruje": 1,
     "kaneo": 1,
+    "meteora": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
