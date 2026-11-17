@@ -143,6 +143,12 @@ COUNTRY_TIER = [
      "trees": 7,
      # Veliki slap, the great waterfall at the end of Plitvice's Lower Lakes.
      "landmarks": [("plitvice", 15.6079, 44.9025)]},
+    {"adm0": "BIH", "bounds": (15.7, 42.5, 19.65, 45.3), "capital": "Sarajevo", "cities": 9,
+     "trees": 7,
+     # The overlapping country box includes Croatian waters. Keep boats by Bosnia's Neum coast.
+     "boat_bounds": (17.45, 42.85, 17.7, 43.0),
+     # Stari Most itself, rather than Mostar's city centre or a bridge museum.
+     "landmarks": [("stari-most", 17.81503, 43.33728)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -180,6 +186,7 @@ VARIANTS = {
     "trakai": 1,
     "bled": 1,
     "plitvice": 1,
+    "stari-most": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -461,12 +468,19 @@ def main():
                 kind = "olive" if lat < 44.3 else "pine" if lon < 15.8 and lat < 45.5 else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
+            if spec["adm0"] == "BIH":
+                kind = "pine" if lat < 44.5 and lon > 17 else "oak"
+                building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+                continue
             if lat > 47.5 and spec["adm0"] == "FRA":
                 kind = "oak"  # northern France: broadleaf woods
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             kind = "pine" if lat > 40.5 else "olive" if lat < 38.8 else "oak"
             building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+        if "boat_bounds" in spec:
+            bw, bs, be, bn = spec["boat_bounds"]
+            boats = [(lon, lat) for lon, lat in boats if bw <= lon <= be and bs <= lat <= bn]
         for lon, lat in spread(boats, 2, spec.get("decoration_km", 75)*2, 53):
             building("boat", lon, lat, 0, 0)
 

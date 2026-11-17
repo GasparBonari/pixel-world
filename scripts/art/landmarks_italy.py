@@ -146,11 +146,35 @@ def palazzo(scene, i, j, wi=2.5, wj=3, floors=3, seed=0):
 
 
 def st_peters(scene, i, j):
-    """Ribbed great dome, lantern, Maderno façade and Bernini's embracing colonnades."""
+    """Ribbed great dome, lantern, Maderno façade and Bernini's embracing colonnades.
+
+    The real basilica faces east, so the façade is the shaded +i (south-east) face: the
+    transept and dome stand at the -i (west) end, the long nave runs forward along +i, and
+    St Peter's Square opens further along +i towards Via della Conciliazione and the Tiber.
+    Footprint about 15.3 × 11 tiles."""
+    def side_pediment(s, fi, j0, width, base, rise, material):
+        # A pediment in the j/z plane, on a wall whose front faces +i.
+        pts = [P(s, fi, j0, base), P(s, fi, j0 + width, base), P(s, fi, j0 + width / 2, base + rise)]
+        poly(s, pts, lambda x, y: material['dark'] if (int(x) + int(y)) % 7 else material['line'])
+        for a, b in zip(pts, pts[1:] + pts[:1]):
+            seg(s, a, b, material['hi'], 2)
+
+    def side_statue(s, fi, fj, z, material):
+        # The façade's attic saints, standing in the j/z plane and facing +i.
+        profile = [(-.3, 0), (.3, 0), (.2, 3), (.18, 6), (.12, 7),
+                   (.16, 9), (-.13, 9), (-.2, 7), (-.12, 6), (-.23, 4)]
+        face = [P(s, fi, fj + dj, z + dz) for dj, dz in profile]
+        back = [P(s, fi - .12, fj + dj, z + dz) for dj, dz in profile]
+        for a in range(len(face)):
+            b = (a + 1) % len(face)
+            poly(s, [back[a], back[b], face[b], face[a]], lambda x, y: material['dark'])
+        poly(s, face, lambda x, y: material['lit'] if int(x) % 3 else material['mid'])
+
     def draw(s):
-        block(s, i + 2, j, 8, 6, 35, STONE, windows(STONE, 35))
-        hip_roof(s, i + 2, j, 8, 6, 35, 8, roof=CLAY)
-        ci, cj = i + 6, j + 2.2
+        # Transept and crossing at the west end, its arms running north-south (along j).
+        block(s, i, j + 1, 4.4, 9, 35, STONE, windows(STONE, 35))
+        hip_roof(s, i, j + 1, 4.4, 9, 35, 8, roof=CLAY)
+        ci, cj = i + 2.2, j + 5.5
         cylinder(s, ci, cj, 2.15, 2.15, 40, 19, MARBLE, windows(MARBLE, 23, 8))
         for n in range(12):
             a = n * math.tau / 12
@@ -169,28 +193,37 @@ def st_peters(scene, i, j):
         cylinder(s, ci, cj, .48, .48, 96, 10, MARBLE, windows(MARBLE, 14, 5))
         dome(s, ci, cj, .65, 106, 5, LEAD)
         cross(s, ci, cj, 111)
-        block(s, i, j + 5, 12, 1.7, 33, MARBLE, windows(MARBLE, 33, 11, True))
-        for a in range(12):
-            column(s, i + a + .45, j + 6.75, 2, 29, width=.35)
-        block(s, i - .15, j + 5, 12.3, 1.85, 4, MARBLE, z=33)
-        pediment(s, i + 3.5, j + 6.86, 5, 37, 7, MARBLE)
+        # Long nave running east from the crossing to the façade, ridge along i.
+        block(s, i + 4.4, j + 3.5, 4.2, 4, 33, STONE, windows(STONE, 33))
+        hip_roof(s, i + 4.4, j + 3.5, 4.2, 4, 33, 7, roof=CLAY)
+        # Maderno's east façade, wider than the nave: a wall with arched portals and
+        # eight giant engaged columns, the central four under the pediment.
+        fi = i + 10
+        block(s, i + 8.4, j + .5, 1.6, 10, 33, MARBLE, windows(MARBLE, 33, 11, True))
+        for a in range(8):
+            column(s, fi + .12, j + 2 + a, 2, 29, width=.35)
+        block(s, i + 8.4, j + .35, 1.75, 10.3, 4, MARBLE, z=33)
+        side_pediment(s, fi + .16, j + 3, 5, 37, 9, MARBLE)
         for a in range(13):
-            relief(s, i + a, j + 6.75, 38, MARBLE)
-        # Two elliptical arms, open at the front: independent columns with upper lintels.
-        for side in (-1, 1):
+            side_statue(s, fi + .05, j + .75 + a * .79, 38, MARBLE)
+        # Two elliptical arms east of the façade, open towards the river: independent
+        # columns with upper lintels; the far (north) arm first, then the obelisk, then the near arm.
+        def arm(side):
             ring = []
             for n in range(14):
                 a = -.9 + n * 1.8 / 13
-                ci2 = i + 6 + side * (4.2 + 1.6 * math.cos(a))
-                cj2 = j + 10 + 3.1 * math.sin(a)
+                ci2 = i + 12.9 + 2.2 * math.sin(a)
+                cj2 = j + 5.5 + side * (3.9 + 1.4 * math.cos(a))
                 column(s, ci2, cj2, 0, 12, width=.25)
                 ring.append(P(s, ci2, cj2, 14))
                 if n % 3 == 0:
-                    relief(s, ci2, cj2, 15, MARBLE)
+                    side_statue(s, ci2, cj2, 15, MARBLE)
             for a, b in zip(ring, ring[1:]):
                 seg(s, a, b, MARBLE['lit'], 2)
-        obelisk(s, i + 6, j + 10, 0, 24)
-    scene.add(i + j + 27, draw)
+        arm(-1)
+        obelisk(s, i + 12.9, j + 5.5, 0, 24)
+        arm(1)
+    scene.add(i + j + 26, draw)
 
 
 def castel_santangelo(scene, i, j):
@@ -478,8 +511,9 @@ LANDMARKS = [
 
 if __name__ == '__main__':
     for name, builder in LANDMARKS:
-        print(preview([lambda s, builder=builder: builder(s, 2, 2)], f'rome-{name}',
-                      size=(250, 230), origin=(120, 110), tiles=20))
+        # St Peter's runs 15 tiles east from its dome to the colonnade, so it gets a larger plot.
+        frame = dict(size=(270, 250), origin=(125, 115)) if builder is st_peters else dict(size=(250, 230), origin=(120, 110))
+        print(preview([lambda s, builder=builder: builder(s, 2, 2)], f'rome-{name}', tiles=20, **frame))
     print(preview([lambda s: palazzo(s, 2, 3, 3, 3, 3, 0),
                    lambda s: palazzo(s, 7, 2, 3, 3, 4, 3),
                    lambda s: palazzo(s, 7, 7, 3, 3, 2, 5)], 'rome-houses',

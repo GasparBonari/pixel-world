@@ -21,6 +21,59 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Bosnia and Herzegovina marks Sarajevo, spaced cities and Stari Most within its bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'sarajevo');
+  assert.deepEqual(region.bounds, [15.7, 42.5, 19.65, 45.3]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
+  const kinds = (site) => at(...site).map((i) => icons.names[i[0]]).sort();
+  // The pinned Natural Earth capital is west of the scene's civic-centre anchor. Mostar is
+  // within 75 km of that capital point, so its bridge is shown as a separate landmark.
+  const cities = [[18.383, 43.85], [17.18, 44.7804], [18.68, 44.5505]];
+  const trees = [[17.625, 45.125], [19.125, 44.875], [16.125, 44.625], [17.375, 44.375],
+    [16.625, 43.875], [19.125, 43.625], [18.125, 42.875]];
+  const bridge = [17.815, 43.3373];
+  assert.deepEqual(kinds(cities[0]), ['castle', 'house', 'house']);
+  for (const city of cities.slice(1)) assert.deepEqual(kinds(city), ['church', 'house', 'house']);
+  assert.deepEqual(kinds(bridge), ['stari-most']);
+  const country = [...cities, ...trees, bridge].flatMap((site) => at(...site));
+  assert.equal(country.length, 17);
+  for (const [, lon, lat] of country) {
+    const [w, s, e, n] = region.bounds;
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Bosnia and Herzegovina bounds`);
+  }
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'oak').length, 4);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length, 3);
+  const radians = (n) => n*Math.PI/180;
+  const km = ([a, b], [c, d]) => {
+    const h = Math.sin(radians(d-b)/2)**2 + Math.cos(radians(b))*Math.cos(radians(d))*Math.sin(radians(c-a)/2)**2;
+    return 6371*2*Math.atan2(Math.sqrt(h), Math.sqrt(1-h));
+  };
+  for (const [k, a] of cities.entries())
+    for (const b of cities.slice(k+1)) assert.ok(km(a, b) >= 75, `${a} and ${b} at least 75 km apart`);
+});
+
+test('Sarajevo supports focal arrival and release at country zoom', () => {
+  const city = scenes.find((s) => s.id === 'sarajevo');
+  assert.equal(city.country, 'Bosnia and Herzegovina');
+  assert.deepEqual([city.longitude, city.latitude, city.width, city.height], [18.4131, 43.8564, 720, 520]);
+  assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(17.815, 43.3373), CAPITAL_ZOOM.full); // Mostar lies within the existing arrival reach.
+  assert.equal(maxZoomAt(16.3639, 44.1794), COUNTRY_ZOOM.max); // Bosansko Grahovo is beyond every capital's reach.
+  assert.equal(maxZoomAt(23.7275, 37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
+    const focal = globePoint(city.longitude, city.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom+.3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(camera.activeCapital(current).id, 'sarajevo');
+    const after = globePoint(city.longitude, city.latitude, current, viewport);
+    assert.ok(Math.hypot(after.x-focal.x, after.y-focal.y) < 1);
+    assert.equal(camera.activeCapital({ ...current, zoom: 6.2 }), undefined);
+  }
+});
+
 test('Croatia marks Zagreb, spaced cities and Plitvice Lakes within its bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'zagreb');
   assert.deepEqual(region.bounds, [13.45, 42.4, 19.45, 46.6]);

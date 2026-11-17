@@ -343,9 +343,15 @@ def culture_palace(scene, i, j):
         clock(s, i+5, j+5.53, 137, 6)
         clock(s, i+6.53, j+4.1, 137, 6, lit=False)
         band(s, i+3.5, j+2.7, 3, 2.8, 146)
-        mansard(s, i+3.5, j+2.7, 3, 2.8, 149, 8, .7, COPPER)
-        spire(s, i+5, j+4.1, .72, 157, 27, COPPER)
-        seg(s, P(s, i+5, j+4.1, 184), P(s, i+5, j+4.1, 196), SLATE['deep'])
+        # The crown is pale stone, not copper: stepped stone drums narrowing into the ribbed stone
+        # pinnacle, finished by the slender steel spire.
+        for n, (w, h) in enumerate(((2.4, 6), (1.8, 6), (1.3, 5))):
+            z = 149+sum(hh for _, hh in ((2.4, 6), (1.8, 6), (1.3, 5))[:n])
+            block(s, i+5-w/2, j+4.1-w/2, w, w, h, STONE,
+                  lambda u, v, lit: PALE['hi' if lit else 'mid'] if int(u) % 4 == 0 else None, z=z)
+            band(s, i+5-w/2, j+4.1-w/2, w, w, z+h-1, PALE, 1)
+        spire(s, i+5, j+4.1, .55, 166, 20, STONE)
+        seg(s, P(s, i+5, j+4.1, 186), P(s, i+5, j+4.1, 200), SLATE['deep'])
         # Entrance portico, relief panels, and sculpted people on the lower cornice.
         for n in range(5):
             a = i+3.3+n*.7

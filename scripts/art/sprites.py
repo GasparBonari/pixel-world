@@ -2232,6 +2232,51 @@ def plitvice(seed=0):
     return scene.img
 
 
+def stari_most(seed=0):
+    """Mostar's single high limestone arch and the two bridge-keeper towers over the Neretva."""
+    import iso
+    from landmarks_bosnia import STONE, WHITE, LEAD, BLUE
+    from landmarks_slovakia import block, band
+    from landmarks_iberia import hip_roof, stone_courses
+    from landmarks_paris import P, poly, seg
+
+    scene = iso.Scene(40, 34, (20, 24))
+    shadow = Sprite(40, 34)
+    ground_shadow(shadow, 20, 30, 17, 1.5)
+    scene.img = shadow.image(); scene.px = scene.img.load()
+    water = (hex_rgb('#398D94'), hex_rgb('#59B7B1'), hex_rgb('#D3F0DF'))
+    poly(scene, [P(scene,a,b) for a,b in ((-.65,-1),(.65,-1),(.65,1.2),(-.65,1.2))],
+         lambda x,y:water[2] if h01(int(x)//3,int(y),8201)<.06 else water[int(h01(int(x)//4,int(y)//2,8202)<.25)])
+    # Limestone bank abutments and the higher eastern (Tara) keeper tower.
+    for a,b,h in ((-1.45,.07,10),(1,-.45,13)):
+        courses = stone_courses(STONE,3,7)
+        block(scene,a,b,.48,.6,h,STONE,
+              lambda u,v,lit: BLUE['deep'] if int(u)%4==2 and 4<v<8 else courses(u,v,lit))
+        band(scene,a,b,.48,.6,h-1,WHITE,1)
+        hip_roof(scene,a-.07,b-.07,.62,.74,h,3,LEAD)
+    start=P(scene,-1.2,.45)
+    length=19.6
+    for x,y in iso.polygon_pixels([P(scene,-1.2,.45),P(scene,1.25,.45),
+                                  P(scene,1.25,.45,11),P(scene,-1.2,.45,11)]):
+        u=(x-start[0])/length
+        v=start[1]+(x-start[0])*.5-y
+        arch=8.5*math.sqrt(max(0,1-((u-.5)/.5)**2))
+        if arch <= v <= arch+2:
+            scene.put(x,y,STONE['lit'] if int(v)%3 else STONE['line'])
+    # The hump-backed deck is a succession of 3D cross-sections, with two continuous parapets.
+    previous = None
+    for k in range(25):
+        a=-1.2+2.45*k/24
+        z=2+8.5*math.sqrt(max(0,1-((k/24-.5)/.5)**2))
+        cross=[P(scene,a,b,z) for b in (.1,.45)]
+        if previous:
+            poly(scene,[previous[0],cross[0],cross[1],previous[1]],lambda x,y:WHITE['lit'])
+            for old,new in zip(previous,cross):
+                seg(scene,old,new,WHITE['hi'])
+        previous=cross
+    return scene.img
+
+
 WHITE_FALL = (hex_rgb('#FFFFFF'), hex_rgb('#DDF3F4'), hex_rgb('#B6E2E6'))
 
 
@@ -2272,6 +2317,7 @@ ICONS = {
     "trakai": trakai,
     "bled": bled,
     "plitvice": plitvice,
+    "stari-most": stari_most,
     **FLORA, **FAUNA,
 }
 

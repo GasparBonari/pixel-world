@@ -1313,7 +1313,8 @@ def rome():
         protected.append((left - 3, top - 3, right + 3, bottom + 4))
 
     # Ground anchors preserve every site's real longitude/latitude ordering.
-    landmark(it.st_peters, 108, 190, 12, 13)
+    # St Peter's faces east: dome at the west end, square opening south-east (+i) to the river.
+    landmark(it.st_peters, 122, 195, 16.5, 12)
     landmark(it.castel_santangelo, 260, 125, 8, 7)
     landmark(it.spanish_steps, 460, 120, 9, 9)
     landmark(it.trevi, 600, 245, 10, 8)
@@ -1370,13 +1371,18 @@ def copenhagen():
 
     # North-up, compressed harbour bends along i/j axes. Nyhavn opens east into it;
     # Slotsholmen stays on the city side, Christianshavn and Our Saviour on the east bank.
+    # Slotsholmen is an island: the harbour on its south-east (+i) side, Slotsholmskanalen along
+    # its north-east (-j) and north-west (-i) sides, Frederiksholms Kanal along its south-west
+    # (+j) side; both canals join the harbour.
     ni, nj = at(450, 300)
     ni, nj = ni - 11.4 / 2, nj - 6.5 / 2
     def water(i, j):
         return (i > 28 and j < 5) or (52 < i < 58 and j < 35) or (52 < i < 67 and 29 < j < 35) \
             or (61 < i < 67 and j >= 29) \
             or (ni < i < 65 and nj + 2.9 < j < nj + 6.2) \
-            or (48 < i < 61 and 61 < j < 63)  # Slotsholmen's southern canal
+            or (44.5 < i < 62 and 47 < j < 49.5) \
+            or (44.5 < i < 47 and 47 < j < 68) \
+            or (44.5 < i < 62 and 65.5 < j < 68)
 
     kinds = {}
     for i, j in visible_tiles(scene):
@@ -1421,11 +1427,11 @@ def copenhagen():
     # Ground anchors preserve every site's real longitude and latitude ordering.
     landmark(dk.little_mermaid, 580, 85, 3.6, 3.2)
     landmark(dk.rosenborg, 300, 135, 8, 4.5)
-    landmark(dk.marble_church, 470, 165, 7.2, 8)
+    landmark(dk.marble_church, 440, 160, 8, 7.2)
     landmark(dk.amalienborg, 560, 220, 9.4, 9.4)
     landmark(dk.round_tower, 245, 255, 5.2, 7)
     landmark(dk.nyhavn, 450, 300, 11.4, 6.5)
-    landmark(dk.christiansborg, 345, 405, 8.6, 7.1)
+    landmark(dk.christiansborg, 330, 389.4, 8.6, 7.1)
     landmark(dk.city_hall, 140, 435, 8, 4.8)
     landmark(dk.our_saviour, 570, 477, 5.6, 7.6)
     # Rådhuspladsen and Kongens Nytorv remain paved/open in front of their buildings.
@@ -1436,15 +1442,18 @@ def copenhagen():
                  {}, dk.WATER, dk.STONE['dark'])
 
     # Square crossings on the isometric harbour reaches; low decks keep water visible.
-    lp.stone_bridge(scene, 55.5, 58.5, 7, width=1.4, deck=5)
-    reserve(54.5, 57.5, 4, 9)
+    # Slotsholmen's bridges: Højbro and Holmens Bro over Slotsholmskanalen, Marmorbroen over
+    # Frederiksholms Kanal from the riding ground, and Knippelsbro from the island's east tip.
+    for i, j, length, along_i in ((43.6, 52, 4.8, True), (56.5, 45.8, 4.4, False), (53.5, 63.8, 5.4, False)):
+        lp.stone_bridge(scene, i, j, length, width=1.4, deck=5, along_i=along_i)
+        reserve(i - .5, j - .5, (length if along_i else 1.4) + 1, (1.4 if along_i else length) + 1)
     def harbour_bridge(s):
-        dk.block(s, 59.5, 49, 9, 1.4, 5, dk.STONE,
+        dk.block(s, 59.5, 50.5, 9, 1.4, 5, dk.STONE,
                  lambda u, v, lit: dk.WATER[1] if lit and 2 < int(u) % 18 < 14 and v < 3 else None)
-        for jj in (49, 50.4):
+        for jj in (50.5, 51.9):
             dk.block(s, 59.5, jj, 9, .12, 2, dk.STONE, z=5)
-    scene.add(59.5 + 49 + 9 + 1.4, harbour_bridge)
-    reserve(59, 48, 11, 4)
+    scene.add(59.5 + 50.5 + 9 + 1.4, harbour_bridge)
+    reserve(59, 49.5, 11, 4)
 
     for li in range(-12, 112, 3):
         for lj in range(-12, 112, 3):
@@ -3704,6 +3713,107 @@ def zagreb():
     return scene.img.convert('RGB')
 
 
+def sarajevo():
+    import landmarks_bosnia as ba
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # Miljacka enters the valley from the east, below Vijećnica, and flows west below
+    # Baščaršija. Its central reach follows j; Latin Bridge crosses it squarely along i.
+    bridge = next(site for site in ba.SITES if site[0] == 'latin-bridge')
+    bi, bj = tile(*bridge[4])
+    river_i = bi
+    kinds, elev = {}, {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        d = abs(i+.5-river_i)
+        # The northern mahalas and the southern foothills rise outside the valley centre.
+        hill = 14 if y < 95 and x > 185 else 10 if x > 570 and y > 440 else 0
+        if d < 2.2:
+            kind = 'water'
+        elif d < 3.5 or river_i+2.2 < i+.5 < river_i+8:
+            kind = 'quay'
+            elev[(i, j)] = 2
+        elif hill:
+            kind = 'grass' if (i+j) % 7 else 'cobble'
+            elev[(i, j)] = hill
+        elif i % 10 == 0 or j % 9 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[(i, j)] = kind
+
+    reserved, protected, silhouette = set(), [], set()
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[(a, b)] = 'square'
+
+    for name, builder, (wi, wj), _, (x, y) in ba.SITES:
+        ci, cj = tile(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        builder(scene, i, j)
+        reserve(i-1, j-1, wi+2, wj+2)
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j)
+        study.paint_objects()
+        l, t, r, b = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < l < r < WIDTH and 0 < t < b < HEIGHT, (name, l, t, r, b)
+        protected.append((l-4, t-4, r+4, b+5))
+        pixels = study.img.convert('RGB').load()
+        silhouette.update((sx-100, sy-100) for sy in range(t+100, b+100) for sx in range(l+100, r+100)
+                          if pixels[sx, sy] != (0, 0, 0))
+        # Botanical garden within the museum's four pavilions; do not add trees over its roofs.
+        if name == 'museum':
+            reserve(i+2, j+3, wi-4, wj-5)
+
+    for (i, j) in sorted(kinds, key=lambda t: (t[0]+t[1], t[0])):
+        kind, z = kinds[(i, j)], elev.get((i, j), 0)
+        def color(x, y, kind=kind):
+            if kind == 'water':
+                return ba.WATER[2] if h01(x//3, y, 8101) < .018 else ba.WATER[int(h01(x//5, y//2, 8102) < .3)]
+            if kind == 'square':
+                return ba.GROUND['square'] if (x+2*(y % 3)) % 8 else ba.GROUND['square_joint']
+            if kind == 'cobble':
+                return ba.GROUND['cobble'] if (x+2*(y % 2)) % 4 else ba.GROUND['cobble_joint']
+            return ground_color('pave' if kind == 'lot' else kind, x, y)
+        iso.ground_tile(scene, i, j, color, z, iso.stone_wall(ba.ROCK['mid']) if z else None)
+
+    # Streets, squares and quays remain open. Low shops in the east, taller stucco westwards.
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            cells = [(a,b) for a in range(li, li+3) for b in range(lj, lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):
+                continue
+            x, y = scene.screen(li+1.3, lj+1.5)
+            seed = int(h01(li, lj, 8103)*10000)
+            floors = 2 if x > 350 else 2+seed % 2
+            half = 31
+            if any(x+half > l and x-half < r and y+16 > t and y-floors*10-27 < b for l,t,r,b in protected):
+                continue
+            ba.townhouse(scene, li, lj, floors=floors, seed=seed)
+            reserved.update(cells)
+
+    trees = [round_tree(k, '#678C4F', '#29452D') for k in range(3)]
+    for (i,j),kind in kinds.items():
+        if kind not in ('grass','quay') or (i,j) in reserved or h01(i,j,8104) > (.35 if kind == 'grass' else .09):
+            continue
+        x,y = scene.screen(i+.5,j+.5,elev.get((i,j),0))
+        if any((sx,sy) in silhouette for sx in range(int(x)-9,int(x)+10)
+               for sy in range(int(y)-18,int(y)+5)):
+            continue
+        scene.add(i+j+1.5,lambda s,x=x,y=y,im=trees[(i+j)%3]:s.sprite(im,x,y+3))
+    # The shallow urban Miljacka is not navigable: no invented sightseeing boats.
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -3759,6 +3869,8 @@ CAPITALS = [
      "render": ljubljana},
     {"id": "zagreb", "name": "Zagreb", "country": "Croatia", "longitude": 15.9819, "latitude": 45.8150,
      "render": zagreb},
+    {"id": "sarajevo", "name": "Sarajevo", "country": "Bosnia and Herzegovina", "longitude": 18.4131, "latitude": 43.8564,
+     "render": sarajevo},
 ]
 
 

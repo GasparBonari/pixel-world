@@ -241,5 +241,14 @@
     "latitude": 45.815,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "sarajevo",
+    "name": "Sarajevo",
+    "country": "Bosnia and Herzegovina",
+    "longitude": 18.4131,
+    "latitude": 43.8564,
+    "width": 720,
+    "height": 520
   }
 ]

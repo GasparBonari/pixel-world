@@ -95,60 +95,102 @@ def pointed_roof(s, ci, cj, radius, base, rise, material=SLATE):
     seg(s, P(s, ci, cj, base+rise), P(s, ci, cj, base+rise+7), material['outline'])
 
 
-def gothic_tower(s, i, j, width, height, rise, material=GOTHIC, turrets=False, roof=SLATE):
-    block(s, i, j, width, width, height, material, windows(material, height, 8, 17, True))
-    for z in (height*.45, height-4):
-        band(s, i, j, width, width, z, material)
-    pointed_roof(s, i+width/2, j+width/2, width*.76, height, rise, roof)
+def gothic_tower(s, i, j, width, height, rise, material=GOTHIC, turrets=False, roof=SLATE, z=0):
+    block(s, i, j, width, width, height, material, windows(material, height, 8, 17, True), z=z)
+    for zz in (height*.45, height-4):
+        band(s, i, j, width, width, z+zz, material)
+    pointed_roof(s, i+width/2, j+width/2, width*.76, z+height, rise, roof)
     for a, b in ((0, 0), (width, 0), (0, width), (width, width)):
-        block(s, i+a-.13, j+b-.13, .26, .26, 8, material, z=height-3)
-        pointed_roof(s, i+a, j+b, .25 if turrets else .15, height+5, 16 if turrets else 8, roof)
+        block(s, i+a-.13, j+b-.13, .26, .26, 8, material, z=z+height-3)
+        pointed_roof(s, i+a, j+b, .25 if turrets else .15, z+height+5, 16 if turrets else 8, roof)
     # Týn's two tiers of four roof turrets, rather than a generic single pyramid.
     if turrets:
         for a, b in ((-.36, -.36), (.36, -.36), (-.36, .36), (.36, .36)):
-            pointed_roof(s, i+width/2+a, j+width/2+b, .19, height+rise*.46, 14)
+            pointed_roof(s, i+width/2+a, j+width/2+b, .19, z+height+rise*.46, 14)
 
 
-def prague_castle(scene, i, j):
-    """Palace courts around St Vitus: twin west spires, rose, buttresses and south clock tower."""
-    W, D = 13, 8
+def helm(s, ci, cj, radius, base, height, material=COPPER):
+    """Renaissance copper helm: bell roof, open lantern, small bulb and gilded spike."""
+    profile = [(0, 1), (.08, .97), (.2, .78), (.3, .45), (.36, .3), (.37, .38), (.4, .38),
+               (.42, .26), (.58, .26), (.6, .34), (.63, .34), (.66, .25), (.74, .42), (.8, .36),
+               (.86, .12), (1, .03)]
+    for k, ((z0, r0), (z1, r1)) in enumerate(zip(profile, profile[1:])):
+        faces = []
+        for n in range(8):
+            a, b = n*math.tau/8, (n+1)*math.tau/8
+            pts = [P(s, ci+radius*r*math.cos(t), cj+radius*r*math.sin(t), base+height*zz)
+                   for zz, r, t in ((z0, r0, a), (z0, r0, b), (z1, r1, b), (z1, r1, a))]
+            key = 'lit' if math.sin((a+b)/2)-.5*math.cos((a+b)/2) > .1 else 'dark'
+            faces.append((math.cos(a)+math.sin(a)+math.cos(b)+math.sin(b), pts, key))
+        lantern = k == 7
+        for _, pts, key in sorted(faces):
+            poly(s, pts, lambda x, y, key=key: (IRON if lantern and key == 'lit' and int(x) % 3
+                                                 else material['line'] if int(y) % 5 == 0 else material[key]))
+            seg(s, pts[0], pts[3], material['hi'] if key == 'lit' else material['deep'])
+    cylinder(s, ci, cj, .1, .1, base+height, 3, GOLD)
+
+
+def prague_castle(scene, i, j, z=0):
+    """Castle courts on Hradčany around St Vitus, drawn from the south like the view from the river.
+
+    The cathedral's long axis runs along i (west at the -i end, east at +i), so its south side is the
+    lit +j face: twin west spires at the -i end, the long buttressed nave and choir, the Great South
+    Tower with its copper helm about halfway along, and the long, low south palace front before it."""
+    W, D = 16, 9
     def draw(s):
-        block(s, i-.5, j-.5, W+1, D+1, 5, STONE)
-        # Low cream palace wings enclose the cathedral without hiding its lower walls.
-        for a, b, wi, wj in ((i, j, W, 1.2), (i, j, 1.2, D), (i+W-1.2, j, 1.2, D)):
-            block(s, a, b, wi, wj, 18, PALE, windows(PALE, 18, 8, 12), z=5)
-            hip_roof(s, a-.1, b-.1, wi+.2, wj+.2, 23, 9, CLAY)
-        a, b, wi, wj, H = i+3, j+1.7, 5.3, 5.6, 42
-        block(s, a, b, wi, wj, H, STONE, windows(STONE, H, 9, 23, True), z=5)
-        hip_roof(s, a, b, wi, wj, H+5, 19, SLATE)
-        # Projected flying buttresses and pinnacles along the long south wall.
-        for n in range(5):
-            aa = a+.4+n*1.05
-            block(s, aa, b+wj, .28, .8, 23, STONE, z=5)
-            poly(s, [P(s, aa, b+wj+.8, 28), P(s, aa, b+wj, 43),
-                     P(s, aa+.2, b+wj, 40), P(s, aa+.2, b+wj+.8, 25)], lambda x, y: STONE['hi'])
-            spire(s, aa+.1, b+wj+.4, .17, 29, 9, STONE)
-        # West front and its stone rose in its own wall plane.
-        def front(u, v, lit):
-            if not lit:
-                return windows(STONE, 43, 8, 20, True)(u, v, lit)
-            rr = math.hypot(u-21, v-29)
-            if rr < 6:
-                return STONE['hi'] if rr > 4.8 or int(u) == 21 or int(v) == 29 else STEEL['dark'] if int(u+v) % 3 else GOLD['mid']
-            for c in (8, 21, 34):
-                opening = arch_opening(u, v, c, 3.5, 11-abs(u-c), STONE['deep'])
-                if opening:
-                    return opening
-            return stone_courses(STONE)(u, v, lit)
-        block(s, a, b+wj-.6, wi, .7, 43, STONE, front, z=5)
-        for aa in (a, a+wi-1.3):
-            gothic_tower(s, aa, b+wj-1, 1.3, 63, 27, STONE)
-        # Great South Tower's Renaissance copper crown differs from the Gothic pair.
-        aa, bb = a+wi+.25, b+2.6
-        block(s, aa, bb, 1.8, 1.8, 65, STONE, windows(STONE, 65, 8, 18, True))
-        dial(s, aa+.9, bb+1.83, 54, 5)
-        band(s, aa, bb, 1.8, 1.8, 64)
-        spire(s, aa+.9, bb+.9, 1.15, 67, 24, COPPER, onion=True)
+        block(s, i-.5, j-.5, W+1, D+1, 4, STONE, z=z)
+        Z = z+4
+        # North and west palace wings close the courtyards behind the cathedral.
+        for a, b, wi, wj in ((i, j, W, 1.3), (i, j, 1.3, D)):
+            block(s, a, b, wi, wj, 16, PALE, windows(PALE, 16, 8, 12), z=Z)
+            hip_roof(s, a-.1, b-.1, wi+.2, wj+.2, Z+16, 7, CLAY)
+        a, b, wj = i+2.4, j+2, 3.6          # west front at a, south wall at b+wj
+        n0, L, H = a+1.5, 10.4, 30           # nave and choir
+        # Twin slender west spires at the two corners of the (north/south) west front.
+        gothic_tower(s, a, b-.1, 1.5, 48, 24, GOTHIC, z=Z)
+        block(s, a+.2, b+1.4, 1.3, wj-2.8, 40, GOTHIC, windows(GOTHIC, 40, 8, 20, True), z=Z)
+        gothic_tower(s, a, b+wj-1.4, 1.5, 48, 24, GOTHIC, z=Z)
+        # Long nave and choir: tall traceried clerestory under a steep dark roof.
+        block(s, n0, b, L, wj, H, GOTHIC, windows(GOTHIC, H, 9, 26, True), z=Z)
+        hip_roof(s, n0, b, L, wj, Z+H, 15, SLATE)
+        # Chevet chapels round the east end of the Gothic choir.
+        block(s, n0+L, b+.5, .9, wj-1, 18, GOTHIC, windows(GOTHIC, 18, 7, 15, True), z=Z)
+        hip_roof(s, n0+L-.05, b+.45, 1, wj-.9, Z+18, 6, SLATE)
+        t0 = n0+L*.5                         # Great South Tower, about halfway along
+        def buttress(aa):
+            block(s, aa, b+wj, .28, .9, 18, GOTHIC, z=Z)
+            poly(s, [P(s, aa, b+wj+.9, Z+22), P(s, aa, b+wj, Z+H+1),
+                     P(s, aa+.22, b+wj, Z+H-2), P(s, aa+.22, b+wj+.9, Z+19)], lambda x, y: GOTHIC['lit'])
+            spire(s, aa+.14, b+wj+.45, .17, Z+18, 9, GOTHIC)
+        piers = [n0+.5+k*1.05 for k in range(10)]
+        for aa in piers:
+            if aa < t0-.3:
+                buttress(aa)
+        tb = b+wj-.3
+        # The tallest tower (96 m against the west spires' 82 m).
+        block(s, t0, tb, 2.1, 2.1, 64, GOTHIC, windows(GOTHIC, 64, 9, 19, True), z=Z)
+        # Two gilded dials (hours above minutes) under the Renaissance gallery.
+        dial(s, t0+1.05, tb+2.13, Z+53, 3)
+        dial(s, t0+1.05, tb+2.13, Z+44, 3)
+        band(s, t0, tb, 2.1, 2.1, Z+57, GOTHIC)
+        for k in range(9):
+            seg(s, P(s, t0+k*2.1/8, tb+2.12, Z+60), P(s, t0+k*2.1/8, tb+2.12, Z+63), GOTHIC['deep'])
+        band(s, t0, tb, 2.1, 2.1, Z+62, PALE)
+        helm(s, t0+1.05, tb+1.05, 1.3, Z+64, 38)
+        # South transept east of the tower, with the Golden Gate's mosaic.
+        def gate(u, v, lit):
+            if lit and 2 < u < 10 and 8 < v < 19:
+                return GOLD['mid'] if int(u+v) % 3 else GOLD['dark']
+            if lit and v < 8 and int(u) % 4 in (1, 2):
+                return GOTHIC['deep']
+            return windows(GOTHIC, 26, 8, 22, True)(u, v, lit)
+        block(s, t0+2.1, b+wj-.2, 1.4, .8, 26, GOTHIC, gate, z=Z)
+        for aa in piers:
+            if aa > t0+3.6:
+                buttress(aa)
+        # The long, low south palace front along the crest.
+        block(s, i, j+D-1.3, W, 1.3, 15, PALE, windows(PALE, 15, 8, 12), z=Z)
+        hip_roof(s, i-.1, j+D-1.4, W+.2, 1.5, Z+15, 7, CLAY)
     scene.add(i+j+W+D, draw)
 
 
@@ -434,7 +476,7 @@ def townhouse(scene, i, j, wi, wj, floors, seed):
 
 
 if __name__ == '__main__':
-    plots = [('castle', prague_castle, (300, 250), (135, 110)),
+    plots = [('castle', prague_castle, (320, 260), (135, 120)),
              ('st-nicholas', st_nicholas, (220, 225), (90, 110)),
              ('charles-bridge', charles_bridge, (260, 230), (170, 95)),
              ('old-town-hall', old_town_hall, (220, 220), (100, 105)),

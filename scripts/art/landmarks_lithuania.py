@@ -169,16 +169,20 @@ def cathedral(scene,i,j):
         block(s,i+8.1,j+.3,2.8,3,26,WHITE,windows(WHITE,26,9,14))
         cylinder(s,i+9.5,j+1.8,1.1,1.1,26,8,WHITE,windows(WHITE,12,7,12))
         cap(s,i+9.5,j+1.8,1.25,34,14,DARK);cross(s,i+9.5,j+1.8,48)
-        # Belfry stands southwest of the cathedral; round lower masonry, octagonal upper tiers.
-        ci,cj=i+1,j+8
-        cylinder(s,ci,cj,1.15,1.15,0,27,WHITE,windows(WHITE,30,12,20))
-        for z,r,h in ((27,1.03,15),(42,.86,15)):
-            cylinder(s,ci,cj,r,r,z,h,WHITE,
-                     lambda u,v,lit: arch_opening(int(u)%9,v,4.5,2,9,IRON) if v>3 else None)
-            ellipse(s,ci,cj,r+.12,r+.12,z+h,WHITE['hi'])
-        clock(s,ci,cj+1.03,3,35)
-        cap(s,ci,cj,.95,57,16,DARK);cross(s,ci,cj,73,8)
     scene.add(i+j+25,draw)
+    # The 57 m belfry stands apart in Cathedral Square, south-west of the portico, and rises well
+    # above the façade: a round lower tower of old defensive masonry, then arcaded upper tiers.
+    ci,cj=i-.6,j+11.6
+    def belfry(s):
+        cylinder(s,ci,cj,1.15,1.15,0,32,WHITE,windows(WHITE,32,12,20))
+        ellipse(s,ci,cj,1.22,1.22,32,STONE['lit'])
+        for z,r,h in ((32,1.03,19),(51,.86,17)):
+            cylinder(s,ci,cj,r,r,z,h,WHITE,
+                     lambda u,v,lit: arch_opening(int(u)%9,v,4.5,2,11,IRON) if v>3 else None)
+            ellipse(s,ci,cj,r+.12,r+.12,z+h,WHITE['hi'])
+        clock(s,ci,cj+1.03,3,42)
+        cap(s,ci,cj,.95,68,18,DARK);cross(s,ci,cj,86,8)
+    scene.add(ci+cj+2.4,belfry)
 
 
 def palace(scene,i,j):

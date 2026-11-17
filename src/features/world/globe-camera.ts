@@ -41,6 +41,7 @@ export const COVERAGE = [
   { id: 'vilnius', country: 'Lithuania', longitude: 25.2797, latitude: 54.6872, bounds: [20.85, 53.85, 26.85, 56.5] },
   { id: 'ljubljana', country: 'Slovenia', longitude: 14.5061, latitude: 46.0514, bounds: [13.35, 45.4, 16.65, 46.9] },
   { id: 'zagreb', country: 'Croatia', longitude: 15.9819, latitude: 45.815, bounds: [13.45, 42.4, 19.45, 46.6] },
+  { id: 'sarajevo', country: 'Bosnia and Herzegovina', longitude: 18.4131, latitude: 43.8564, bounds: [15.7, 42.5, 19.65, 45.3] },
 ] as const;
 
 /** Keep the visited capital while panning across overlapping capital areas. Zooming out releases it. */

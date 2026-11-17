@@ -186,12 +186,16 @@ def marble_church(scene,i,j):
         dome(s,ci,cj,.64,86,5,COPPER)
         block(s,ci-.08,cj-.08,.16,.16,6,GOLD,z=91)
         block(s,ci-.32,cj-.08,.64,.16,1,GOLD,z=95)
-        # Entrance vestibule with four columns, triangular pediment and open portal.
-        block(s,i+2,j+6.2,3.2,1.6,20,STONE,windows(STONE,20,bay=10,floor=17,arched=True))
-        for a in (2.1,2.9,3.7,4.5):
-            block(s,i+a,j+7.6,.28,.35,20,PALE,z=2)
-            block(s,i+a-.08,j+7.53,.44,.49,2,STONE,z=20)
-        pediment(s,i+1.9,j+8,3.4,23,8,PALE)
+        # Entrance vestibule with four columns, triangular pediment and open portal. The real
+        # portico faces east along Frederiksgade towards Amalienborg, so it stands on the shaded
+        # +i face (south-east), the visible side closest to east.
+        block(s,i+6.2,j+2,1.6,3.2,20,STONE,windows(STONE,20,bay=10,floor=17,arched=True))
+        for b in (2.1,2.9,3.7,4.5):
+            block(s,i+7.6,j+b,.35,.28,20,PALE,z=2)
+            block(s,i+7.53,j+b-.08,.49,.44,2,STONE,z=20)
+        gable=[P(s,i+8,j+1.9,23),P(s,i+8,j+5.3,23),P(s,i+8,j+3.6,31)]
+        poly(s,gable,lambda x,y:PALE['dark'] if (int(x)+int(y))%7 else PALE['deep'])
+        for a,b in zip(gable,gable[1:]+gable[:1]):seg(s,a,b,PALE['lit'],2)
         for n in range(8):
             a=n*math.tau/8
             cylinder(s,ci+3.3*math.cos(a),cj+3.3*math.sin(a),.16,.16,29,4,STONE)
