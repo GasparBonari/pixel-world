@@ -21,6 +21,77 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Albania marks Tirana, spaced cities and Krujë inside its bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'tirane');
+  assert.deepEqual(region.bounds, [19.2,39.6,21.1,42.7]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon,lat) => tier.filter((i) => Math.abs(i[1]-lon)<.0001 && Math.abs(i[2]-lat)<.0001);
+  const kinds = (site) => at(...site).map((i) => icons.names[i[0]]).sort();
+  // Keep Natural Earth's spelling/points. Elbasan, Durrës and Fier are inside
+  // Tirana's 75 km exclusion; the next two eligible cities are Shkodër and Vlorë.
+  const cities = [[19.8189,41.3275],[19.5189,42.0685],[19.4982,40.4774],
+    [20.7667,40.6167],[20.434,42.083],[20,39.877]];
+  const fortress = [19.7941,41.507];
+  const trees = [[19.75,42.65],[20.55,41.45],[19.35,41.35],[20.35,41.15],
+    [19.55,41.05],[20.05,40.55],[20.55,40.05]];
+  const boats = [[19.25,40.75],[19.25,39.85]];
+  assert.deepEqual(kinds(cities[0]), ['castle','house','house']);
+  for (const city of cities.slice(1,3)) assert.deepEqual(kinds(city), ['church','house','house']);
+  assert.deepEqual(kinds(cities[3]), ['church']);
+  assert.deepEqual(kinds(cities[4]), ['house','house']);
+  assert.deepEqual(kinds(cities[5]), ['church']);
+  assert.deepEqual(kinds(fortress), ['kruje']);
+  for (const site of [[20.0838,41.1215],[19.4482,41.3178],[19.573,40.73]])
+    assert.deepEqual(at(...site), [], `${site}: city spacing`);
+  const country = [...cities,fortress,...trees,...boats].flatMap((site) => at(...site));
+  assert.equal(country.length,23);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length,4);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'olive').length,3);
+  for (const site of boats) assert.deepEqual(kinds(site), ['boat']);
+  for (const [,lon,lat] of country) {
+    const [w,s,e,n] = region.bounds;
+    assert.ok(w<=lon && lon<=e && s<=lat && lat<=n, `${lon},${lat}: Albania bounds`);
+  }
+  for (const [index,[lon,lat]] of cities.entries()) {
+    for (const [otherLon,otherLat] of cities.slice(index+1)) {
+      const rad = Math.PI/180;
+      const km = 6371*Math.acos(Math.sin(lat*rad)*Math.sin(otherLat*rad)
+        + Math.cos(lat*rad)*Math.cos(otherLat*rad)*Math.cos((lon-otherLon)*rad));
+      assert.ok(km>=75, `${lon},${lat} and ${otherLon},${otherLat}: ${km} km`);
+    }
+  }
+});
+
+test('Tirane supports focal arrival, bounded panning and release beside Podgorica', () => {
+  const city = scenes.find((s) => s.id === 'tirane');
+  assert.equal(city.name,'Tirane');
+  assert.equal(city.country,'Albania');
+  assert.deepEqual([city.longitude,city.latitude,city.width,city.height], [19.8189,41.3275,720,520]);
+  assert.equal(maxZoomAt(city.longitude,city.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(20.8,39.8), COUNTRY_ZOOM.max);
+  assert.equal(maxZoomAt(23.7275,37.9838), MAX_GLOBE_ZOOM); // Athens remains uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
+    const focal = globePoint(city.longitude,city.latitude,current,viewport);
+    for (let step=0;step<8;step++) current = zoomGlobe(current,current.zoom+.3,focal.x,focal.y,viewport);
+    assert.equal(current.zoom,CAPITAL_ZOOM.full);
+    assert.equal(camera.activeCapital(current).id,'tirane');
+    const after = globePoint(city.longitude,city.latitude,current,viewport);
+    assert.ok(Math.hypot(after.x-focal.x,after.y-focal.y)<1);
+    assert.equal(camera.activeCapital({ ...current, longitude: 19.3, latitude: 42.1 }).id,'tirane');
+    for (const [dx,dy] of [[100,0],[-100,0],[0,100],[0,-100]]) {
+      for (let step=0;step<100;step++)
+        current = capitals.clampToCapitals(camera.rotateGlobe(current,dx,dy,viewport),scenes,viewport,2);
+      const edge = capitals.clampToCapitals(camera.rotateGlobe(current,dx,dy,viewport),scenes,viewport,2);
+      assert.ok(Math.abs(edge.longitude-current.longitude)<1e-9);
+      assert.ok(Math.abs(edge.latitude-current.latitude)<1e-9);
+      assert.equal(camera.activeCapital(current).id,'tirane');
+    }
+    assert.equal(camera.activeCapital({ ...current, zoom: 6.2 }),undefined);
+    assert.equal(camera.activeCapital({ longitude: 19.2628, latitude: 42.4414, zoom: 7 }).id,'podgorica');
+  }
+});
+
 test('Montenegro marks Podgorica and Upper Ostrog with decorations inside its bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'podgorica');
   assert.deepEqual(region.bounds, [18.4, 41.8, 20.4, 43.6]);

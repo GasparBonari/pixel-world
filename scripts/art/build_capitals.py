@@ -4042,6 +4042,101 @@ def podgorica():
     return scene.img.convert('RGB')
 
 
+def tirane():
+    import landmarks_albania as rs
+
+    scene = new_scene()
+
+    def tile(x,y):
+        return tile_of((x-WIDTH/2)/8,(y-scene.oy)/4)
+
+    # Lana enters NE and flows W/SW. Isometric-axis bends compress its real course.
+    # Historic Tanners' Bridge is NW of the current river, over its DRY former channel.
+    lana = [(800,340),(620,430),(580,410),(480,460),(400,420),(300,470),(220,430),(-40,560)]
+    segments = [(tile(*a),tile(*b)) for a,b in zip(lana,lana[1:])]
+
+    def water_distance(i,j):
+        best = float('inf')
+        for (a,b),(c,d) in segments:
+            di,dj = c-a,d-b
+            t = max(0,min(1,((i-a)*di+(j-b)*dj)/(di*di+dj*dj)))
+            best = min(best,math.hypot(i-a-t*di,j-b-t*dj))
+        return best
+
+    kinds = {}
+    for i,j in visible_tiles(scene):
+        x,y = scene.screen(i+.5,j+.5)
+        distance = water_distance(i+.5,j+.5)
+        if distance < .65:kind = 'water'
+        elif distance < 1.35:kind = 'quay'
+        elif distance < 2.3:kind = 'grass'
+        elif 200 < x < 555 and 125 < y < 320:kind = 'square'
+        elif 225 < x < 405 and 370 < y < 430:kind = 'grass'  # Rinia south of cathedral
+        elif 605 < x < 700 and 350 < y < 415:kind = 'dry'
+        elif i%10 == 0 or j%10 == 0:kind = 'cobble'
+        else:kind = 'lot'
+        kinds[(i,j)] = kind
+
+    reserved,protected,silhouette = set(),[],set()
+
+    def reserve(i,j,wi,wj):
+        for a in range(math.floor(i),math.ceil(i+wi)):
+            for b in range(math.floor(j),math.ceil(j+wj)):
+                reserved.add((a,b))
+                if kinds.get((a,b)) == 'lot':kinds[(a,b)] = 'square'
+
+    for name,builder,(wi,wj),_,(x,y),z in rs.SITES:
+        ci,cj = tile(x,y)
+        i,j = ci-wi/2,cj-wj/2
+        builder(scene,i,j,z=z)
+        reserve(i-1,j-1,wi+2,wj+2)
+        study = iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
+        builder(study,i,j,z=z)
+        study.paint_objects()
+        l,t,r,b = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < l < r < WIDTH and 0 < t < b < HEIGHT,(name,l,t,r,b)
+        protected.append((l-4,t-4,r+4,b+5))
+        pixels = study.img.convert('RGB').load()
+        silhouette.update((sx-100,sy-100) for sy in range(t+100,b+100) for sx in range(l+100,r+100)
+                          if pixels[sx,sy] != (0,0,0))
+
+    # Geography is painted before objects. Pale quays frame the small channel; flat central
+    # Tirana gets no invented hill. Stone squares, cobbled lanes and gardens have distinct paving.
+    for (i,j) in sorted(kinds,key=lambda p:(p[0]+p[1],p[0])):
+        kind = kinds[(i,j)]
+        def color(x,y,kind=kind):
+            if kind == 'water':return rs.WATER[2] if h01(x//3,y,8401)<.025 else rs.WATER[int(h01(x//5,y//2,8402)<.27)]
+            if kind == 'square':
+                if (x+2*(y//5))%10==0 or y%5==0:return rs.GROUND['joint']
+                return rs.GROUND[['square','rose','grey'][int(h01(x//10,y//5,8403)*3)]]
+            if kind == 'cobble':return rs.GROUND['cobble_joint'] if (x+2*(y%2))%4==0 else rs.GROUND['cobble']
+            if kind == 'grass':return rs.GROUND['garden_light'] if h01(x,y,8404)<.13 else rs.GROUND['garden']
+            if kind == 'dry':return rs.GROUND['dry'] if (x+3*y)%13 else rs.ROCK['mid']
+            return ground_color('pave' if kind == 'lot' else kind,x,y)
+        iso.ground_tile(scene,i,j,color)
+
+    # Painted Ottoman/Italianate villas at the margins frame open landmark forecourts.
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            cells = [(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):continue
+            x,y = scene.screen(li+1.25,lj+1.5)
+            seed = int(h01(li,lj,8405)*10000)
+            floors = 1+seed%3
+            if any(x+34>l and x-34<r and y+18>t and y-floors*11-25<b for l,t,r,b in protected):continue
+            rs.townhouse(scene,li,lj,floors=floors,seed=seed)
+            reserved.update(cells)
+
+    trees = [round_tree(k,'#658A49','#2D472D') for k in range(3)]
+    for (i,j),kind in kinds.items():
+        if kind not in ('grass','quay') or (i,j) in reserved or h01(i,j,8406)>(.17 if kind == 'grass' else .045):continue
+        x,y = scene.screen(i+.5,j+.5)
+        if any((sx,sy) in silhouette for sx in range(int(x)-11,int(x)+12) for sy in range(int(y)-23,int(y)+6)):continue
+        scene.add(i+j+1.5,lambda s,x=x,y=y,im=trees[(i+j)%3]:s.sprite(im,x,y+3))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -4103,6 +4198,8 @@ CAPITALS = [
      "render": belgrade},
     {"id": "podgorica", "name": "Podgorica", "country": "Montenegro", "longitude": 19.2628, "latitude": 42.4414,
      "render": podgorica},
+    {"id": "tirane", "name": "Tirane", "country": "Albania", "longitude": 19.8189, "latitude": 41.3275,
+     "render": tirane},
 ]
 
 

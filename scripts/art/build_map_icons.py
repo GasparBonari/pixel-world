@@ -158,6 +158,11 @@ COUNTRY_TIER = [
      "boat_bounds": (18.4, 41.8, 19.4, 42.4),
      # Upper Ostrog itself in its cliff, not the lower monastery or Danilovgrad.
      "landmarks": [("ostrog", 19.02917, 42.67500)]},
+    {"adm0": "ALB", "bounds": (19.2, 39.6, 21.1, 42.7), "capital": "Tirana", "cities": 9,
+     "trees": 7, "decoration_grid": .1, "decoration_km": 35,
+     "boat_bounds": (19.2, 39.6, 19.7, 41.8),
+     # Krujë's fortress itself, not Krujë town or the museum entrance.
+     "landmarks": [("kruje", 19.794087, 41.507026)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -198,6 +203,7 @@ VARIANTS = {
     "stari-most": 1,
     "golubac": 1,
     "ostrog": 1,
+    "kruje": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -481,6 +487,10 @@ def main():
                 continue
             if spec["adm0"] == "MNE":
                 kind = "olive" if lat < 42.4 else "pine"
+                building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+                continue
+            if spec["adm0"] == "ALB":
+                kind = "pine" if lat > 41.5 or lon > 20.3 else "olive"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if spec["adm0"] in ("BIH", "SRB"):

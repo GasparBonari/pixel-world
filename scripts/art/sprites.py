@@ -2357,6 +2357,37 @@ def ostrog(seed=0):
     return scene.img
 
 
+def kruje(seed=0):
+    """Krujë's limestone fortress hill and the museum's round/stepped stone masses."""
+    import iso
+    from landmarks_albania import STONE, WHITE, ROCK, LEAD, IRON
+    from landmarks_slovakia import block, band
+    from landmarks_bosnia import cylinder
+    from landmarks_iberia import crenellate, arch_opening, stone_courses
+    from landmarks_paris import poly
+
+    scene = iso.Scene(54, 66, (27, 50))
+    shadow = Sprite(54, 66)
+    ground_shadow(shadow, 27, 60, 21, 2)
+    scene.img = shadow.image(); scene.px = scene.img.load()
+    poly(scene, [(6,54),(9,44),(16,35),(34,34),(46,43),(49,57),(34,62),(16,60)],
+         lambda x,y:ROCK['line'] if (x+2*y)%11==0 else ROCK['lit' if x<24 else 'dark'])
+    # A selected curtain and the museum inside it; the whole complex is compressed.
+    block(scene,-1.6,-.6,3.4,2.1,8,STONE,stone_courses(STONE,3,7),z=3)
+    block(scene,-.7,-1.2,2.4,1.5,20,STONE,
+          lambda u,v,lit:arch_opening(int(u)%6,v,3,1.4,10,IRON) if v<13 else stone_courses(STONE,4,9)(u,v,lit),z=8)
+    band(scene,-.7,-1.2,2.4,1.5,28,WHITE,2)
+    cylinder(scene,-1.05,-.1,.8,.8,11,25,STONE,
+             lambda u,v,lit:arch_opening(int(u)%6,v-16,3,1.4,4,IRON) if v>16 else stone_courses(STONE,4,8)(u,v,lit),segments=16)
+    cylinder(scene,-1.05,-.1,.86,.86,35,2,WHITE,segments=16)
+    for a,b,wi,wj,zz in ((-.7,-1.2,2.4,1.5,30),(-1.7,.9,3.6,.4,11)):
+        block(scene,a,b,wi,wj,.8,LEAD,z=zz)
+        crenellate(scene,a,b,wi,wj,zz+1,STONE,set(),step=4,height=3)
+    block(scene,.5,.15,1.1,.9,15,STONE,
+          lambda u,v,lit:arch_opening(u,v,4,1.8,7,IRON) if lit else stone_courses(STONE,4,8)(u,v,lit),z=8)
+    return scene.img
+
+
 WHITE_FALL = (hex_rgb('#FFFFFF'), hex_rgb('#DDF3F4'), hex_rgb('#B6E2E6'))
 
 
@@ -2400,6 +2431,7 @@ ICONS = {
     "stari-most": stari_most,
     "golubac": golubac,
     "ostrog": ostrog,
+    "kruje": kruje,
     **FLORA, **FAUNA,
 }
 

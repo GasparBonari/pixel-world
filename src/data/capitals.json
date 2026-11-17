@@ -268,5 +268,14 @@
     "latitude": 42.4414,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "tirane",
+    "name": "Tirane",
+    "country": "Albania",
+    "longitude": 19.8189,
+    "latitude": 41.3275,
+    "width": 720,
+    "height": 520
   }
 ]
