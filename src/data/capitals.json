@@ -250,5 +250,14 @@
     "latitude": 43.8564,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "belgrade",
+    "name": "Belgrade",
+    "country": "Serbia",
+    "longitude": 20.46,
+    "latitude": 44.8125,
+    "width": 720,
+    "height": 520
   }
 ]

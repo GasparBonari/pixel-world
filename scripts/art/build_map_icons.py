@@ -149,6 +149,10 @@ COUNTRY_TIER = [
      "boat_bounds": (17.45, 42.85, 17.7, 43.0),
      # Stari Most itself, rather than Mostar's city centre or a bridge museum.
      "landmarks": [("stari-most", 17.81503, 43.33728)]},
+    {"adm0": "SRB", "bounds": (18.8, 42.2, 23.1, 46.2), "capital": "Belgrade", "cities": 9,
+     "trees": 7,
+     # Golubac Fortress itself on the Danube, not Golubac town.
+     "landmarks": [("golubac", 21.6784847, 44.6611873)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -187,6 +191,7 @@ VARIANTS = {
     "bled": 1,
     "plitvice": 1,
     "stari-most": 1,
+    "golubac": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -468,7 +473,7 @@ def main():
                 kind = "olive" if lat < 44.3 else "pine" if lon < 15.8 and lat < 45.5 else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
-            if spec["adm0"] == "BIH":
+            if spec["adm0"] in ("BIH", "SRB"):
                 kind = "pine" if lat < 44.5 and lon > 17 else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue

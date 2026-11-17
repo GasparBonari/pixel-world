@@ -2277,6 +2277,46 @@ def stari_most(seed=0):
     return scene.img
 
 
+def golubac(seed=0):
+    """Danube-edge limestone fortress climbing an Iron Gate crag; hilltop keep and cannon tower.
+    Compressed selected towers, rather than a claim that every tower fits this country sprite.
+    """
+    import iso
+    from landmarks_serbia import STONE, ROCK, CLAY, IRON
+    from landmarks_bosnia import cylinder
+    from landmarks_slovakia import block, band
+    from landmarks_iberia import stone_courses, crenellate
+    from landmarks_paris import P, poly
+    from landmarks_slovenia import revolve
+
+    scene = iso.Scene(44, 52, (22, 40))
+    shadow = Sprite(44, 52)
+    ground_shadow(shadow, 22, 48, 19, 1.8)
+    scene.img = shadow.image(); scene.px = scene.img.load()
+    poly(scene, [P(scene,a,b) for a,b in ((-1.6,-1.1),(1.8,-1.1),(1.8,.3),(-1.6,.3))],
+         lambda x,y:hex_rgb('#B6D6D2') if h01(x//3,y,8300)<.04 else hex_rgb('#537F88'))
+    # Rocky ridge rises inland; the highest cylindrical keep carries a conical tiled cap.
+    poly(scene,[(6,43),(10,31),(23,22),(31,29),(40,45),(25,49)],
+         lambda x,y:ROCK['line'] if (x+3*y)%8==0 else ROCK['lit' if x<23 else 'dark'])
+    cylinder(scene,.15,-.25,.34,.34,17,14,STONE,
+             lambda u,v,lit:IRON if 6<v<9 and int(u)%4==1 else stone_courses(STONE,3,6)(u,v,lit),segments=12)
+    revolve(scene,.15,-.25,.4,31,6,[(0,1),(1,0)],CLAY,ribs=3)
+    # Rising curtains and five of the lower square towers, with arrow slits and crenels.
+    for a,b,w,d,z,h in ((-1.3,.2,1.4,.22,2,8),(.15,.15,1.2,.22,4,11),
+                      (-.35,.2,.2,1.4,4,10),(.9,.2,.2,1.1,2,9)):
+        cover=block(scene,a,b,w,d,h,STONE,stone_courses(STONE,3,6),z=z)
+        crenellate(scene,a,b,w,d,z+h,STONE,cover,step=3,height=2)
+    for a,b,z,h in ((-1.4,.1,1,13),(-.55,.75,5,14),(.62,.1,8,15),(1.05,1,1,12),(-.65,1.45,0,10)):
+        cover=block(scene,a,b,.5,.55,h,STONE,
+                    lambda u,v,lit:IRON if 4<v<7 and int(u)%4==2 else stone_courses(STONE,3,6)(u,v,lit),z=z)
+        crenellate(scene,a,b,.5,.55,z+h,STONE,cover,step=3,height=2)
+    # Later low polygonal cannon tower at the actual water edge.
+    cylinder(scene,-1.15,-.6,.42,.42,0,7,STONE,
+             lambda u,v,lit:IRON if 2<v<4 and int(u)%4==1 else None,segments=8)
+    band(scene,-1.55,-1,.8,.8,6,STONE)
+    return scene.img
+
+
 WHITE_FALL = (hex_rgb('#FFFFFF'), hex_rgb('#DDF3F4'), hex_rgb('#B6E2E6'))
 
 
@@ -2318,6 +2358,7 @@ ICONS = {
     "bled": bled,
     "plitvice": plitvice,
     "stari-most": stari_most,
+    "golubac": golubac,
     **FLORA, **FAUNA,
 }
 
