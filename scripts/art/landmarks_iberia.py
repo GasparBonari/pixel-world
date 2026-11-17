@@ -26,6 +26,9 @@ TERRACOTTA = {"hi": rgb("#F6A070"), "lit": rgb("#E4764C"), "mid": rgb("#CF623C")
               "outline": rgb("#5A2418")}
 SLATE = {"hi": rgb("#97A3BC"), "lit": rgb("#74819C"), "mid": rgb("#626E88"), "dark": rgb("#4E5970"),
          "outline": rgb("#262C3A")}
+BLACK_SLATE = {"hi": rgb("#626873"), "lit": rgb("#414650"), "mid": rgb("#2C303A"),
+               "dark": rgb("#1C2029"), "outline": rgb("#12151D")}
+BRONZE = {"hi": rgb("#969276"), "lit": rgb("#696D59"), "dark": rgb("#343E37")}
 IRON = rgb("#2A2624")
 GOLD, GOLD_DARK = rgb("#F2C14E"), rgb("#C9962E")
 WOOD = rgb("#6B4228")
@@ -671,48 +674,166 @@ def casa_correos(scene, i, j):
 
 
 def metropolis(scene, i, j):
-    """Edificio Metrópolis: a rounded white corner tower with paired columns, crowned by a black
-    slate dome with gilded bands and garlands and the winged Victory."""
+    """Metrópolis: a curved stone rotunda, giant paired columns and balconies, an attic with
+    relief panels, and a black-and-gold cupola with oculi and a bronze winged Victory.
+
+    The rotunda's circular plan projects to a 2:1 ellipse. Cornices, windows and column feet
+    follow its near arc, with the centre closest to the viewer, as on the isometric blocks.
+    """
     def draw(s):
         x, y = P(s, i, j)
-        r, height = 13, 48
-        for dy in range(0, height):
-            for dx in range(-r, r + 1):
-                t = dx / r
-                yy = y - dy + (1 - math.sqrt(max(0, 1 - t * t))) * 5  # the curved front
-                light = 0.55 - t * 0.45
-                tone = GRANITE["hi"] if light > 0.75 else GRANITE["lit"] if light > 0.45 else GRANITE["mid"] if light > 0.2 else GRANITE["dark"]
-                if dx % 5 == 0 and 12 <= dy <= 40:
-                    tone = shade(tone, 0.12)  # paired columns
-                elif dx % 5 in (2, 3) and (16 <= dy <= 24 or 28 <= dy <= 36):
-                    tone = rgb("#34405A")
-                elif dy in (11, 41):
+        r, height = 15, 55
+
+        def wing_windows(u, v, lit):
+            u, v = int(u), int(v)
+            if v in (2, 13, 26, 40):
+                return GRANITE["line"]
+            if u % 8 in (2, 3, 4, 5) and (4 <= v <= 10 or 17 <= v <= 23 or 30 <= v <= 37):
+                return GRANITE["hi" if lit else "mid"] if u % 8 in (2, 5) else BLACK_SLATE["mid"]
+            if v in (15, 28) and u % 8 in (1, 3, 5):
+                return IRON
+            return None
+
+        # The set-back street wing joins the rotunda instead of leaving a freestanding tower.
+        cover = facade(s, i - 1.8, j - 2.6, 2.8, 2.5, 41, wing_windows, palette=GRANITE)
+        mansard(s, i - 1.8, j - 2.6, 2.8, 2.5, 41, 5, 0.35,
+                roof=SLATE, dormers=7, cover=cover)
+
+        def put(dx, dy, tone):
+            s.put(x + dx, y + dy, tone)
+            cover.add((int(x + dx), int(y + dy)))
+
+        def front(dx, radius=r):
+            return math.sqrt(max(0, radius * radius - dx * dx)) / 2
+
+        def stone(dx):
+            return GRANITE["hi" if dx < -7 else "lit" if dx < 2 else "mid" if dx < 10 else "dark"]
+
+        def band(z, radius, thickness=2):
+            # Only the exposed ledge: the rotunda above hides the rear of the ellipse.
+            for dy in range(-math.ceil(radius / 2), math.ceil(radius / 2) + 1):
+                for dx in range(-radius, radius + 1):
+                    if dx * dx + (dy * 2) ** 2 <= radius * radius and \
+                            (abs(dx) > r or dy >= front(dx)):
+                        put(dx, dy - z, GRANITE["lit"])
+            for dx in range(-radius, radius + 1):
+                for dz in range(thickness):
+                    put(dx, front(dx, radius) - z + dz,
+                        stone(dx) if dz == 0 else GRANITE["line"])
+
+        for dx in range(-r, r + 1):
+            for z in range(height + 1):
+                tone = stone(dx)
+                # Rusticated lower storey, with a restrained joint every fourth course.
+                if z < 14 and (z % 4 == 0 or (dx + z // 4 * 3) % 8 == 0):
                     tone = GRANITE["line"]
-                s.put(x + dx, yy, tone)
-        dome_y = y - height + 5
-        for dy in range(-17, 1):  # a round black-slate dome, lit from the upper left
-            for dx in range(-r, r + 1):
-                d = dx * dx / (r * r) + (dy / 17) ** 2
-                if d <= 1:
-                    light = -dx / r * 0.6 - dy / 17 * 0.3
-                    tone = rgb("#6A7286") if light > 0.45 else rgb("#4A5164") if light > 0.15 else \
-                        rgb("#30364A") if light > -0.2 else rgb("#1C2030")
-                    s.put(x + dx, dome_y + dy, tone)
-        for dx in range(-r + 1, r):  # the gilded ring at the dome's foot
-            s.put(x + dx, dome_y - 1, GOLD if dx < 0 else GOLD_DARK)
-        for dx in (-5, 5):  # two gilded ribs with garlands
-            for dy in range(2, 16):
-                if dx * dx / (r * r) + (dy / 17) ** 2 <= 0.9:
-                    s.put(x + dx, dome_y - dy, GOLD if dx < 0 else GOLD_DARK)
-        for k in range(5):
-            s.put(x - 4 + k * 2, dome_y - 9 + abs(k - 2), GOLD)
-        for dy in range(17, 21):  # lantern
-            s.put(x, dome_y - dy, GOLD)
-            s.put(x - 1, dome_y - dy, GOLD_DARK)
-        victory = [(0, 20), (0, 21), (0, 22), (0, 23), (-1, 21), (1, 21), (0, 24),
-                   (-2, 23), (-3, 24), (-4, 25), (-5, 25), (2, 23), (3, 24), (4, 25), (5, 25), (-3, 25), (3, 25)]
-        for dx, dy in victory:  # the winged Victory
-            s.put(x + dx, dome_y - dy, GOLD if dx <= 0 else GOLD_DARK)
+                put(dx, front(dx) - z, tone)
+
+        for cx in (-9, 0, 9):
+            for z0, z1 in ((3, 12), (20, 28), (31, 40)):
+                for dx in range(cx - 2, cx + 3):
+                    for z in range(z0, z1 + 1):
+                        # Stone archivolts around recessed, divided windows.
+                        if z > z1 - 2 and abs(dx - cx) == 2:
+                            continue
+                        frame = abs(dx - cx) == 2 or z in (z0, z1)
+                        tone = stone(dx) if frame else BLACK_SLATE["mid"]
+                        if not frame and dx == cx:
+                            tone = GRANITE["line"]
+                        put(dx, front(dx) - z, tone)
+                if z0 > 3:
+                    # Projecting balcony sill, fine iron rail and separate balusters.
+                    for dx in range(cx - 3, cx + 4):
+                        put(dx, front(dx) - z0 + 1, stone(dx))
+                        put(dx, front(dx) - z0 - 2, IRON)
+                        if (dx - cx) % 2 == 0:
+                            put(dx, front(dx) - z0 - 1, IRON)
+
+        band(15, r + 1)
+        # Giant paired columns span two floors; distinct bases and leafy capitals.
+        for cx in (-13, -5, 5, 13):
+            for dx in (cx - 1, cx + 1):
+                for z in range(17, 42):
+                    put(dx, front(dx) - z, stone(dx - 3))
+                put(dx + 1, front(dx) - 40, GRANITE["line"])
+            for dx in range(cx - 2, cx + 3):
+                for z in (17, 41, 42):
+                    put(dx, front(dx) - z, stone(dx))
+        band(44, r + 2, 3)
+
+        # Attic reliefs and round-headed openings beneath the overhanging cornice.
+        for cx in (-9, 0, 9):
+            for dx in range(cx - 2, cx + 3):
+                for z in range(47, 52):
+                    edge = abs(dx - cx) == 2 or z in (47, 51)
+                    tone = GRANITE["line"] if edge else stone(dx)
+                    if abs(dx - cx) <= 1 and z in (48, 49):
+                        tone = GRANITE["deep"] if cx else GRANITE["mid"]
+                    put(dx, front(dx) - z, tone)
+        band(height, r + 2, 2)
+        iso.outline(s, cover, GRANITE["outline"])
+
+        # A full, shouldered cupola. Horizontal rings are projected from circular sections,
+        # so the dome and its curved gold swags share the rotunda's volume.
+        dome_base, dome_h = height + 1, 20
+        roof_cover = set()
+
+        def roof_put(dx, dy, tone):
+            s.put(x + dx, y + dy, tone)
+            roof_cover.add((int(x + dx), int(y + dy)))
+
+        def radius(z):
+            return 3 + 12 * math.sqrt(max(0, 1 - (z / dome_h) ** 2))
+
+        for z in range(dome_h + 1):
+            rr = radius(z)
+            for dx in range(-int(rr), int(rr) + 1):
+                arc = front(dx, rr)
+                tone = BLACK_SLATE["lit" if dx < -rr * 0.35 else "mid" if dx < rr * 0.4 else "dark"]
+                if dx < -rr * 0.55 and z > 8:
+                    tone = BLACK_SLATE["hi"]
+                roof_put(dx, arc - dome_base - z, tone)
+        iso.outline(s, roof_cover, BLACK_SLATE["outline"])
+
+        # Curved gilded ribs and festoons, with a dark gap between each gold detail.
+        for z in range(dome_h + 1):
+            rr = radius(z)
+            for t in (-0.83, -0.28, 0.36, 0.86):
+                dx = round(rr * t)
+                if z > 13 or z < 4:
+                    roof_put(dx, front(dx, rr) - dome_base - z, GOLD if t < 0 else GOLD_DARK)
+        for z in (1, 16, 19):
+            rr = radius(z)
+            for dx in range(-int(rr), int(rr) + 1):
+                roof_put(dx, front(dx, rr) - dome_base - z, GOLD if dx < 0 else GOLD_DARK)
+        for centre in (-7, 4):
+            for dx in range(centre - 4, centre + 5):
+                z = 5 + abs(dx - centre) // 2
+                roof_put(dx, front(dx, radius(z)) - dome_base - z, GOLD if dx < 0 else GOLD_DARK)
+
+        # Two raised oval dormers, with stone rims and gold crowns, on the black slate.
+        for cx in (-7, 6):
+            cy = front(cx, radius(10)) - dome_base - 10
+            for dx in range(-2, 3):
+                for dy in range(-3, 4):
+                    d = (dx / 2.2) ** 2 + (dy / 3.2) ** 2
+                    if d <= 1:
+                        roof_put(cx + dx, cy + dy,
+                                 stone(cx) if d > 0.42 else BLACK_SLATE["outline"])
+            roof_put(cx, cy - 4, GOLD)
+
+        # Gilded crown and plinth, then the dark bronze Victory with distinct feathered wings.
+        apex = dome_base + dome_h
+        for dz, width in ((0, 3), (1, 2), (2, 2), (3, 1)):
+            for dx in range(-width, width + 1):
+                roof_put(dx, -apex - dz, GOLD if dx <= 0 else GOLD_DARK)
+        victory = [(-1, 0), (0, 0), (1, 0), (-1, 1), (0, 1), (1, 1), (0, 2), (0, 3),
+                   (1, 3), (0, 4), (1, 4), (0, 5), (0, 6), (0, 7),
+                   (-1, 5), (-2, 6), (-3, 7), (-4, 8), (-5, 10), (-4, 10), (-3, 9),
+                   (-2, 8), (-1, 7), (1, 5), (2, 6), (3, 7), (4, 9), (5, 11),
+                   (4, 11), (3, 10), (2, 8), (1, 7), (-1, 9), (0, 9)]
+        for dx, dz in victory:
+            roof_put(dx, -apex - 4 - dz, BRONZE["hi" if dx < 0 else "lit" if dx == 0 else "dark"])
     scene.add(i + j + 1, draw)
 
 
@@ -862,6 +983,8 @@ if __name__ == "__main__":
     print(preview([lambda s: plaza_mayor(s, 1, 1), lambda s: casa_correos(s, 14, 2),
                    lambda s: metropolis(s, 16, 10)],
                   "madrid-plaza-sol-metropolis", size=(280, 210), origin=(130, 70), tiles=22))
+    print(preview([lambda s: metropolis(s, 5, 5)], "madrid-metropolis",
+                  size=(120, 140), origin=(60, 75), tiles=10))
     print(preview([lambda s: puerta_alcala(s, 1, 2), lambda s: cibeles(s, 13, 4), lambda s: palacio_cristal(s, 3, 9),
                    lambda s: alfonso_xii(s, 13, 12)] +
                   [lambda s, n=n: madrid_house(s, 2 + n * 3, 15, 3, 2, 4, [BRICK, rgb("#E3B66B"), rgb("#EEE1C6")][n], n,
