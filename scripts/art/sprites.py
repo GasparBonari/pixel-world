@@ -2388,6 +2388,43 @@ def kruje(seed=0):
     return scene.img
 
 
+def kaneo(seed=0):
+    """St John at Kaneo: one Byzantine drum/dome, clay cross roofs, cliff above Lake Ohrid."""
+    import iso
+    from landmarks_macedonia import STONE, BRICK, CLAY, ROCK, WHITE, WOOD
+    from landmarks_slovakia import block, band
+    from landmarks_bosnia import cylinder
+    from landmarks_iberia import hip_roof, stone_courses, arch_opening
+    from landmarks_slovenia import revolve, DOME
+    from landmarks_paris import poly, P, seg
+
+    scene = iso.Scene(52, 62, (25, 44))
+    shadow = Sprite(52, 62)
+    ground_shadow(shadow, 26, 58, 22, 2)
+    scene.img = shadow.image(); scene.px = scene.img.load()
+    poly(scene, [(3,53),(15,48),(37,48),(49,54),(43,59),(16,59)],
+         lambda x,y:hex_rgb('#A9D7DF') if (x+3*y)%11==0 else hex_rgb('#457FA0'))
+    poly(scene, [(5,44),(13,36),(36,36),(44,44),(38,55),(14,55)],
+         lambda x,y:ROCK['line'] if (x+2*y)%13==0 else ROCK['lit' if x<23 else 'dark'])
+    def masonry(u,v,lit):
+        if int(v)%5==0:return BRICK['lit' if lit else 'dark']
+        hole=arch_opening(int(u)%8,v-3,4,1.5,7,WOOD['deep']) if 3<v<12 else None
+        return hole or stone_courses(STONE,3,8)(u,v,lit)
+    block(scene,-1.3,-.7,2.7,1.6,14,STONE,masonry,z=3)
+    hip_roof(scene,-1.42,-.82,2.94,1.84,17,6,CLAY)
+    block(scene,-.7,-1.2,1.5,2.7,14,STONE,masonry,z=3)
+    hip_roof(scene,-.82,-1.32,1.74,2.94,17,6,CLAY)
+    # Eastern apse behind the nave, one polygonal central drum.
+    cylinder(scene,.9,-.8,.65,.6,3,11,STONE,masonry,segments=8)
+    hip_roof(scene,.35,-1.4,1.2,1.2,14,4,CLAY)
+    cylinder(scene,.05,.1,.78,.78,20,12,BRICK,masonry,segments=8)
+    band(scene,-.57,-.52,1.24,1.24,31,STONE,1)
+    revolve(scene,.05,.1,.86,32,6,DOME,CLAY,ribs=4,segments=16)
+    seg(scene,P(scene,.05,.1,38),P(scene,.05,.1,43),WHITE['dark'])
+    seg(scene,P(scene,-.15,.1,41),P(scene,.25,.1,41),WHITE['lit'])
+    return scene.img
+
+
 WHITE_FALL = (hex_rgb('#FFFFFF'), hex_rgb('#DDF3F4'), hex_rgb('#B6E2E6'))
 
 
@@ -2432,6 +2469,7 @@ ICONS = {
     "golubac": golubac,
     "ostrog": ostrog,
     "kruje": kruje,
+    "kaneo": kaneo,
     **FLORA, **FAUNA,
 }
 

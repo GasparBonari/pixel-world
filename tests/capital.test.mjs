@@ -21,6 +21,62 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('North Macedonia marks Skopje, Bitola and Kaneo with landlocked decorations inside bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'skopje');
+  assert.deepEqual(region.bounds, [20.4,40.8,23.1,42.4]);
+  const tier = icons.icons.filter((i) => i[5] === 1);
+  const at = (lon,lat) => tier.filter((i) => Math.abs(i[1]-lon)<.0001 && Math.abs(i[2]-lat)<.0001);
+  const kinds = (site) => at(...site).map((i) => icons.names[i[0]]).sort();
+  // The pinned layer contains three MKD cities. Tetovo is within Skopje's 75 km
+  // exclusion. Bitola is the only remaining town: do not invent a third city.
+  const cities = [[21.4335,42],[21.3395,41.0391]];
+  const churchSite = [20.7888,41.1111];
+  const trees = [[21.95,42.05],[20.65,41.65],[21.45,41.65],[22.85,41.65],
+    [21.85,41.55],[22.55,41.35],[21.85,41.25]];
+  assert.deepEqual(kinds(cities[0]), ['castle','house','house']);
+  assert.deepEqual(kinds(cities[1]), ['church','house','house']);
+  assert.deepEqual(kinds(churchSite), ['kaneo']);
+  assert.deepEqual(at(20.9701,42.0092), [], 'Tetovo respects the unchanged 75 km rule');
+  const country = [...cities,churchSite,...trees].flatMap((site) => at(...site));
+  assert.equal(country.length,14);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length,2);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'oak').length,5);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'boat').length,0);
+  for (const [,lon,lat] of country) {
+    const [w,s,e,n] = region.bounds;
+    assert.ok(w<=lon && lon<=e && s<=lat && lat<=n, `${lon},${lat}: North Macedonia bounds`);
+  }
+});
+
+test('Skopje supports focal arrival, bounded panning and release beside Tirane', () => {
+  const city = scenes.find((s) => s.id === 'skopje');
+  assert.equal(city.country,'North Macedonia');
+  assert.deepEqual([city.longitude,city.latitude,city.width,city.height], [21.433462,42.000006,720,520]);
+  assert.equal(maxZoomAt(city.longitude,city.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(22.95,41), COUNTRY_ZOOM.max);
+  assert.equal(maxZoomAt(23.7275,37.9838), MAX_GLOBE_ZOOM); // Athens stays uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
+    const focal = globePoint(city.longitude,city.latitude,current,viewport);
+    for (let step=0;step<8;step++) current = zoomGlobe(current,current.zoom+.3,focal.x,focal.y,viewport);
+    assert.equal(current.zoom,CAPITAL_ZOOM.full);
+    assert.equal(camera.activeCapital(current).id,'skopje');
+    const after = globePoint(city.longitude,city.latitude,current,viewport);
+    assert.ok(Math.hypot(after.x-focal.x,after.y-focal.y)<1);
+    assert.equal(camera.activeCapital({ ...current, longitude:20.5, latitude:41.7 }).id,'skopje');
+    for (const [dx,dy] of [[100,0],[-100,0],[0,100],[0,-100]]) {
+      for (let step=0;step<100;step++)
+        current = capitals.clampToCapitals(camera.rotateGlobe(current,dx,dy,viewport),scenes,viewport,2);
+      const edge = capitals.clampToCapitals(camera.rotateGlobe(current,dx,dy,viewport),scenes,viewport,2);
+      assert.ok(Math.abs(edge.longitude-current.longitude)<1e-9);
+      assert.ok(Math.abs(edge.latitude-current.latitude)<1e-9);
+      assert.equal(camera.activeCapital(current).id,'skopje');
+    }
+    assert.equal(camera.activeCapital({ ...current, zoom:6.2 }),undefined);
+    assert.equal(camera.activeCapital({ longitude:19.8189, latitude:41.3275, zoom:7 }).id,'tirane');
+  }
+});
+
 test('Albania marks Tirana, spaced cities and Krujë inside its bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'tirane');
   assert.deepEqual(region.bounds, [19.2,39.6,21.1,42.7]);
@@ -190,7 +246,7 @@ test('Belgrade supports focal arrival, bounded panning and release beside Saraje
   assert.deepEqual([city.longitude,city.latitude,city.width,city.height], [20.46,44.8125,720,520]);
   assert.equal(maxZoomAt(city.longitude,city.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(21.9,43.3304), CAPITAL_ZOOM.full); // Niš falls within the standard 1.5° reach.
-  assert.equal(maxZoomAt(22.8,42.8), COUNTRY_ZOOM.max);
+  assert.equal(maxZoomAt(23,43.6), COUNTRY_ZOOM.max); // Outside Skopje's new capital reach.
   assert.equal(maxZoomAt(23.7275,37.9838), MAX_GLOBE_ZOOM); // Athens stays uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };

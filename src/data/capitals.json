@@ -277,5 +277,14 @@
     "latitude": 41.3275,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "skopje",
+    "name": "Skopje",
+    "country": "North Macedonia",
+    "longitude": 21.433462,
+    "latitude": 42.000006,
+    "width": 720,
+    "height": 520
   }
 ]

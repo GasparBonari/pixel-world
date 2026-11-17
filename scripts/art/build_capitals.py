@@ -4137,6 +4137,106 @@ def tirane():
     return scene.img.convert('RGB')
 
 
+def skopje():
+    import landmarks_macedonia as mk
+
+    scene = new_scene()
+
+    def tile(x,y):
+        return tile_of((x-WIDTH/2)/8,(y-scene.oy)/4)
+
+    # Vardar enters NW, then follows +i (SE) through Stone Bridge. The bridge runs +j.
+    # All four left-bank landmarks remain NE of the water, cathedral/gate SW.
+    river = [(-120,110),(110,225),(70,245),(820,620)]
+    segments = [(tile(*a),tile(*b)) for a,b in zip(river,river[1:])]
+
+    def water_distance(i,j):
+        best = float('inf')
+        for (a,b),(c,d) in segments:
+            di,dj = c-a,d-b
+            t = max(0,min(1,((i-a)*di+(j-b)*dj)/(di*di+dj*dj)))
+            best = min(best,math.hypot(i-a-t*di,j-b-t*dj))
+        return best
+
+    kinds,elevation = {},{}
+    for i,j in visible_tiles(scene):
+        x,y = scene.screen(i+.5,j+.5)
+        distance = water_distance(i+.5,j+.5)
+        # Raised promontory and smaller mosque terrace, both on the left bank.
+        kale_hill = ((x-405)/115)**2+((y-222)/65)**2
+        mosque_hill = ((x-555)/65)**2+((y-140)/50)**2
+        elev = 30 if kale_hill<.65 else 18 if kale_hill<1.15 else 8 if kale_hill<1.55 else 0
+        if mosque_hill<1:elev=max(elev,16)
+        elevation[i,j] = elev
+        if distance<2.25:kind='water'
+        elif distance<3.1:kind='quay'
+        elif distance<4.4:kind='grass'
+        elif elev:kind='grass'
+        elif 220<x<435 and 425<y<520:kind='square'  # Macedonia Square/Pella forecourt
+        elif 50<x<210 and 285<y<380:kind='square'  # Cathedral yard
+        elif i%10==0 or j%10==0:kind='cobble'
+        else:kind='lot'
+        kinds[i,j] = kind
+
+    reserved,protected,silhouette = set(),[],set()
+
+    def reserve(i,j,wi,wj):
+        for a in range(math.floor(i),math.ceil(i+wi)):
+            for b in range(math.floor(j),math.ceil(j+wj)):
+                reserved.add((a,b))
+                if kinds.get((a,b))=='lot':kinds[a,b]='square'
+
+    for name,builder,(wi,wj),_,(x,y),z in mk.SITES:
+        ci,cj = tile(x,y)
+        i,j = ci-wi/2,cj-wj/2
+        builder(scene,i,j,z=z)
+        reserve(i-1,j-1,wi+2,wj+2)
+        # Use each builder's actual silhouette for house/tree clearance, including the belfry.
+        study = iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
+        builder(study,i,j,z=z);study.paint_objects()
+        l,t,r,b = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0<l<r<WIDTH and 0<t<b<HEIGHT,(name,l,t,r,b)
+        protected.append((l-4,t-4,r+4,b+5))
+        pixels=study.img.convert('RGB').load()
+        silhouette.update((sx-100,sy-100) for sy in range(t+100,b+100) for sx in range(l+100,r+100)
+                          if pixels[sx,sy]!=(0,0,0))
+        # Every tile directly under an elevated building belongs to its own level terrace.
+        if z:
+            for a in range(math.floor(i)-1,math.ceil(i+wi)+1):
+                for b in range(math.floor(j)-1,math.ceil(j+wj)+1):
+                    elevation[a,b]=max(elevation.get((a,b),0),z)
+
+    for i,j in sorted(kinds,key=lambda p:(sum(p),p[0])):
+        kind=kinds[i,j]
+        def color(x,y,kind=kind):
+            if kind=='water':return mk.WATER[2] if h01(x//3,y,8501)<.03 else mk.WATER[int(h01(x//5,y//2,8502)<.3)]
+            if kind=='square':return mk.GROUND['joint'] if (x+2*(y//5))%10==0 or y%5==0 else mk.GROUND['square' if h01(x//10,y//5,8503)>.15 else 'rose']
+            if kind=='cobble':return mk.GROUND['cobble_joint'] if (x+2*(y%2))%4==0 else mk.GROUND['cobble']
+            if kind=='grass':return mk.GROUND['garden_light'] if h01(x,y,8504)<.13 else mk.GROUND['garden']
+            return ground_color('pave' if kind=='lot' else kind,x,y)
+        elev=elevation[i,j]
+        iso.ground_tile(scene,i,j,color,elev,lambda x,y,lit:mk.ROCK['line'] if y%5==0 else mk.ROCK['lit' if lit else 'dark'])
+
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):continue
+            x,y=scene.screen(li+1.25,lj+1.5)
+            seed=int(h01(li,lj,8505)*10000);floors=1+seed%3
+            if any(x+35>l and x-35<r and y+18>t and y-floors*11-26<b for l,t,r,b in protected):continue
+            mk.townhouse(scene,li,lj,floors=floors,seed=seed)
+            reserved.update(cells)
+
+    trees=[round_tree(k,'#698C4B','#2F482E') for k in range(3)]
+    for (i,j),kind in kinds.items():
+        if kind not in ('grass','quay') or (i,j) in reserved or h01(i,j,8506)>(.16 if kind=='grass' else .045):continue
+        x,y=scene.screen(i+.5,j+.5,elevation[i,j])
+        if any((sx,sy) in silhouette for sx in range(int(x)-11,int(x)+12) for sy in range(int(y)-23,int(y)+6)):continue
+        scene.add(i+j+1.5,lambda s,x=x,y=y,im=trees[(i+j)%3]:s.sprite(im,x,y+3))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -4200,6 +4300,8 @@ CAPITALS = [
      "render": podgorica},
     {"id": "tirane", "name": "Tirane", "country": "Albania", "longitude": 19.8189, "latitude": 41.3275,
      "render": tirane},
+    {"id": "skopje", "name": "Skopje", "country": "North Macedonia", "longitude": 21.433462, "latitude": 42.000006,
+     "render": skopje},
 ]
 
 

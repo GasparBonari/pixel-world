@@ -163,6 +163,10 @@ COUNTRY_TIER = [
      "boat_bounds": (19.2, 39.6, 19.7, 41.8),
      # Krujë's fortress itself, not Krujë town or the museum entrance.
      "landmarks": [("kruje", 19.794087, 41.507026)]},
+    {"adm0": "MKD", "bounds": (20.4, 40.8, 23.1, 42.4), "capital": "Skopje", "cities": 9,
+     "trees": 7, "decoration_grid": .1, "decoration_km": 30,
+     # St John at Kaneo itself on the cliff above Lake Ohrid. Landlocked: no offshore boats.
+     "landmarks": [("kaneo", 20.7887653, 41.1111244)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -204,6 +208,7 @@ VARIANTS = {
     "golubac": 1,
     "ostrog": 1,
     "kruje": 1,
+    "kaneo": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -487,6 +492,10 @@ def main():
                 continue
             if spec["adm0"] == "MNE":
                 kind = "olive" if lat < 42.4 else "pine"
+                building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+                continue
+            if spec["adm0"] == "MKD":
+                kind = "pine" if lon < 21.3 or lat > 41.8 else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if spec["adm0"] == "ALB":
