@@ -295,5 +295,14 @@
     "latitude": 37.9838,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "bucharest",
+    "name": "Bucharest",
+    "country": "Romania",
+    "longitude": 26.1025,
+    "latitude": 44.4268,
+    "width": 720,
+    "height": 520
   }
 ]

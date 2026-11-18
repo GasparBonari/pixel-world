@@ -171,6 +171,11 @@ COUNTRY_TIER = [
      "trees": 7,
      # Holy Trinity Monastery itself on its sandstone pillar at Meteora, above Kalambaka.
      "landmarks": [("meteora", 21.6358, 39.7132)]},
+    {"adm0": "ROU", "bounds": (20.2, 43.6, 29.8, 48.3), "capital": "Bucharest", "cities": 9,
+     "trees": 7,
+     # Offshore boats stay off Romania's own Black Sea coast, outside the Danube delta.
+     "boat_bounds": (28.7, 43.7, 29.7, 44.8),
+     "landmarks": [("bran", 25.36722, 45.51500)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -214,6 +219,7 @@ VARIANTS = {
     "kruje": 1,
     "kaneo": 1,
     "meteora": 1,
+    "bran": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -488,6 +494,10 @@ def main():
             if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL", "DNK", "CZE", "POL", "LUX", "SVK", "HUN", "SVN"):
                 kind = "pine" if (spec["adm0"] in ("DEU", "POL") and lat > 53 or spec["adm0"] in ("GBR", "DNK") and lat > 56
                                   or spec["adm0"] == "SVN" and lat > 46.2) else "oak"
+                building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+                continue
+            if spec["adm0"] == "ROU":
+                kind = "pine" if 45.2 < lat < 47.4 and 22 < lon < 26.5 else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if spec["adm0"] == "HRV":

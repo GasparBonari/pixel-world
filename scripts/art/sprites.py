@@ -2471,6 +2471,38 @@ def meteora(seed=0):
     return scene.img
 
 
+def bran(seed=0):
+    """Bran's irregular white courtyard castle, clay-roofed round SW tower and rocky spur."""
+    import iso
+    from landmarks_romania import WHITE, STONE, CLAY, ROCK, WOOD, windows
+    from landmarks_slovakia import block, band
+    from landmarks_bosnia import cylinder
+    from landmarks_iberia import hip_roof
+    from landmarks_slovenia import revolve, slab
+
+    scene = iso.Scene(60,76,(30,62))
+    shadow = Sprite(60,76)
+    ground_shadow(shadow,30,71,24,3)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    slab(scene,[(-1.8,-1),(-.7,-1.65),(1.6,-1.2),(1.9,.5),(.9,1.65),(-1.6,1.1)],0,10,ROCK,
+         lambda u,v,lit: ROCK['line'] if (int(u)*3+int(v)//4)%11==0 else None)
+    # Unequal roofed wings enclose the small court. The higher rear block is rectangular.
+    for a,b,w,d,h in ((-1.3,-1.1,2.5,.7,21),(-1.4,-.4,.7,1.6,18),(.7,-.3,.7,1.7,25)):
+        block(scene,a,b,w,d,h,WHITE,windows(WHITE,h,8,10,True),z=10)
+        hip_roof(scene,a-.05,b-.05,w+.1,d+.1,10+h,8,CLAY)
+    block(scene,-.7,-1.1,1.1,1,36,WHITE,windows(WHITE,36,8,10),z=10)
+    band(scene,-.7,-1.1,1.1,1,44,STONE,2)
+    hip_roof(scene,-.8,-1.2,1.3,1.2,46,11,CLAY)
+    # A timbered inner gallery, openings and roof seam highlights remain legible at native pixels.
+    block(scene,-.7,-.35,1.4,.3,9,STONE,
+          lambda u,v,lit: WOOD if int(u)%4==0 or int(v) in (1,7) else None,z=22)
+    hip_roof(scene,-.75,-.4,1.5,.5,31,5,CLAY)
+    cylinder(scene,-.6,1.05,.55,.55,10,27,WHITE,windows(WHITE,27,8,10),segments=16)
+    revolve(scene,-.6,1.05,.76,37,15,[(0,1),(1,.02)],CLAY,ribs=3,segments=24)
+    return scene.img
+
+
 WHITE_FALL = (hex_rgb('#FFFFFF'), hex_rgb('#DDF3F4'), hex_rgb('#B6E2E6'))
 
 
@@ -2517,6 +2549,7 @@ ICONS = {
     "kruje": kruje,
     "kaneo": kaneo,
     "meteora": meteora,
+    "bran": bran,
     **FLORA, **FAUNA,
 }
 
