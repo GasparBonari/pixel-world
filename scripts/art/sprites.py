@@ -2584,6 +2584,52 @@ def meritxell(seed=0):
     return scene.img
 
 
+def rila(seed=0):
+    """Rila's cloister court, striped five-domed Nativity church and separate Hrelyo tower."""
+    import iso
+    from landmarks_bulgaria import WHITE, BRICK, IVORY, CLAY, LEAD, WOOD, windows, cross
+    from landmarks_iberia import hip_roof
+    from landmarks_slovakia import block, band
+    from landmarks_bosnia import cylinder
+    from landmarks_slovenia import revolve, DOME
+    from landmarks_paris import P, poly
+
+    scene=iso.Scene(72,66,(36,38))
+    shadow=Sprite(72,66);ground_shadow(shadow,36,58,30,3)
+    scene.img=shadow.image();scene.px=scene.img.load()
+    poly(scene,[P(scene,a,b) for a,b in ((-2,-1.8),(2.1,-1.8),(2.1,2),(-2,2))],
+         lambda x,y:IVORY['mid'] if (x+2*y)%7 else IVORY['line'])
+    def arcade(u,v,lit):
+        c,k=int(u)%6,int(v)%7
+        if k<5 and 1<c<5:return WOOD if k<3 or abs(c-3)<2 else WHITE['dark']
+        if k==6:return BRICK['lit' if lit else 'dark']
+        return WHITE['lit' if lit else 'dark']
+    # Back and side cloister wings leave the courtyard and central church visible.
+    for a,b,w,d in ((-1.85,-1.65,3.9,.55),(-1.85,-1.1,.6,3.1),(1.55,-1.1,.6,3.1)):
+        block(scene,a,b,w,d,15,WHITE,arcade)
+        hip_roof(scene,a-.07,b-.07,w+.14,d+.14,16,5,CLAY)
+        band(scene,a,b,w,d,7,BRICK,1)
+    # Medieval stone tower stands separately to the NE of the Nativity church.
+    block(scene,.8,-.95,.65,.7,28,IVORY,windows(IVORY,28,6,9))
+    band(scene,.8,-.95,.65,.7,26,BRICK,2)
+    hip_roof(scene,.72,-1.03,.81,.86,29,3,CLAY)
+    # Five copper/lead domes: main dome, two western and two eastern smaller domes.
+    church_windows=windows(WHITE,13,7,10,True)
+    def stripes(u,v,lit):
+        return BRICK['lit' if lit else 'dark'] if int(v)%5 in (0,1) else church_windows(u,v,lit)
+    block(scene,-.75,-.35,1.5,2.2,12,WHITE,stripes)
+    hip_roof(scene,-.82,-.42,1.64,2.34,13,4,CLAY)
+    for a,b,r,base,rise in ((-.48,-.05,.29,16,4),(.48,-.05,.29,16,4),
+                           (-.48,1.32,.29,16,4),(.48,1.32,.29,16,4),(0,.65,.48,21,6)):
+        cylinder(scene,a,b,r*.8,r*.8,base-4,4,WHITE,stripes,segments=12)
+        revolve(scene,a,b,r,base,rise,DOME,LEAD,ribs=3,segments=16)
+        cross(scene,a,b,base+rise,3)
+    # The western porch is shown as an arcade, rather than a solid wall of dark stripes.
+    block(scene,-.9,1.7,1.8,.42,7,WHITE,arcade)
+    hip_roof(scene,-.98,1.62,1.96,.58,8,3,CLAY)
+    return scene.img
+
+
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
@@ -2613,6 +2659,7 @@ ICONS = {
     "bran": bran,
     "pamukkale": pamukkale,
     "meritxell": meritxell,
+    "rila": rila,
     **FLORA, **FAUNA,
 }
 

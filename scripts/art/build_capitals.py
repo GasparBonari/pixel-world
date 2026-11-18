@@ -4691,6 +4691,116 @@ def andorra():
     return scene.img.convert('RGB')
 
 
+def sofia():
+    import landmarks_bulgaria as bg
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    kinds, elevation = {}, {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        # Central basin, gently rising east toward the old basilica/cathedral. No downtown river.
+        elev = 8 if x > 440 and 180 < y < 460 else 4 if x > 420 and 170 < y < 470 else 0
+        if 85 < x < 215 and 205 < y < 290:
+            kind, elev = 'ruins', -6  # St George's excavated courtyard below street level.
+        elif 180 < x < 310 and 345 < y < 435:
+            kind = 'grass'  # City Garden, west/north-west of the theatre.
+        elif 65 < x < 315 and 165 < y < 202:
+            kind = 'grass'  # Banski Square garden between/east of the baths and mosque.
+        elif 340 < x < 445 and 320 < y < 355:
+            kind = 'grass'  # Russian Church garden, south-west of the eastern rise.
+        elif x > 450 and 210 < y < 450 or 40 < x < 370 and 65 < y < 170:
+            kind = 'square'
+        elif abs(y-(285+x*.18)) < 12:
+            kind = 'yellow'  # Compressed Tsar Osvoboditel corridor, west to east/south-east.
+        elif i % 10 == 0 or j % 10 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[i, j], elevation[i, j] = kind, elev
+
+    reserved, protected, silhouette = set(), [], set()
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[a, b] = 'square'
+
+    for name, builder, (wi, wj), _, (x, y), z in bg.SITES:
+        ci, cj = tile(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        builder(scene, i, j, z=z)
+        reserve(i-1, j-1, wi+2, wj+2)
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j, z=z)
+        study.paint_objects()
+        l, t, r, b = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < l < r < WIDTH and 0 < t < b < HEIGHT, name
+        protected.append((l-4, t-4, r+4, b+5))
+        pixels = study.img.convert('RGB').load()
+        silhouette.update((sx-100, sy-100) for sy in range(t+100, b+100) for sx in range(l+100, r+100)
+                          if pixels[sx, sy] != (0, 0, 0))
+        for a in range(math.floor(i)-1, math.ceil(i+wi)+1):
+            for b in range(math.floor(j)-1, math.ceil(j+wj)+1):
+                if (a, b) in kinds:
+                    elevation[a, b] = z
+                    if name == 'rotunda':
+                        kinds[a, b] = 'ruins'
+
+    # Continuous substrate under the excavation/terraces prevents tiny holes at tile steps.
+    for i, j in kinds:
+        iso.ground_tile(scene,i,j,lambda x,y:bg.GROUND['cobble'])
+
+    for i, j in sorted(kinds, key=lambda p: (sum(p), p[0])):
+        kind = kinds[i, j]
+        def color(x, y, kind=kind):
+            if kind == 'yellow':
+                return bg.GROUND['yellow_joint'] if (x+3*(y//4))%7 == 0 or y%4 == 0 else bg.GROUND['yellow_hi' if h01(x, y, 9101)<.08 else 'yellow']
+            if kind == 'square':
+                return bg.GROUND['joint'] if (x+2*(y//6))%12 == 0 or y%6 == 0 else bg.GROUND['rose' if h01(x//12, y//6, 9102)<.08 else 'square']
+            if kind == 'cobble':
+                return bg.GROUND['cobble_joint'] if (x+2*(y%2))%4 == 0 else bg.GROUND['cobble']
+            if kind == 'grass':
+                return bg.GROUND['garden_hi'] if h01(x,y,9103)<.12 else bg.GROUND['garden']
+            if kind == 'ruins':
+                return bg.GROUND['earth'] if h01(x,y,9104)<.14 else bg.GROUND['cobble']
+            return ground_color('pave',x,y)
+        iso.ground_tile(scene,i,j,color,elevation[i,j],
+                        lambda x,y,lit:bg.ROCK['line'] if y%4 == 0 else bg.ROCK['lit' if lit else 'dark'])
+
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):
+                continue
+            x,y=scene.screen(li+1.25,lj+1.5)
+            seed=int(h01(li,lj,9105)*10000)
+            floors=1+seed%3
+            if any(x+38>l and x-38<r and y+22>t and y-floors*12-28<b for l,t,r,b in protected):
+                continue
+            bg.townhouse(scene,li,lj,floors=floors,seed=seed,z=elevation[li,lj])
+            reserved.update(cells)
+
+    trees=[round_tree(k,'#779854','#354D32') for k in range(4)]
+    for (i,j),kind in kinds.items():
+        if kind not in ('grass','square') or (i,j) in reserved:
+            continue
+        if h01(i,j,9106)>(.18 if kind=='grass' else .008):
+            continue
+        x,y=scene.screen(i+.5,j+.5,elevation[i,j])
+        if any((sx,sy) in silhouette for sx in range(int(x)-14,int(x)+15) for sy in range(int(y)-25,int(y)+7)):
+            continue
+        im=trees[(i+j)%4]
+        scene.add(i+j+1.5,lambda s,x=x,y=y,im=im:s.sprite(im,x,y+3))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -4764,6 +4874,8 @@ CAPITALS = [
      "render": ankara},
     {"id": "andorra", "name": "Andorra la Vella", "country": "Andorra", "longitude": 1.5218, "latitude": 42.5078,
      "render": andorra},
+    {"id": "sofia", "name": "Sofia", "country": "Bulgaria", "longitude": 23.3219, "latitude": 42.6977,
+     "render": sofia},
 ]
 
 

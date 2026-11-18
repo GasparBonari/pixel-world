@@ -184,6 +184,11 @@ COUNTRY_TIER = [
      # The pinned Natural Earth name is Andorra; all other towns are within 75 km.
      "trees": 3, "decoration_grid": .01, "decoration_km": 5,
      "landmarks": [("meritxell", 1.59088, 42.55463)]},
+    {"adm0": "BGR", "bounds": (22.3, 41.2, 28.7, 44.3), "capital": "Sofia", "cities": 9,
+     "trees": 7,
+     # Rila Monastery complex in the Rilska valley, south of Sofia.
+     "boat_bounds": (27.8, 42.0, 28.7, 43.8),
+     "landmarks": [("rila", 23.3401159, 42.1333100)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -230,6 +235,7 @@ VARIANTS = {
     "bran": 1,
     "pamukkale": 1,
     "meritxell": 1,
+    "rila": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -504,6 +510,10 @@ def main():
             if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL", "DNK", "CZE", "POL", "LUX", "SVK", "HUN", "SVN"):
                 kind = "pine" if (spec["adm0"] in ("DEU", "POL") and lat > 53 or spec["adm0"] in ("GBR", "DNK") and lat > 56
                                   or spec["adm0"] == "SVN" and lat > 46.2) else "oak"
+                building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+                continue
+            if spec["adm0"] == "BGR":
+                kind = "pine" if lat < 43 and lon < 25 or 42.4 < lat < 43.1 and 24 < lon < 27 else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if spec["adm0"] == "ROU":

@@ -322,5 +322,14 @@
     "latitude": 42.5078,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "sofia",
+    "name": "Sofia",
+    "country": "Bulgaria",
+    "longitude": 23.3219,
+    "latitude": 42.6977,
+    "width": 720,
+    "height": 520
   }
 ]
