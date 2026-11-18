@@ -21,6 +21,57 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Andorra marks its pinned capital, Meritxell and three native-filtered pines within shared bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'andorra');
+  assert.deepEqual(region.bounds, [1.4, 42.42, 1.79, 42.66]);
+  const [west, south, east, north] = region.bounds;
+  const tier = icons.icons.filter((i) => i[5] === 1
+    && west <= i[1] && i[1] <= east && south <= i[2] && i[2] <= north);
+  const at = (lon, lat) => tier.filter((i) => Math.abs(i[1] - lon) < .0001 && Math.abs(i[2] - lat) < .0001);
+  // Natural Earth's exact capital name is Andorra; other towns are all within 75 km.
+  assert.deepEqual(at(1.5165, 42.5).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  assert.deepEqual(at(1.5909, 42.5546).map((i) => icons.names[i[0]]), ['meritxell']);
+  const trees = [[1.465, 42.605], [1.615, 42.485], [1.695, 42.435]];
+  for (const site of trees) assert.deepEqual(at(...site).map((i) => icons.names[i[0]]), ['pine']);
+  assert.equal(tier.length, 7);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat').length, 0);
+  // The inland sanctuary has an appended native sprite at its expected dimensions.
+  const frame = icons.frames[at(1.5909, 42.5546)[0][0]];
+  assert.deepEqual(frame.slice(2), [56, 40]);
+});
+
+test('Andorra la Vella supports focal arrival, scene bounds and zoom-out release', () => {
+  const scene = scenes.find((s) => s.id === 'andorra');
+  assert.equal(scene.name, 'Andorra la Vella');
+  assert.equal(scene.country, 'Andorra');
+  assert.deepEqual([scene.longitude, scene.latitude, scene.width, scene.height], [1.5218, 42.5078, 720, 520]);
+  const region = COVERAGE.find((c) => c.id === scene.id);
+  assert.deepEqual([region.longitude, region.latitude], [scene.longitude, scene.latitude]);
+  assert.equal(maxZoomAt(scene.longitude, scene.latitude), CAPITAL_ZOOM.full);
+  // The shared 1.5° capital reach also covers Barcelona, across the national border.
+  assert.equal(maxZoomAt(2.17, 41.39), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(23.3219, 42.6977), MAX_GLOBE_ZOOM); // Sofia remains uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: scene.longitude, latitude: scene.latitude, zoom: 5 };
+    const focal = globePoint(scene.longitude, scene.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(current.capitalId, scene.id);
+    const after = globePoint(scene.longitude, scene.latitude, current, viewport);
+    assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+    for (const [dx, dy] of [[100, 0], [-100, 0], [0, 100], [0, -100]]) {
+      for (let step = 0; step < 100; step++)
+        current = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      const edge = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      assert.deepEqual(edge, current);
+      assert.equal(edge.capitalId, scene.id);
+    }
+    const released = constrainGlobe({ ...current, zoom: 5 });
+    assert.equal(released.capitalId, undefined);
+  }
+});
+
 test('Turkey marks Ankara as capital, eight spaced cities and Pamukkale within shared bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'ankara');
   assert.deepEqual(region.bounds, [25.6, 35.8, 44.9, 42.2]);
@@ -1108,7 +1159,7 @@ test('every country with a capital scene has coverage, an image, and an index en
 
 test('Madrid: Spain allows country zoom, Madrid capital zoom, and panning clamps to Madrid', () => {
   assert.equal(maxZoomAt(-3.70, 40.42), CAPITAL_ZOOM.full);
-  assert.equal(maxZoomAt(2.17, 41.39), COUNTRY_ZOOM.max); // Barcelona
+  assert.equal(maxZoomAt(-.3763, 39.4699), COUNTRY_ZOOM.max); // Valencia
   const madrid = scenes.find((s) => s.id === 'madrid');
   let current = { longitude: -3.7038, latitude: 40.4168, zoom: CAPITAL_ZOOM.full };
   for (let k = 0; k < 80; k++)

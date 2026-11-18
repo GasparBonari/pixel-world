@@ -313,5 +313,14 @@
     "latitude": 39.9334,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "andorra",
+    "name": "Andorra la Vella",
+    "country": "Andorra",
+    "longitude": 1.5218,
+    "latitude": 42.5078,
+    "width": 720,
+    "height": 520
   }
 ]

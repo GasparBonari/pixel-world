@@ -4574,6 +4574,123 @@ def ankara():
     return scene.img.convert('RGB')
 
 
+def andorra():
+    import landmarks_andorra as ad
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # Follow the valley first: northern/eastern tributaries meet northwest of Caldea.
+    # Axis-aligned steps compress the Gran Valira's southwest course, keeping the old town
+    # and Santa Coloma on its northwestern/right bank. The Paris deck crosses j along i.
+    bi, bj = tile(445, 225)
+    confluence = (bi, bj-10)
+    main = [confluence, (bi,bj+10), (bi+9,bj+10), (bi+9,bj+22),
+            (bi+18,bj+22), (bi+18,bj+40), (bi+23,bj+40), (bi+23,bj+78)]
+    north = [(confluence[0]-55,confluence[1]), confluence]
+    east = [confluence, (confluence[0]+40,confluence[1])]
+    segments = list(zip(main,main[1:]))+list(zip(north,north[1:]))+list(zip(east,east[1:]))
+
+    def river_distance(i,j):
+        return min(math.hypot(i-max(min(a,c),min(max(a,c),i)),
+                              j-max(min(b,d),min(max(b,d),j)))
+                   for (a,b),(c,d) in segments)
+
+    kinds, elevation = {}, {}
+    for i,j in visible_tiles(scene):
+        x,y=scene.screen(i+.5,j+.5)
+        water=river_distance(i+.5,j+.5)
+        old=((x-265)/155)**2+((y-380)/105)**2
+        western=((x+25)/155)**2+((y-300)/300)**2
+        northern=((x-220)/250)**2+((y+30)/140)**2
+        elev=0
+        if old<1.25 and water>3:
+            elev=22 if old<.6 else 18 if old<.9 else 10
+        if western<1.4 and water>4:
+            elev=max(elev,52 if western<.45 else 36 if western<.9 else 18)
+        if northern<1.1 and water>4:
+            elev=max(elev,40 if northern<.65 else 20)
+        if water<1.35:
+            kind='water';elev=0
+        elif water<3.2:
+            kind='quay';elev=0
+        elif western<1.35 or northern<1.1:
+            kind='grass'
+        elif 350<x<465 and 340<y<460:
+            kind='grass'  # Parc Central, southeast of the old town, near the river.
+        elif i%13==0 or j%13==0:
+            kind='cobble'
+        else:
+            kind='lot'
+        kinds[i,j],elevation[i,j]=kind,elev
+
+    reserved, protected, silhouette=set(),[],set()
+
+    def reserve(i,j,wi,wj):
+        for a in range(math.floor(i),math.ceil(i+wi)):
+            for b in range(math.floor(j),math.ceil(j+wj)):
+                reserved.add((a,b))
+                if kinds.get((a,b))=='lot':kinds[a,b]='square'
+
+    for name,builder,(wi,wj),_,(x,y),z in ad.SITES:
+        ci,cj=tile(x,y);i,j=ci-wi/2,cj-wj/2
+        builder(scene,i,j,z=z)
+        reserve(i-1,j-1,wi+2,wj+3)
+        study=iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
+        builder(study,i,j,z=z);study.paint_objects()
+        l,t,r,b=(v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0<l<r<WIDTH and 0<t<b<HEIGHT,(name,(l,t,r,b))
+        protected.append((l-5,t-5,r+5,b+6))
+        px=study.img.convert('RGB').load()
+        silhouette.update((sx-100,sy-100) for sy in range(t+100,b+100) for sx in range(l+100,r+100)
+                          if px[sx,sy]!=(0,0,0))
+        if name!='Pont de Paris':
+            for a in range(math.floor(i)-1,math.ceil(i+wi)+1):
+                for b in range(math.floor(j)-1,math.ceil(j+wj)+2):
+                    if (a,b) in elevation and kinds[a,b]!='water':elevation[a,b]=z
+
+    for i,j in sorted(kinds,key=lambda p:(sum(p),p[0])):
+        kind=kinds[i,j]
+        def color(x,y,kind=kind):
+            if kind=='water':
+                if int(y)%7==0 and h01(int(x)//4,int(y),8901)<.12:return ad.GROUND['water_hi']
+                return ad.GROUND['water_dark' if h01(int(x)//6,int(y)//3,8902)<.2 else 'water']
+            if kind in ('square','quay'):
+                return ad.GROUND['joint'] if (x+2*(y//6))%12==0 or y%6==0 else ad.GROUND['rose' if h01(x//12,y//6,8903)<.12 else 'square']
+            if kind=='cobble':
+                return ad.GROUND['cobble_joint'] if (x+2*(y%2))%4==0 else ad.GROUND['cobble']
+            if kind=='grass':
+                return ad.GROUND['grass_light'] if h01(x,y,8904)<.15 else ad.GROUND['grass']
+            return ground_color('pave',x,y)
+        iso.ground_tile(scene,i,j,color,elevation[i,j],
+                        lambda x,y,lit:ad.ROCK['line'] if y%5==0 else ad.ROCK['lit' if lit else 'dark'])
+
+    for li in range(-12,112,3):
+        for lj in range(-12,112,4):
+            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+4)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):continue
+            seed=int(h01(li,lj,8905)*10000);floors=1+seed%3
+            z=elevation.get((li,lj),0)
+            # A house's whole plot stays on one terrace; no floating walls at a terrain step.
+            if any(elevation[c]!=z for c in cells):continue
+            x,y=scene.screen(li+1.3,lj+1.5,z)
+            if any(x+31>l and x-31<r and y+22>t and y-floors*12-30<b for l,t,r,b in protected):continue
+            ad.townhouse(scene,li,lj,floors=floors,seed=seed,z=z)
+            reserved.update(cells)
+
+    trees=[round_tree(k,'#6F915A','#324F38') for k in range(3)]+[sprites.pine(0)]
+    for (i,j),kind in kinds.items():
+        if kind not in ('grass','quay') or (i,j) in reserved or h01(i,j,8906)>.14:continue
+        x,y=scene.screen(i+.5,j+.5,elevation[i,j])
+        if any((sx,sy) in silhouette for sx in range(int(x)-14,int(x)+15) for sy in range(int(y)-25,int(y)+7)):continue
+        im=trees[(i+j)%len(trees)]
+        scene.add(i+j+1.5,lambda s,x=x,y=y,im=im:s.sprite(im,x,y+3))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -4645,6 +4762,8 @@ CAPITALS = [
      "render": bucharest},
     {"id": "ankara", "name": "Ankara", "country": "Turkey", "longitude": 32.8597, "latitude": 39.9334,
      "render": ankara},
+    {"id": "andorra", "name": "Andorra la Vella", "country": "Andorra", "longitude": 1.5218, "latitude": 42.5078,
+     "render": andorra},
 ]
 
 

@@ -2556,6 +2556,34 @@ FLORA = {
 }
 
 
+def meritxell(seed=0):
+    """Bofill's NEW Meritxell sanctuary: white arch rims, open court and square bell tower."""
+    import iso
+    from landmarks_andorra import GRANITE, PALE, SLATE, porch
+    from landmarks_slovakia import block, band
+    from landmarks_iberia import hip_roof, stone_courses
+    from landmarks_paris import P, poly
+
+    scene = iso.Scene(56, 40, (29, 23))
+    shadow = Sprite(56, 40)
+    ground_shadow(shadow,29,35,21,2)
+    scene.img=shadow.image();scene.px=scene.img.load()
+    # Low rear sanctuary and side ranges enclose a genuinely open paved court.
+    block(scene,-1.0,-.7,2.1,.85,10,GRANITE,stone_courses(GRANITE,3,6))
+    hip_roof(scene,-1.05,-.75,2.2,.95,10,4,SLATE)
+    poly(scene,[P(scene,a,b) for a,b in ((-1.4,.15),(1.4,.15),(1.4,1.6),(-1.4,1.6))],
+         lambda x,y:PALE['mid'] if (x+y)%6 else GRANITE['mid'])
+    for a in (-1.5,1.0):
+        block(scene,a,.05,.5,1.35,6,GRANITE,stone_courses(GRANITE,3,6))
+        band(scene,a,.05,.5,1.35,6,PALE,1)
+    # Distinctive white-rimmed broad arches leave transparent/dark court recesses behind.
+    porch(-1.5,1.2,3.0,.35,0,9,2,PALE,s=scene)
+    block(scene,1.08,-.45,.58,.65,21,GRANITE,
+          lambda u,v,lit:SLATE['deep'] if 14<v<19 and 1<int(u)%5<4 else stone_courses(GRANITE,3,6)(u,v,lit))
+    band(scene,1.08,-.45,.58,.65,20,PALE,1)
+    return scene.img
+
+
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
@@ -2584,6 +2612,7 @@ ICONS = {
     "meteora": meteora,
     "bran": bran,
     "pamukkale": pamukkale,
+    "meritxell": meritxell,
     **FLORA, **FAUNA,
 }
 

@@ -180,6 +180,10 @@ COUNTRY_TIER = [
      "trees": 7,
      # Pamukkale's travertine terraces, rather than the modern town or Hierapolis theatre.
      "landmarks": [("pamukkale", 29.12333, 37.92389)]},
+    {"adm0": "AND", "bounds": (1.4, 42.42, 1.79, 42.66), "capital": "Andorra", "cities": 9,
+     # The pinned Natural Earth name is Andorra; all other towns are within 75 km.
+     "trees": 3, "decoration_grid": .01, "decoration_km": 5,
+     "landmarks": [("meritxell", 1.59088, 42.55463)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -225,6 +229,7 @@ VARIANTS = {
     "meteora": 1,
     "bran": 1,
     "pamukkale": 1,
+    "meritxell": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
