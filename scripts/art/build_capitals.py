@@ -4465,6 +4465,115 @@ def bucharest():
     return scene.img.convert('RGB')
 
 
+def ankara():
+    import landmarks_ankara as tr
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    kinds, elevation = {}, {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        castle = ((x-610)/125)**2+((y-180)/80)**2
+        namazgah = ((x-225)/120)**2+((y-295)/73)**2
+        rasattepe = ((x-150)/145)**2+((y-445)/100)**2
+        kocatepe_hill = ((x-405)/130)**2+((y-460)/80)**2
+        elev = 36 if castle < .65 else 24 if castle < 1 else 12 if castle < 1.35 else 0
+        if namazgah < 1:
+            elev = max(elev, 20 if namazgah < .7 else 10)
+        if rasattepe < 1:
+            elev = max(elev, 22 if rasattepe < .7 else 11)
+        if kocatepe_hill < 1:
+            elev = max(elev, 12 if kocatepe_hill < .7 else 6)
+        if castle < 1.3:
+            kind = 'dust' if castle < .8 else 'grass'
+        elif rasattepe < 1.15:
+            kind = 'square' if rasattepe < .48 else 'grass'  # Peace Park surrounds the mausoleum.
+        elif 70 < x < 230 and 135 < y < 235:
+            kind = 'grass'  # Gençlik Park, west/south of Hacı Bayram.
+        elif namazgah < .7 or kocatepe_hill < .7:
+            kind = 'square'
+        elif 300 < x < 405 and 75 < y < 180:
+            kind = 'square'  # Augustus/Hacı Bayram's open Ulus terrace.
+        elif abs(x-(205+y*.28)) < 12:
+            kind = 'square'  # Compressed Atatürk Boulevard, north/south through the centre.
+        elif i % 10 == 0 or j % 9 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[i, j], elevation[i, j] = kind, elev
+
+    reserved, protected, silhouette = set(), [], set()
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if kinds.get((a, b)) == 'lot':
+                    kinds[a, b] = 'square'
+
+    for name, builder, (wi, wj), _, (x, y), z in tr.SITES:
+        ci, cj = tile(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        builder(scene, i, j, z=z)
+        reserve(i-1, j-1, wi+2, wj+3)
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j, z=z)
+        study.paint_objects()
+        l, t, r, b = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < l < r < WIDTH and 0 < t < b < HEIGHT, (name, (l,t,r,b))
+        protected.append((l-5, t-5, r+5, b+6))
+        pixels = study.img.convert('RGB').load()
+        silhouette.update((sx-100, sy-100) for sy in range(t+100, b+100) for sx in range(l+100, r+100)
+                          if pixels[sx, sy] != (0, 0, 0))
+        for a in range(math.floor(i)-1, math.ceil(i+wi)+1):
+            for b in range(math.floor(j)-1, math.ceil(j+wj)+2):
+                if (a,b) in elevation:
+                    elevation[a,b] = z
+
+    for i, j in sorted(kinds, key=lambda p: (sum(p), p[0])):
+        kind = kinds[i, j]
+        def color(x, y, kind=kind):
+            if kind == 'square':
+                return tr.GROUND['joint'] if (x+2*(y//6))%12 == 0 or y%6 == 0 else tr.GROUND['rose' if h01(x//12,y//6,8801) < .1 else 'square']
+            if kind == 'cobble':
+                return tr.GROUND['cobble_joint'] if (x+2*(y%2))%4 == 0 else tr.GROUND['cobble']
+            if kind == 'grass':
+                return tr.GROUND['garden_light'] if h01(x,y,8802) < .12 else tr.GROUND['garden']
+            if kind == 'dust':
+                return tr.GROUND['cobble'] if h01(x,y,8803) < .08 else tr.GROUND['dust']
+            return ground_color('pave',x,y)
+        iso.ground_tile(scene,i,j,color,elevation[i,j],
+                        lambda x,y,lit:tr.ROCK['line'] if y%5==0 else tr.ROCK['lit' if lit else 'dark'])
+
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            cells = [(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):
+                continue
+            seed = int(h01(li,lj,8804)*10000)
+            floors = 1+seed%3
+            x,y = scene.screen(li+1.25,lj+1.5)
+            if any(x+40>l and x-40<r and y+25>t and y-floors*12-30<b for l,t,r,b in protected):
+                continue
+            tr.townhouse(scene,li,lj,floors=floors,seed=seed)
+            reserved.update(cells)
+
+    trees = [round_tree(k,'#7C9458','#3C5032') for k in range(4)]
+    for (i,j),kind in kinds.items():
+        if kind!='grass' or (i,j) in reserved or h01(i,j,8805)>.16:
+            continue
+        x,y = scene.screen(i+.5,j+.5,elevation[i,j])
+        if any((sx,sy) in silhouette for sx in range(int(x)-14,int(x)+15) for sy in range(int(y)-25,int(y)+7)):
+            continue
+        im = trees[(i+j)%4]
+        scene.add(i+j+1.5,lambda s,x=x,y=y,im=im:s.sprite(im,x,y+3))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -4534,6 +4643,8 @@ CAPITALS = [
      "render": athens},
     {"id": "bucharest", "name": "Bucharest", "country": "Romania", "longitude": 26.1025, "latitude": 44.4268,
      "render": bucharest},
+    {"id": "ankara", "name": "Ankara", "country": "Turkey", "longitude": 32.8597, "latitude": 39.9334,
+     "render": ankara},
 ]
 
 

@@ -176,6 +176,10 @@ COUNTRY_TIER = [
      # Offshore boats stay off Romania's own Black Sea coast, outside the Danube delta.
      "boat_bounds": (28.7, 43.7, 29.7, 44.8),
      "landmarks": [("bran", 25.36722, 45.51500)]},
+    {"adm0": "TUR", "bounds": (25.6, 35.8, 44.9, 42.2), "capital": "Ankara", "cities": 9,
+     "trees": 7,
+     # Pamukkale's travertine terraces, rather than the modern town or Hierapolis theatre.
+     "landmarks": [("pamukkale", 29.12333, 37.92389)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -220,6 +224,7 @@ VARIANTS = {
     "kaneo": 1,
     "meteora": 1,
     "bran": 1,
+    "pamukkale": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.

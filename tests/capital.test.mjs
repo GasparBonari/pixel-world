@@ -21,6 +21,61 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Turkey marks Ankara as capital, eight spaced cities and Pamukkale within shared bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'ankara');
+  assert.deepEqual(region.bounds, [25.6, 35.8, 44.9, 42.2]);
+  const at = (lon, lat) => icons.icons.filter((i) => i[5] === 1
+    && Math.abs(i[1] - lon) < .0001 && Math.abs(i[2] - lat) < .0001);
+  // Capital first, then pinned Natural Earth population order under the existing 75 km rule.
+  const cities = [[32.8624, 39.9292], [29.0081, 41.1069], [27.1498, 38.4381],
+    [29.0681, 40.2019], [35.3181, 36.9969], [37.383, 37.0769],
+    [32.4731, 37.877], [30.698, 36.8919], [39.72, 40.98]];
+  for (const [rank, city] of cities.entries()) {
+    assert.deepEqual(at(...city).map((i) => icons.names[i[0]]).sort(), rank === 0
+      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
+        : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const other of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(city[1] * rad) * Math.sin(other[1] * rad)
+        + Math.cos(city[1] * rad) * Math.cos(other[1] * rad) * Math.cos((city[0] - other[0]) * rad));
+      assert.ok(km >= 75, `${city} / ${other}: ${km} km`);
+    }
+  }
+  assert.deepEqual(at(29.1233, 37.9239).map((i) => icons.names[i[0]]), ['pamukkale']);
+  const trees = [[30.625, 40.125], [35.625, 39.625], [36.875, 39.125],
+    [39.375, 39.125], [43.875, 39.125], [40.875, 38.875], [32.875, 37.625]];
+  const boats = [[35.875, 42.125], [30.625, 36.125]];
+  const tier = [...cities, ...trees, ...boats, [29.1233, 37.9239]].flatMap((site) => at(...site));
+  assert.equal(tier.length, 28);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'oak').length, 6);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'olive').length, 1);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat').length, 2);
+  const [w, s, e, n] = region.bounds;
+  for (const [, lon, lat] of tier)
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Turkey`);
+});
+
+test('Ankara supports focal capital arrival while Istanbul and eastern Turkey retain country zoom', () => {
+  const scene = scenes.find((s) => s.id === 'ankara');
+  assert.equal(scene.name, 'Ankara');
+  assert.equal(scene.country, 'Turkey');
+  assert.deepEqual([scene.width, scene.height], [720, 520]);
+  const region = COVERAGE.find((c) => c.id === scene.id);
+  assert.deepEqual([scene.longitude, scene.latitude], [region.longitude, region.latitude]);
+  assert.equal(maxZoomAt(scene.longitude, scene.latitude), CAPITAL_ZOOM.full);
+  for (const [lon, lat] of [[29.0081, 41.1069], [29.1233, 37.9239], [43.875, 39.125]])
+    assert.equal(maxZoomAt(lon, lat), COUNTRY_ZOOM.max);
+  assert.equal(maxZoomAt(23.3219, 42.6977), MAX_GLOBE_ZOOM); // Sofia stays uncovered.
+  let current = { longitude: 32.5, latitude: 40.1, zoom: 5 };
+  const focal = globePoint(scene.longitude, scene.latitude, current, view);
+  for (let step = 0; step < 8; step++)
+    current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, view);
+  assert.equal(current.zoom, CAPITAL_ZOOM.full);
+  assert.equal(current.capitalId, scene.id);
+  const after = globePoint(scene.longitude, scene.latitude, current, view);
+  assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+});
+
 test('Greece marks Athens, eight spaced cities and Meteora inside the country bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'athens');
   assert.deepEqual(region.bounds, [19.3,34.7,29.7,41.8]);

@@ -304,5 +304,14 @@
     "latitude": 44.4268,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "ankara",
+    "name": "Ankara",
+    "country": "Turkey",
+    "longitude": 32.8597,
+    "latitude": 39.9334,
+    "width": 720,
+    "height": 520
   }
 ]

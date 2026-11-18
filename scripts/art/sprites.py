@@ -2503,6 +2503,39 @@ def bran(seed=0):
     return scene.img
 
 
+def pamukkale(seed=0):
+    """Pamukkale's white calcite terraces, irregular mineral curtains and blue thermal pools."""
+    import iso
+    from landmarks_ankara import WHITE, GROUND
+    from landmarks_slovenia import slab
+    from landmarks_paris import P, seg, poly
+
+    scene = iso.Scene(68, 68, (34, 42))
+    shadow = Sprite(68, 68)
+    ground_shadow(shadow, 34, 54, 27, 3)
+    scene.img = shadow.image()
+    scene.px = scene.img.load()
+    # Recurring rim shapes vary by level; the deposits are a landscape, not equal stair slabs.
+    for n in range(5):
+        a,b=-2.0+n*.12,-1.7+n*.08
+        w,d=3.9-n*.48,3.4-n*.43
+        points=[(a,b+.2),(a+.5,b-.12),(a+w-.4,b),(a+w,b+.45),
+                (a+w-.12,b+d-.35),(a+w-.65,b+d),(a+.6,b+d+.1),(a-.13,b+d-.45)]
+        bottom,top=n*3,(n+1)*3
+        slab(scene,points,bottom,top,WHITE,
+             lambda u,v,lit:WHITE['line'] if (int(u)*3+int(v))%13==0 else
+             WHITE['hi' if lit else 'mid'] if int(u)%3==0 else None)
+        # Pools inset behind thick white scalloped lips, with sparse reflected glints.
+        centre=(a+w/2,b+d/2)
+        pool=[(centre[0]+(x-centre[0])*.91,centre[1]+(y-centre[1])*.91) for x,y in points]
+        poly(scene,[P(scene,x,y,top+.1) for x,y in pool],
+             lambda x,y:GROUND['pool_hi'] if (x*3+y)%19==0 else
+             GROUND['pool_dark'] if (x+2*y)%13<3 else GROUND['pool'])
+        for p,q in zip(pool,pool[1:]+pool[:1]):
+            seg(scene,P(scene,*p,top+.2),P(scene,*q,top+.2),WHITE['hi'])
+    return scene.img
+
+
 WHITE_FALL = (hex_rgb('#FFFFFF'), hex_rgb('#DDF3F4'), hex_rgb('#B6E2E6'))
 
 
@@ -2550,6 +2583,7 @@ ICONS = {
     "kaneo": kaneo,
     "meteora": meteora,
     "bran": bran,
+    "pamukkale": pamukkale,
     **FLORA, **FAUNA,
 }
 
