@@ -4913,6 +4913,127 @@ def chisinau():
     return scene.img.convert('RGB')
 
 
+def minsk():
+    import landmarks_belarus as by
+
+    scene=new_scene()
+
+    def tile(x,y):
+        return tile_of((x-WIDTH/2)/8,(y-scene.oy)/4)
+
+    # The Svislach bends around Upper Town and Trinity Hill, then past Gorky Park.
+    # Each segment follows an isometric axis; the opera/monument stay on the NE bank.
+    course=[(-70,70),(390,300),(445,272.5),(485,292.5),(445,312.5),(860,520)]
+
+    def river_distance(x,y):
+        result=1000
+        for (ax,ay),(bx,by_) in zip(course,course[1:]):
+            dx,dy=bx-ax,by_-ay
+            t=max(0,min(1,((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy)))
+            result=min(result,math.hypot(x-ax-t*dx,y-ay-t*dy))
+        return result
+
+    kinds,elevation={},{}
+    for i,j in visible_tiles(scene):
+        x,y=scene.screen(i+.5,j+.5)
+        distance=river_distance(x,y)
+        z=10 if 145<x<370 and y>270 else 6 if 290<x<480 and 100<y<265 else 0
+        if distance<11:kind,z='water',0
+        elif distance<23:kind,z='quay',0
+        elif 295<x<490 and 95<y<270 or x>510 and y<200 or 430<x<680 and 330<y<465:
+            kind='grass'
+            if i%10==0 or j%11==0:kind='square'
+        elif abs(y-(-x*.5+570))<12:
+            kind='avenue'  # Independence Avenue from the SW centre toward Victory/NE.
+        elif 165<x<365 and 280<y<490 or x<175 and y>415 or 490<x<595 and 255<y<340:
+            kind='square'
+        elif i%9==0 or j%10==0:kind='cobble'
+        else:kind='lot'
+        kinds[i,j],elevation[i,j]=kind,z
+
+    reserved,protected,silhouette=set(),[],set()
+
+    def reserve(i,j,wi,wj):
+        for a in range(math.floor(i),math.ceil(i+wi)):
+            for b in range(math.floor(j),math.ceil(j+wj)):
+                reserved.add((a,b))
+                if kinds.get((a,b))=='lot':kinds[a,b]='square'
+
+    for name,builder,(wi,wj),_,(x,y),z in by.SITES:
+        ci,cj=tile(x,y);i,j=ci-wi/2,cj-wj/2
+        builder(scene,i,j,z=z)
+        reserve(i-1,j-1,wi+2,wj+2)
+        study=iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
+        builder(study,i,j,z=z);study.paint_objects()
+        l,t,r,b=(v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0<l<r<WIDTH and 0<t<b<HEIGHT,name
+        protected.append((l-5,t-5,r+5,b+6))
+        pixels=study.img.convert('RGB').load()
+        silhouette.update((sx-100,sy-100) for sy in range(t+100,b+100) for sx in range(l+100,r+100)
+                          if pixels[sx,sy]!=(0,0,0))
+        for a in range(math.floor(i)-1,math.ceil(i+wi)+1):
+            for b in range(math.floor(j)-1,math.ceil(j+wj)+1):
+                if (a,b) in kinds:
+                    elevation[a,b]=z
+                    if kinds[a,b] in ('water','quay'):kinds[a,b]='square'
+
+    # Fill the substrate before raising the Upper Town and Trinity Hill terraces.
+    for i,j in kinds:iso.ground_tile(scene,i,j,lambda x,y:by.GROUND['cobble'])
+    for i,j in sorted(kinds,key=lambda p:(sum(p),p[0])):
+        kind=kinds[i,j]
+        def color(x,y,kind=kind):
+            if kind=='water':
+                return by.GROUND['water_hi'] if h01(x//3,y,9300)<.035 else by.GROUND['water_dark' if h01(x//7,y//2,9301)<.22 else 'water']
+            if kind in ('square','quay'):
+                return by.GROUND['joint'] if y%5==0 or (x+4*(y//5%2))%12==0 else by.GROUND['square']
+            if kind=='avenue':return by.GROUND['rose'] if (x+2*y)%9 else by.GROUND['joint']
+            if kind=='grass':return by.GROUND['garden_hi'] if h01(x,y,9302)<.12 else by.GROUND['garden']
+            return by.GROUND['cobble_joint'] if y%4==0 and x%3!=0 or (x+4*(y//4%2))%11==0 else by.GROUND['cobble']
+        iso.ground_tile(scene,i,j,color,elevation[i,j],lambda x,y,lit:by.STONE['line'] if y%4==0 else by.STONE['lit' if lit else 'dark'])
+
+    # Independence Avenue's real bridge (OSM ways 25379436/25379437), southwest
+    # of Victory Square: a low modern deck across the +i river, with open railings.
+    bi,bj=tile(465,322.5)
+    def bridge(s):
+        from landmarks_slovakia import block
+        from landmarks_paris import P,seg,poly,corners
+        block(s,bi-1.1,bj-3.5,2.2,7,4,by.STONE,z=3)
+        poly(s,list(corners(s,bi-1.1,bj-3.5,2.2,7,7)),
+             lambda x,y:by.GROUND['rose'] if (x+2*y)%9 else by.GROUND['joint'])
+        for ai in (bi-1.1,bi+1.1):
+            seg(s,P(s,ai,bj-3.5,11),P(s,ai,bj+3.5,11),by.WHITE['hi'])
+            for n in range(15):
+                jj=bj-3.5+n*.5
+                seg(s,P(s,ai,jj,7),P(s,ai,jj,11),by.STONE['dark'])
+    scene.add(bi+bj+4,bridge)
+
+    # Low Upper Town houses and taller avenue blocks, with broad monument clearances.
+    for li in range(-10,100,3):
+        for lj in range(-10,100,3):
+            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):continue
+            x,y=scene.screen(li+1.4,lj+1.5)
+            seed=int(h01(li,lj,9304)*10000);floors=2+seed%2
+            if any(x+43>l and x-43<r and y+24>t and y-floors*12-30<b for l,t,r,b in protected):continue
+            by.townhouse(scene,li,lj,floors=floors,seed=seed,z=elevation[li,lj])
+            reserved.update(cells)
+
+    trees=[round_tree(k,'#72985D','#304B37') for k in range(4)]
+    for (i,j),kind in kinds.items():
+        if kind not in ('grass','square','quay') or (i,j) in reserved:continue
+        if h01(i,j,9305)>(.13 if kind=='grass' else .022 if kind=='quay' else .008):continue
+        x,y=scene.screen(i+.5,j+.5,elevation[i,j])
+        if any((sx,sy) in silhouette for sx in range(int(x)-14,int(x)+15) for sy in range(int(y)-25,int(y)+7)):continue
+        im=trees[(i+j)%4]
+        scene.add(i+j+1.5,lambda s,x=x,y=y,im=im:s.sprite(im,x,y+3))
+    # Small recreational craft on the broad upstream reach, away from monument silhouettes.
+    for x,y in ((91,150),(191,200)):
+        im=rowboat(int(x));ci,cj=tile(x,y)
+        scene.add(ci+cj,lambda s,x=x,y=y,im=im:s.sprite(im,x,y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -4990,6 +5111,8 @@ CAPITALS = [
      "render": sofia},
     {"id": "chisinau", "name": "Chișinău", "country": "Moldova", "longitude": 28.8353, "latitude": 47.0228,
      "render": chisinau},
+    {"id": "minsk", "name": "Minsk", "country": "Belarus", "longitude": 27.5667, "latitude": 53.9,
+     "render": minsk},
 ]
 
 

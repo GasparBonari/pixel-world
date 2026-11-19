@@ -340,5 +340,14 @@
     "latitude": 47.0228,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "minsk",
+    "name": "Minsk",
+    "country": "Belarus",
+    "longitude": 27.5667,
+    "latitude": 53.9,
+    "width": 720,
+    "height": 520
   }
 ]

@@ -21,6 +21,77 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Belarus marks Minsk, spaced real cities and Mir Castle within shared bounds', () => {
+  const region = COVERAGE.find((c) => c.id === 'minsk');
+  assert.deepEqual(region.bounds, [23.1, 51.2, 32.8, 56.2]);
+  const at = (lon, lat) => icons.icons.filter((i) => i[5] === 1
+    && Math.abs(i[1] - lon) < .0001 && Math.abs(i[2] - lat) < .0001);
+  const kinds = (site) => at(...site).map((i) => icons.names[i[0]]).sort();
+  // Exact pinned Natural Earth anchors, population order and the unchanged 75 km rule.
+  const cities = [[27.5647, 53.9019], [31, 52.43], [30.3246, 53.8985],
+    [30.1853, 55.1887], [23.8341, 53.6779], [23.7, 52.1],
+    [29.1928, 53.1266], [26.0134, 53.1368], [26.0941, 52.1279]];
+  for (const [rank, city] of cities.entries()) {
+    assert.deepEqual(kinds(city), rank === 0 ? ['castle', 'house', 'house']
+      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const other of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(city[1] * rad) * Math.sin(other[1] * rad)
+        + Math.cos(city[1] * rad) * Math.cos(other[1] * rad) * Math.cos((city[0] - other[0]) * rad));
+      assert.ok(km >= 75, `${city} / ${other}: ${km} km`);
+    }
+  }
+  // Barysaw is too close to Minsk; Orsha is too close to Mahilyow.
+  assert.deepEqual(at(28.4922, 54.226), []);
+  assert.deepEqual(at(30.4215, 54.5153), []);
+  const trees = [[29.625, 54.875], [29.625, 53.875], [30.875, 53.625], [30.375, 52.625],
+    [25.375, 52.375], [26.625, 52.375], [24.375, 51.875]];
+  for (const site of trees) assert.deepEqual(kinds(site), [site[1] > 54.3 ? 'pine' : 'oak']);
+  const castle = [26.473, 53.4512];
+  assert.deepEqual(kinds(castle), ['mir-castle']);
+  assert.deepEqual(icons.frames[at(...castle)[0][0]].slice(2), [72, 68]);
+  const [west, south, east, north] = region.bounds;
+  const tier = icons.icons.filter((i) => i[5] === 1
+    && west <= i[1] && i[1] <= east && south <= i[2] && i[2] <= north);
+  // Belarus overlaps Lithuania/Latvia country boxes; only check its own selected locations.
+  for (const [, lon, lat] of [...cities, castle, ...trees].flatMap((site) => at(...site)))
+    assert.ok(west <= lon && lon <= east && south <= lat && lat <= north);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat').length, 0);
+});
+
+test('Minsk supports focal arrival, bounded panning and zoom-out release', () => {
+  const scene = scenes.find((s) => s.id === 'minsk');
+  assert.equal(scene.name, 'Minsk');
+  assert.equal(scene.country, 'Belarus');
+  assert.deepEqual([scene.longitude, scene.latitude, scene.width, scene.height], [27.5667, 53.9, 720, 520]);
+  const region = COVERAGE.find((c) => c.id === scene.id);
+  assert.deepEqual([region.longitude, region.latitude], [scene.longitude, scene.latitude]);
+  assert.equal(maxZoomAt(scene.longitude, scene.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(31, 52.43), COUNTRY_ZOOM.max);
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: scene.longitude, latitude: scene.latitude, zoom: 5 };
+    const focal = globePoint(scene.longitude, scene.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(current.capitalId, scene.id);
+    const after = globePoint(scene.longitude, scene.latitude, current, viewport);
+    assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+    for (const [dx, dy] of [[100, 0], [-100, 0], [0, 100], [0, -100]]) {
+      for (let step = 0; step < 100; step++)
+        current = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      const edge = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      assert.deepEqual(edge, current);
+      assert.equal(edge.capitalId, scene.id);
+      const rect = capitals.capitalRect(scene, edge, viewport, 2);
+      assert.ok(rect.x <= 1e-6 && rect.y <= 1e-6);
+      assert.ok(rect.x + rect.width >= viewport.width - 1e-6);
+      assert.ok(rect.y + rect.height >= viewport.height - 1e-6);
+    }
+    assert.equal(constrainGlobe({ ...current, zoom: 5 }).capitalId, undefined);
+  }
+});
+
 test('Moldova marks Chișinău, spaced cities and Soroca without offshore boats', () => {
   const region = COVERAGE.find((c) => c.id === 'chisinau');
   assert.deepEqual(region.bounds, [26.6, 45.4, 30.2, 48.5]);

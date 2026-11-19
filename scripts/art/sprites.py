@@ -2681,6 +2681,59 @@ def soroca(seed=0):
     return scene.img
 
 
+def mir_castle(seed=0):
+    """Mir's brick square court: four corner towers, western gate tower, pale palace wings."""
+    import iso
+    from landmarks_paris import P, seg, poly
+    from landmarks_slovakia import block, band
+    from landmarks_bosnia import cylinder
+    from landmarks_iberia import hip_roof, stone_courses, arch_opening
+    from landmarks_slovenia import revolve
+    from landmarks_belarus import BRICK, WHITE, RED, STONE, WOOD
+
+    scene=iso.Scene(72,68,(36,37))
+    scene.img=Image.new('RGBA',(72,68),(0,0,0,0));scene.px=scene.img.load()
+    w=3.1
+    def masonry(u,v,lit):
+        c=int(abs(u))%7
+        if 4<v<18 and c in (2,3,4):
+            return WHITE['lit' if lit else 'dark'] if c in (2,4) else BRICK['deep']
+        return stone_courses(BRICK,3,8)(u,v,lit)
+    def niches(u,v,lit):
+        if int(v) in (1,10,20,28):return WHITE['lit' if lit else 'dark']
+        c=int(abs(u))%6
+        if c in (2,3) and int(v)%10 in (4,5,6,7):return WHITE['lit' if lit else 'dark']
+        return stone_courses(BRICK,3,8)(u,v,lit)
+    # The real north/east palace occupies two courtyard sides; the court stays open.
+    poly(scene,[P(scene,*p) for p in ((0,0),(w,0),(w,w),(0,w))],
+         lambda x,y:STONE['line'] if (x+2*y)%5==0 else STONE['lit'])
+    parts=[(w/2,'palace',(0,0,w,.7)),(w*1.5,'palace',(w-.7,.7,.7,w-.7)),
+           (w,'wall',(0,0,.22,w)),(w*1.5,'wall',(.22,w-.22,w-.22,.22))]
+    for a,b in ((-.25,-.25),(w-.65,-.25),(-.25,w-.65),(w-.65,w-.65)):
+        parts.append((a+b+1,'tower',(a,b)))
+    # The actual western gate: presented on the visible SW wall at this icon scale.
+    parts.append((w*1.5+.6,'gate',(w/2-.48,w-.4)))
+    for _,kind,args in sorted(parts,key=lambda p:p[0]):
+        if kind in ('palace','wall'):
+            a,b,wi,wj=args
+            material=WHITE if kind=='palace' else BRICK
+            block(scene,a,b,wi,wj,16 if kind=='palace' else 12,material,masonry)
+            band(scene,a,b,wi,wj,15 if kind=='palace' else 11,WHITE)
+            if kind=='palace':hip_roof(scene,a-.08,b-.08,wi+.16,wj+.16,17,7,RED)
+        else:
+            a,b=args
+            def gate(u,v,lit):
+                if lit and v<9:
+                    o=arch_opening(u,v,3.8,2.5,4,WOOD)
+                    if o:return o
+                return niches(u,v,lit)
+            block(scene,a,b,.95,.95,15,BRICK,gate if kind=='gate' else niches)
+            cylinder(scene,a+.475,b+.475,.57,.57,15,9,BRICK,niches,segments=8)
+            cylinder(scene,a+.475,b+.475,.6,.6,23,2,WHITE,segments=8)
+            revolve(scene,a+.475,b+.475,.75,25,9,[(0,1),(1,.01)],RED,ribs=3,segments=8)
+    return scene.img
+
+
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
@@ -2712,6 +2765,7 @@ ICONS = {
     "meritxell": meritxell,
     "rila": rila,
     "soroca": soroca,
+    "mir-castle": mir_castle,
     **FLORA, **FAUNA,
 }
 
