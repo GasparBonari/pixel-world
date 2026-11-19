@@ -21,6 +21,74 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Ukraine marks Kyiv, spaced real cities, Khotyn and in-bounds decoration', () => {
+  const region = COVERAGE.find((c) => c.id === 'kyiv');
+  assert.deepEqual(region.bounds, [22.0, 44.2, 40.3, 52.4]);
+  const at = (lon, lat) => icons.icons.filter((i) => i[5] === 1
+    && Math.abs(i[1] - lon) < .0001 && Math.abs(i[2] - lat) < .0001);
+  const kinds = (site) => at(...site).map((i) => icons.names[i[0]]).sort();
+  // Pinned Natural Earth names and anchors; Kyiv is explicitly selected first.
+  const cities = [[30.514682, 50.435313], [36.248079, 50.001929], [34.998078, 48.481918],
+    [30.708055, 46.491962], [37.828034, 48.001948], [24.029996, 49.83498],
+    [33.344983, 47.928326], [31.984342, 46.967739], [37.556198, 47.096181]];
+  for (const [rank, city] of cities.entries()) {
+    assert.deepEqual(kinds(city), rank === 0 ? ['castle', 'house', 'house']
+      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    for (const other of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(city[1] * rad) * Math.sin(other[1] * rad)
+        + Math.cos(city[1] * rad) * Math.cos(other[1] * rad) * Math.cos((city[0] - other[0]) * rad));
+      assert.ok(km >= 75, `${city} / ${other}: ${km} km`);
+    }
+  }
+  assert.deepEqual(kinds([26.49833, 48.52194]), ['khotyn']);
+  assert.deepEqual(icons.frames[at(26.49833, 48.52194)[0][0]].slice(2), [88, 88]);
+  const trees = [[32.125, 51.875], [26.625, 51.375], [24.375, 50.375], [31.375, 49.875],
+    [25.125, 48.375], [30.625, 48.375], [33.375, 46.125]];
+  for (const site of trees) assert.deepEqual(kinds(site), [site[1] > 50.8 ? 'pine' : 'oak']);
+  const boats = [[37.625, 46.625], [30.375, 45.625]];
+  for (const site of boats) assert.deepEqual(kinds(site), ['boat']);
+  const [w, s, e, n] = region.bounds;
+  const additions = [...cities, [26.49833, 48.52194], ...trees, ...boats].flatMap((site) => at(...site));
+  assert.equal(additions.length, 28);
+  for (const [, lon, lat] of additions)
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Ukraine bounds`);
+});
+
+test('Kyiv supports focal arrival, bounded panning and zoom-out release', () => {
+  const scene = scenes.find((s) => s.id === 'kyiv');
+  assert.equal(scene.name, 'Kyiv');
+  assert.equal(scene.country, 'Ukraine');
+  assert.deepEqual([scene.longitude, scene.latitude, scene.width, scene.height], [30.5234, 50.4501, 720, 520]);
+  const region = COVERAGE.find((c) => c.id === scene.id);
+  assert.deepEqual([region.longitude, region.latitude], [scene.longitude, scene.latitude]);
+  assert.equal(maxZoomAt(scene.longitude, scene.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(36.2481, 50.0019), COUNTRY_ZOOM.max);
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM);
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: scene.longitude, latitude: scene.latitude, zoom: 5 };
+    const focal = globePoint(scene.longitude, scene.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(current.capitalId, scene.id);
+    const after = globePoint(scene.longitude, scene.latitude, current, viewport);
+    assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+    for (const [dx, dy] of [[100, 0], [-100, 0], [0, 100], [0, -100]]) {
+      for (let step = 0; step < 100; step++)
+        current = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      const edge = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      assert.deepEqual(edge, current);
+      assert.equal(edge.capitalId, scene.id);
+      const rect = capitals.capitalRect(scene, edge, viewport, 2);
+      assert.ok(rect.x <= 1e-6 && rect.y <= 1e-6);
+      assert.ok(rect.x + rect.width >= viewport.width - 1e-6);
+      assert.ok(rect.y + rect.height >= viewport.height - 1e-6);
+    }
+    assert.equal(constrainGlobe({ ...current, zoom: 5 }).capitalId, undefined);
+  }
+});
+
 test('Kosovo marks Pristina with in-country trees and no offshore boats', () => {
   const region = COVERAGE.find((c) => c.id === 'pristina');
   assert.deepEqual(region.bounds, [20.0, 41.8, 21.9, 43.3]);
@@ -51,7 +119,7 @@ test('Pristina supports focal arrival and retains its visit among nearby covered
   const region = COVERAGE.find((c) => c.id === scene.id);
   assert.deepEqual([scene.longitude,scene.latitude], [region.longitude,region.latitude]);
   assert.equal(maxZoomAt(scene.longitude,scene.latitude), CAPITAL_ZOOM.full);
-  assert.equal(maxZoomAt(30.5234,50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let current = { longitude: 21.1, latitude: 42.8, zoom: 5 };
   const focal = globePoint(scene.longitude,scene.latitude,current,view);
   for (let step=0; step<8; step++)
@@ -182,7 +250,7 @@ test('Chișinău supports focal arrival, bounded panning and zoom-out release', 
   // The shared 1.5° capital reach includes Bălți and Cahul, just as in other small countries.
   for (const [lon, lat] of [[27.9053, 47.7591], [28.1944, 45.9079]])
     assert.equal(maxZoomAt(lon, lat), CAPITAL_ZOOM.full);
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: scene.longitude, latitude: scene.latitude, zoom: 5 };
     const focal = globePoint(scene.longitude, scene.latitude, current, viewport);
@@ -254,7 +322,7 @@ test('Sofia supports focal arrival, bounded panning and release beside Skopje', 
   assert.equal(maxZoomAt(scene.longitude, scene.latitude), CAPITAL_ZOOM.full);
   for (const [lon, lat] of [[27.8953, 43.2156], [27.4746, 42.5146], [27.84, 43.585]])
     assert.equal(maxZoomAt(lon, lat), COUNTRY_ZOOM.max);
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: scene.longitude, latitude: scene.latitude, zoom: 5 };
     const focal = globePoint(scene.longitude, scene.latitude, current, viewport);
@@ -311,7 +379,7 @@ test('Andorra la Vella supports focal arrival, scene bounds and zoom-out release
   assert.equal(maxZoomAt(scene.longitude, scene.latitude), CAPITAL_ZOOM.full);
   // The shared 1.5° capital reach also covers Barcelona, across the national border.
   assert.equal(maxZoomAt(2.17, 41.39), CAPITAL_ZOOM.full);
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: scene.longitude, latitude: scene.latitude, zoom: 5 };
     const focal = globePoint(scene.longitude, scene.latitude, current, viewport);
@@ -377,7 +445,7 @@ test('Ankara supports focal capital arrival while Istanbul and eastern Turkey re
   assert.equal(maxZoomAt(scene.longitude, scene.latitude), CAPITAL_ZOOM.full);
   for (const [lon, lat] of [[29.0081, 41.1069], [29.1233, 37.9239], [43.875, 39.125]])
     assert.equal(maxZoomAt(lon, lat), COUNTRY_ZOOM.max);
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv stays uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let current = { longitude: 32.5, latitude: 40.1, zoom: 5 };
   const focal = globePoint(scene.longitude, scene.latitude, current, view);
   for (let step = 0; step < 8; step++)
@@ -437,7 +505,7 @@ test('Athens supports focal arrival and bounded panning while Greek islands reta
   assert.equal(maxZoomAt(22.8831,40.6981), CAPITAL_ZOOM.full);
   for (const [lon,lat] of [[25.1305,35.325],[28.2225,36.4412],[29.59,36.15]])
     assert.equal(maxZoomAt(lon,lat), COUNTRY_ZOOM.max);
-  assert.equal(maxZoomAt(30.5234,50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width:1000, height:780 }]) {
     let current = { longitude:city.longitude, latitude:city.latitude, zoom:5 };
     const focal = globePoint(city.longitude,city.latitude,current,viewport);
@@ -492,7 +560,7 @@ test('Skopje supports focal arrival, bounded panning and release beside Tirane',
   assert.deepEqual([city.longitude,city.latitude,city.width,city.height], [21.433462,42.000006,720,520]);
   assert.equal(maxZoomAt(city.longitude,city.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(22.95,41), COUNTRY_ZOOM.max);
-  assert.equal(maxZoomAt(30.5234,50.4501), MAX_GLOBE_ZOOM); // Kyiv stays uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
     const focal = globePoint(city.longitude,city.latitude,current,viewport);
@@ -563,7 +631,7 @@ test('Tirane supports focal arrival, bounded panning and release beside Podgoric
   assert.deepEqual([city.longitude,city.latitude,city.width,city.height], [19.8189,41.3275,720,520]);
   assert.equal(maxZoomAt(city.longitude,city.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(20.8,39.8), COUNTRY_ZOOM.max);
-  assert.equal(maxZoomAt(30.5234,50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
     const focal = globePoint(city.longitude,city.latitude,current,viewport);
@@ -617,7 +685,7 @@ test('Podgorica supports focal arrival, bounded panning and release beside Saraj
   assert.equal(city.country, 'Montenegro');
   assert.deepEqual([city.longitude,city.latitude,city.width,city.height], [19.2628,42.4414,720,520]);
   assert.equal(maxZoomAt(city.longitude,city.latitude), CAPITAL_ZOOM.full);
-  assert.equal(maxZoomAt(30.5234,50.4501), MAX_GLOBE_ZOOM); // Kyiv stays uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
     const focal = globePoint(city.longitude,city.latitude,current,viewport);
@@ -685,7 +753,7 @@ test('Belgrade supports focal arrival, bounded panning and release beside Saraje
   assert.equal(maxZoomAt(city.longitude,city.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(21.9,43.3304), CAPITAL_ZOOM.full); // Niš falls within the standard 1.5° reach.
   assert.equal(maxZoomAt(22.15,44.47), COUNTRY_ZOOM.max); // Donji Milanovac lies outside the neighbouring capitals' reaches.
-  assert.equal(maxZoomAt(30.5234,50.4501), MAX_GLOBE_ZOOM); // Kyiv stays uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
     const focal = globePoint(city.longitude,city.latitude,current,viewport);
@@ -747,7 +815,7 @@ test('Sarajevo supports focal arrival and release at country zoom', () => {
   assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(17.815, 43.3373), CAPITAL_ZOOM.full); // Mostar lies within the existing arrival reach.
   assert.equal(maxZoomAt(16.3639, 44.1794), COUNTRY_ZOOM.max); // Bosansko Grahovo is beyond every capital's reach.
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
     const focal = globePoint(city.longitude, city.latitude, current, viewport);
@@ -804,7 +872,7 @@ test('Zagreb supports focal arrival, bounded panning and release at country zoom
   assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(15.5478, 45.4872), CAPITAL_ZOOM.full); // Karlovac is within Zagreb's arrival reach.
   assert.equal(maxZoomAt(16.47, 43.5204), COUNTRY_ZOOM.max); // Split, beyond every capital reach
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
     const focal = globePoint(city.longitude, city.latitude, current, viewport);
@@ -854,7 +922,7 @@ test('Ljubljana supports focal arrival, bounded panning and release at country z
   assert.equal(maxZoomAt(15.65, 46.5405), CAPITAL_ZOOM.full); // Maribor is within Ljubljana's arrival reach.
   assert.equal(maxZoomAt(16.4519, 46.5631), CAPITAL_ZOOM.full); // Lendava now falls within Zagreb's reach.
   assert.equal(maxZoomAt(15.2623, 44.1201), COUNTRY_ZOOM.max); // Zadar, beyond Ljubljana's and Zagreb's reach
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
     const focal = globePoint(city.longitude, city.latitude, current, viewport);
@@ -908,7 +976,7 @@ test('Vilnius supports focal arrival, bounded panning and release beside Riga', 
   assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(21.1199, 55.7204), COUNTRY_ZOOM.max); // Klaipėda
   assert.equal(maxZoomAt(23.88, 54.9504), CAPITAL_ZOOM.full); // Kaunas is within Vilnius's arrival reach.
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
     const focal = globePoint(city.longitude, city.latitude, current, viewport);
@@ -966,7 +1034,7 @@ test('Riga supports focal arrival and retains its scene beside Tallinn', () => {
   assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(21.01, 56.51), COUNTRY_ZOOM.max); // Liepāja
   assert.equal(maxZoomAt(27.3166, 56.5), COUNTRY_ZOOM.max); // Rēzekne; Daugavpils now reaches Vilnius.
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: 24.1, latitude: 56.95, zoom: 5 };
     const focal = globePoint(city.longitude, city.latitude, current, viewport);
@@ -1025,7 +1093,7 @@ test('Tallinn supports focal arrival and retains its scene beside Helsinki', () 
   assert.equal(maxZoomAt(28.1603, 59.3776), COUNTRY_ZOOM.max); // Narva
   assert.equal(maxZoomAt(22.4792, 58.247), COUNTRY_ZOOM.max); // Saaremaa
   assert.equal(maxZoomAt(24.5136, 58.3747), CAPITAL_ZOOM.full); // Pärnu shares the standard 1.5° reach.
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: 25, latitude: 59.2, zoom: 5 };
     const focal = globePoint(city.longitude, city.latitude, current, viewport);
@@ -1081,7 +1149,7 @@ test('Budapest supports focal arrival and retains its scene while panning near S
   assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(21.63, 47.5305), COUNTRY_ZOOM.max); // Debrecen stays country-only.
   assert.equal(maxZoomAt(20.15, 46.2504), CAPITAL_ZOOM.full); // Szeged lies inside the shared 1.5° reach.
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv stays uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: 19.3, latitude: 47.7, zoom: 5 };
     const focal = globePoint(city.longitude, city.latitude, current, viewport);
@@ -1148,7 +1216,7 @@ test('Bratislava arrival and panning keep the selected scene beside Vienna', () 
   assert.deepEqual([city.width, city.height], [720, 520]);
   assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(21.25, 48.7304), COUNTRY_ZOOM.max); // Košice remains country-only.
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv stays uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: city.longitude, latitude: city.latitude, zoom: 5 };
     const focal = globePoint(city.longitude, city.latitude, current, viewport);
@@ -1201,7 +1269,7 @@ test('Luxembourg supports focal arrival and keeps its visit across neighbouring 
   assert.equal(city.country, 'Luxembourg');
   assert.deepEqual([city.width, city.height], [720, 520]);
   assert.equal(maxZoomAt(city.longitude, city.latitude), CAPITAL_ZOOM.full);
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: 6.4, latitude: 49.8, zoom: 5 };
     const focal = globePoint(city.longitude, city.latitude, current, viewport);
@@ -1267,7 +1335,7 @@ test('Warsaw supports focal arrival and stops panning at all scene edges', () =>
   assert.equal(maxZoomAt(warsaw.longitude, warsaw.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(18.64, 54.36), COUNTRY_ZOOM.max); // Gdańsk
   assert.equal(maxZoomAt(17.03, 51.1104), COUNTRY_ZOOM.max); // Wrocław
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv stays uncovered
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   for (const viewport of [view, { width: 1000, height: 780 }]) {
     let current = { longitude: 21.7, latitude: 52.8, zoom: 5 };
     const focal = globePoint(warsaw.longitude, warsaw.latitude, current, viewport);
@@ -1331,7 +1399,7 @@ test('Prague supports focal arrival and retains its visit across overlapping cou
   assert.deepEqual([prague.width, prague.height], [720, 520]);
   assert.equal(maxZoomAt(prague.longitude, prague.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(18.25, 49.8304), COUNTRY_ZOOM.max); // Ostrava
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let current = { longitude: 14.9, latitude: 50.4, zoom: 5 };
   const focal = globePoint(prague.longitude, prague.latitude, current, view);
   for (let step = 0; step < 8; step++)
@@ -1351,7 +1419,7 @@ test('detail allows deeper zoom only where it exists', () => {
   assert.equal(maxZoomAt(-8.62, 41.15), COUNTRY_ZOOM.max); // Porto: Portugal, not the capital
   assert.equal(maxZoomAt(16.3738, 48.2082), CAPITAL_ZOOM.full); // Vienna
   assert.equal(maxZoomAt(2.35, 48.86), CAPITAL_ZOOM.full); // Paris
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Sofia, outside covered country bounds
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   assert.equal(constrainGlobe({ longitude: 20, latitude: 0, zoom: 7 }).zoom, MAX_GLOBE_ZOOM);
 });
 
@@ -1483,7 +1551,7 @@ test('Berlin: country zoom, capital arrival and panning stay with the Berlin sce
   assert.equal(maxZoomAt(13.405, 52.52), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(9.99, 53.55), COUNTRY_ZOOM.max); // Hamburg
   assert.equal(maxZoomAt(11.58, 48.14), COUNTRY_ZOOM.max); // Munich
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   const berlin = scenes.find((s) => s.id === 'berlin');
   assert.deepEqual([berlin.width, berlin.height], [720, 520]);
   let arriving = { longitude: 12.7, latitude: 52.3, zoom: 5 };
@@ -1546,7 +1614,7 @@ test('Amsterdam: focal zoom arrives at its own scene while Groningen keeps count
   assert.deepEqual([amsterdam.width, amsterdam.height], [720, 520]);
   assert.equal(maxZoomAt(4.8952, 52.3702), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(6.58, 53.22), COUNTRY_ZOOM.max); // Groningen, outside capital reach
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let arriving = { longitude: 5.3, latitude: 52.1, zoom: 5 };
   const focal = globePoint(amsterdam.longitude, amsterdam.latitude, arriving, view);
   for (let step = 0; step < 8; step++)
@@ -1588,7 +1656,7 @@ test('Brussels: focal zoom arrives at its scene, and De Panne keeps country deta
   assert.deepEqual([brussels.width, brussels.height], [720, 520]);
   assert.equal(maxZoomAt(4.3517, 50.8503), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(2.59, 51.10), COUNTRY_ZOOM.max); // De Panne, beyond Brussels/Luxembourg reach
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let arriving = { longitude: 4.8, latitude: 50.6, zoom: 5 };
   const focal = globePoint(brussels.longitude, brussels.latitude, arriving, view);
   for (let step = 0; step < 8; step++)
@@ -1633,7 +1701,7 @@ test('London: focal zoom reaches its scene while Scotland and Northern Ireland k
   assert.equal(maxZoomAt(-.1276, 51.5072), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(-4.2527, 55.8764), COUNTRY_ZOOM.max); // Glasgow
   assert.equal(maxZoomAt(-7.3086, 54.9975), COUNTRY_ZOOM.max); // Derry, outside Dublin's capital reach
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv stays uncovered
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let arriving = { longitude: -.6, latitude: 51.8, zoom: 5 };
   const focal = globePoint(london.longitude, london.latitude, arriving, view);
   for (let step = 0; step < 8; step++)
@@ -1700,7 +1768,7 @@ test('Dublin: focal zoom arrives at its scene while Cork retains country detail'
   assert.deepEqual([dublin.width, dublin.height], [720, 520]);
   assert.equal(maxZoomAt(-6.2603, 53.3498), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(-8.4958, 51.8986), COUNTRY_ZOOM.max);
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let arriving = { longitude: -6.7, latitude: 53.1, zoom: 5 };
   const focal = globePoint(dublin.longitude, dublin.latitude, arriving, view);
   for (let step = 0; step < 8; step++)
@@ -1751,7 +1819,7 @@ test('Rome: focal arrival and all pan edges stay in its scene; Milan retains cou
   assert.equal(maxZoomAt(9.2031, 45.4719), COUNTRY_ZOOM.max);
   assert.equal(maxZoomAt(15.08, 37.5), COUNTRY_ZOOM.max); // Sicily
   assert.equal(maxZoomAt(9.12, 39.22), COUNTRY_ZOOM.max); // Sardinia
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Sofia
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let current = { longitude: 12.1, latitude: 42.2, zoom: 5 };
   const focal = globePoint(rome.longitude, rome.latitude, current, view);
   for (let step = 0; step < 8; step++)
@@ -1814,7 +1882,7 @@ test('Copenhagen: focal arrival and pan edges keep its scene; Jutland and Bornho
   assert.equal(maxZoomAt(9.9166, 57.0337), COUNTRY_ZOOM.max); // Aalborg
   assert.equal(maxZoomAt(8.45, 55.467), COUNTRY_ZOOM.max); // Esbjerg
   assert.equal(maxZoomAt(14.7, 55.1), COUNTRY_ZOOM.max); // Bornholm
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv stays outside covered bounds.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let current = { longitude: 12.1, latitude: 55.9, zoom: 5 };
   const focal = globePoint(copenhagen.longitude, copenhagen.latitude, current, view);
   for (let step = 0; step < 8; step++)
@@ -1878,7 +1946,7 @@ test('Stockholm: focal arrival and pan edges keep its scene; northern Sweden and
   assert.equal(maxZoomAt(20.24, 63.83), COUNTRY_ZOOM.max); // Umeå
   assert.equal(maxZoomAt(20.225, 67.855), COUNTRY_ZOOM.max); // Kiruna
   assert.equal(maxZoomAt(18.3, 57.6), COUNTRY_ZOOM.max); // Gotland
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains outside covered bounds.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let current = { longitude: 17.7, latitude: 59.6, zoom: 5 };
   const focal = globePoint(stockholm.longitude, stockholm.latitude, current, view);
   for (let step = 0; step < 8; step++)
@@ -2165,7 +2233,7 @@ test('Vienna supports focal arrival while western and southern Austria retain co
   assert.equal(maxZoomAt(vienna.longitude, vienna.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(11.41, 47.2804), COUNTRY_ZOOM.max); // Innsbruck
   assert.equal(maxZoomAt(12.7694, 46.8297), COUNTRY_ZOOM.max); // Lienz; Klagenfurt now reaches Ljubljana.
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv stays uncovered
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let current = { longitude: 15.8, latitude: 48.6, zoom: 5 };
   const focal = globePoint(vienna.longitude, vienna.latitude, current, view);
   for (let step = 0; step < 8; step++)
@@ -2204,7 +2272,7 @@ test('Valletta supports focal arrival within Malta and keeps its capital visit w
   assert.deepEqual([valletta.width, valletta.height], [720, 520]);
   assert.equal(maxZoomAt(valletta.longitude,valletta.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(14.2394,36.0464), CAPITAL_ZOOM.full); // Gozo shares the standard 1.5° reach.
-  assert.equal(maxZoomAt(30.5234,50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let current = { longitude: 14.35, latitude: 35.98, zoom: 5 };
   const focal = globePoint(valletta.longitude,valletta.latitude,current,view);
   for (let step = 0; step < 8; step++)
@@ -2264,7 +2332,7 @@ test('Bucharest supports focal capital arrival while distant Romanian cities ret
   assert.equal(maxZoomAt(scene.longitude, scene.latitude), CAPITAL_ZOOM.full);
   assert.equal(maxZoomAt(23.5984, 46.7884), COUNTRY_ZOOM.max); // Cluj-Napoca
   assert.equal(maxZoomAt(28.61, 44.2027), COUNTRY_ZOOM.max); // Constanța
-  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv stays uncovered.
+  assert.equal(maxZoomAt(37.6173, 55.7558), MAX_GLOBE_ZOOM); // Moscow remains uncovered.
   let current = { longitude: 25.7, latitude: 44.7, zoom: 5 };
   const focal = globePoint(scene.longitude, scene.latitude, current, view);
   for (let step = 0; step < 8; step++)

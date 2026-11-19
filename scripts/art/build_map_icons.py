@@ -201,6 +201,12 @@ COUNTRY_TIER = [
      # All pinned cities are within 75 km of Pristina. Keep city spacing;
      # the smaller country only needs closer, country-index-filtered decoration.
      "trees": 7, "decoration_grid": .05, "decoration_km": 20, "boats": 0, "landmarks": []},
+    {"adm0": "UKR", "bounds": (22.0, 44.2, 40.3, 52.4), "capital": "Kyiv", "cities": 9,
+     "trees": 7, "boats": 2,
+     # Keep Ukraine's offshore decoration east of the existing Romanian coastal boat.
+     "boat_bounds": (30.2, 44.2, 40.3, 48.0),
+     # Khotyn's citadel itself, on the western/right bank of the Dniester.
+     "landmarks": [("khotyn", 26.49833, 48.52194)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -250,6 +256,7 @@ VARIANTS = {
     "rila": 1,
     "soroca": 1,
     "mir-castle": 1,
+    "khotyn": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -521,9 +528,10 @@ def main():
                 kind = "pine" if lat >= 44 else "oak" if lat >= 40 else "olive"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
-            if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL", "DNK", "CZE", "POL", "LUX", "SVK", "HUN", "SVN", "MDA", "BLR"):
+            if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL", "DNK", "CZE", "POL", "LUX", "SVK", "HUN", "SVN", "MDA", "BLR", "UKR"):
                 kind = "pine" if (spec["adm0"] in ("DEU", "POL") and lat > 53 or spec["adm0"] in ("GBR", "DNK") and lat > 56
-                                  or spec["adm0"] == "SVN" and lat > 46.2 or spec["adm0"] == "BLR" and lat > 54.3) else "oak"
+                                  or spec["adm0"] == "SVN" and lat > 46.2 or spec["adm0"] == "BLR" and lat > 54.3
+                                  or spec["adm0"] == "UKR" and (lat > 50.8 or lon < 25 and lat < 49)) else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if spec["adm0"] == "BGR":

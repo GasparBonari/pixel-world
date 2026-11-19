@@ -54,6 +54,7 @@ export const COVERAGE = [
   { id: 'chisinau', country: 'Moldova', longitude: 28.8353, latitude: 47.0228, bounds: [26.6, 45.4, 30.2, 48.5] },
   { id: 'minsk', country: 'Belarus', longitude: 27.5667, latitude: 53.9, bounds: [23.1, 51.2, 32.8, 56.2] },
   { id: 'pristina', country: 'Kosovo', longitude: 21.1622, latitude: 42.6629, bounds: [20.0, 41.8, 21.9, 43.3] },
+  { id: 'kyiv', country: 'Ukraine', longitude: 30.5234, latitude: 50.4501, bounds: [22.0, 44.2, 40.3, 52.4] },
 ] as const;
 
 /** Keep the visited capital while panning across overlapping capital areas. Zooming out releases it. */

@@ -5122,6 +5122,111 @@ def pristina():
     return scene.img.convert('RGB')
 
 
+def kyiv():
+    import landmarks_ukraine as ua
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # North-up geography first. The Dnipro's broad NE bend stays east of all
+    # six sites, then leaves the illustration eastward beside Pechersk.
+    # Reaches follow +i/+j so the bank has the same geometry as the terrain.
+    course = [(610, -100), (850, 20), (650, 120), (890, 240), (690, 340), (1050, 520)]
+
+    def river_distance(x, y):
+        distance = float('inf')
+        for (ax, ay), (bx, by) in zip(course, course[1:]):
+            dx, dy = bx-ax, by-ay
+            t = max(0, min(1, ((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy)))
+            distance = min(distance, math.hypot(x-ax-t*dx, y-ay-t*dy))
+        return distance
+
+    kinds, elev = {}, {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        distance = river_distance(x, y)
+        # Upper City and Pechersk terraces; Andriivska Hill overlooks lower Podil.
+        z = 26 if 230 < x < 375 and y < 200 else 18 if x < 540 and y < 330 else 24 if x > 445 and y > 300 else 12
+        if distance < 38:kind, z = 'water', 0
+        elif distance < 49:kind, z = 'quay', 0
+        elif distance < 90:kind, z = 'garden', 6 if distance < 65 else 12
+        elif x > 440 and y > 300 or 185 < x < 385 and y < 190:kind = 'garden'
+        elif 110 < x < 350 and 235 < y < 345:kind = 'square'
+        elif abs(x-(190+y*.28)) < 11:kind = 'rose'  # compressed Upper City pedestrian spine
+        elif i % 10 == 0 or j % 9 == 0:kind = 'cobble'
+        else:kind = 'lot'
+        kinds[i, j], elev[i, j] = kind, z
+
+    reserved, protected = set(), []
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if (a, b) in kinds:kinds[a, b] = 'square'
+
+    for name, builder, (wi, wj), _, (x, y), z in ua.SITES:
+        ci, cj = tile(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        reserve(i-1, j-1, wi+2, wj+2)
+        for a in range(math.floor(i)-1, math.ceil(i+wi)+1):
+            for b in range(math.floor(j)-1, math.ceil(j+wj)+1):
+                if (a, b) in kinds:elev[a, b] = z
+        builder(scene, i, j, z=z)
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j, z=z)
+        study.paint_objects()
+        l, t, r, b = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < l < r < WIDTH and 0 < t < b < HEIGHT, (name, l, t, r, b)
+        protected.append((l-6, t-6, r+6, b+8))
+
+    # Fill the substrate before raising hill tiles, avoiding black cracks at terrace edges.
+    for i, j in kinds:iso.ground_tile(scene, i, j, lambda x, y: ua.GROUND['cobble'])
+    for i, j in sorted(kinds, key=lambda p: (sum(p), p[0])):
+        kind = kinds[i, j]
+        def color(x, y, kind=kind):
+            if kind == 'water':
+                return ua.GROUND['water_hi'] if h01(x//3, y, 9500) < .035 else ua.GROUND['water_dark' if h01(x//7, y//2, 9501) < .22 else 'water']
+            if kind in ('square', 'quay'):
+                return ua.GROUND['joint'] if y % 5 == 0 or (x+4*(y//5 % 2)) % 12 == 0 else ua.GROUND['square']
+            if kind == 'garden':return ua.GROUND['garden_hi' if h01(x, y, 9502) < .13 else 'garden']
+            if kind == 'rose':return ua.GROUND['rose' if (x+2*y) % 10 else 'joint']
+            if kind == 'cobble':return ua.GROUND['cobble_joint' if (x+2*(y % 2)) % 5 == 0 else 'cobble']
+            return ua.GROUND['pave' if h01(x, y, 9503) > .08 else 'joint']
+        iso.ground_tile(scene, i, j, color, elev[i, j], iso.stone_wall(ua.ROCK['lit']))
+
+    # Two- and three-storey Kyiv houses leave measured clearances in front of every monument.
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            cells = [(a, b) for a in range(li, li+3) for b in range(lj, lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):continue
+            z = elev[li, lj]
+            if any(elev[c] != z for c in cells):continue
+            seed = int(h01(li, lj, 9504)*10000)
+            floors = 2+seed % 2
+            x, y = scene.screen(li+1.35, lj+1.5, z)
+            if any(x+32 > l and x-32 < r and y+18 > t and y-floors*12-29 < b for l, t, r, b in protected):continue
+            ua.townhouse(scene, li, lj, floors=floors, seed=seed, z=z)
+            reserved.update(cells)
+
+    trees = [round_tree(k, '#75965A', '#344B32') for k in range(4)]
+    for (i, j), kind in kinds.items():
+        if kind not in ('garden', 'quay', 'rose') or (i, j) in reserved:continue
+        if h01(i, j, 9505) > (.15 if kind == 'garden' else .025):continue
+        x, y = scene.screen(i+.5, j+.5, elev[i, j])
+        if any(x+13 > l and x-13 < r and y+7 > t and y-24 < b for l, t, r, b in protected):continue
+        im = trees[(i+j) % 4]
+        scene.add(i+j+1.5, lambda s, x=x, y=y, im=im: s.sprite(im, x, y+3))
+    for x, y in ((706, 91), (710, 150)):
+        im = rowboat(int(y))
+        ci, cj = tile(x, y)
+        scene.add(ci+cj, lambda s, x=x, y=y, im=im: s.sprite(im, x, y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -5203,6 +5308,8 @@ CAPITALS = [
      "render": minsk},
     {"id": "pristina", "name": "Pristina", "country": "Kosovo", "longitude": 21.1622, "latitude": 42.6629,
      "render": pristina},
+    {"id": "kyiv", "name": "Kyiv", "country": "Ukraine", "longitude": 30.5234, "latitude": 50.4501,
+     "render": kyiv},
 ]
 
 

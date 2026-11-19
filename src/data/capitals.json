@@ -358,5 +358,14 @@
     "latitude": 42.6629,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "kyiv",
+    "name": "Kyiv",
+    "country": "Ukraine",
+    "longitude": 30.5234,
+    "latitude": 50.4501,
+    "width": 720,
+    "height": 520
   }
 ]

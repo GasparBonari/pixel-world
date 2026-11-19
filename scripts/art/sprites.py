@@ -2734,6 +2734,57 @@ def mir_castle(seed=0):
     return scene.img
 
 
+def khotyn(seed=0):
+    """Khotyn's tall pale citadel, brick bands, five dark-roofed towers and open court."""
+    import iso
+    from landmarks_paris import P, poly
+    from landmarks_slovakia import block
+    from landmarks_iberia import hip_roof, stone_courses, arch_opening
+    from landmarks_ukraine import STONE, BRICK, WOOD, GROUND, CASTLE_ROOF
+    from landmarks_italy import cylinder
+    from landmarks_slovenia import revolve
+
+    scene = iso.Scene(88, 88, (46, 49))
+    scene.img = Image.new('RGBA', (88, 88), (0, 0, 0, 0))
+    scene.px = scene.img.load()
+    def wall(u, v, lit):
+        # Real ornamental red-brick bands on the high limestone curtain.
+        c = int(u) % 8
+        if int(v) in (7, 8, 18, 19) or 9 < v < 14 and c in (int(v)-9, 8-(int(v)-9)):
+            return BRICK['lit' if lit else 'dark']
+        if v > 23 and c in (3, 4):return WOOD['deep']
+        return stone_courses(STONE, 3, 9)(u, v, lit)
+    poly(scene, [P(scene, *p) for p in ((0, 0), (3.2, 0), (3.2, 4.5), (0, 4.5))],
+         lambda x, y: GROUND['joint' if (x+2*y) % 5 == 0 else 'square'])
+    parts = [(4.5, 'wall', (0, 0, .25, 4.5)), (3.2, 'wall', (0, 0, 3.2, .25)),
+             (7.7, 'wall', (2.95, 0, .25, 4.5)), (7.8, 'wall', (0, 4.25, 3.2, .25)),
+             (4, 'palace', (.25, .45, 1, 3.2))]
+    # North tower, east/west flanking towers, southern gate and smaller SW tower.
+    for a, b, r, h in ((1.6, -.05, .7, 37), (3.15, 1.8, .55, 30),
+                       (.05, 1.5, .58, 32), (.1, 3.9, .5, 29)):
+        parts.append((a+b+1.2, 'tower', (a, b, r, h)))
+    parts.append((8.5, 'gate', (1.9, 4.35, .65, 32)))
+    for _, kind, args in sorted(parts, key=lambda p: p[0]):
+        if kind in ('wall', 'palace'):
+            a, b, wi, wj = args
+            block(scene, a, b, wi, wj, 27 if kind == 'wall' else 24, STONE, wall)
+            if kind == 'palace':hip_roof(scene, a, b, wi, wj, 25, 8, CASTLE_ROOF)
+        else:
+            a, b, r, h = args
+            def gate(u, v, lit):
+                if lit and v < 12:
+                    opening = arch_opening(u, v, r*8, 3.1, 6, WOOD['deep'])
+                    if opening:return opening
+                return wall(u, v, lit)
+            if kind == 'gate' or b < 0:
+                block(scene, a-r, b-r, r*2, r*2, h, STONE, gate if kind == 'gate' else wall)
+                hip_roof(scene, a-r-.08, b-r-.08, r*2+.16, r*2+.16, h+1, 10, CASTLE_ROOF)
+            else:cylinder(scene, a, b, r, r, 0, h, STONE, wall)
+            if kind != 'gate' and b >= 0:
+                revolve(scene, a, b, r+.2, h+1, 10, [(0, 1), (1, .01)], CASTLE_ROOF, ribs=4)
+    return scene.img
+
+
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
@@ -2766,6 +2817,7 @@ ICONS = {
     "rila": rila,
     "soroca": soroca,
     "mir-castle": mir_castle,
+    "khotyn": khotyn,
     **FLORA, **FAUNA,
 }
 
