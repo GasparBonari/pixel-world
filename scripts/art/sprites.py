@@ -2630,6 +2630,57 @@ def rila(seed=0):
     return scene.img
 
 
+def soroca(seed=0):
+    """Soroca's round Dniester fortress: four round towers and one eastern gate tower."""
+    import iso
+    from landmarks_paris import P, seg, poly
+    from landmarks_bosnia import cylinder
+    from landmarks_slovakia import block, band
+    from landmarks_iberia import stone_courses, hip_roof
+    from landmarks_slovenia import revolve
+    from landmarks_moldova import STONE, WHITE, CLAY
+
+    scene=iso.Scene(72,68,(36,50))
+    # Native pixels, transparent margins; no fractional image resampling.
+    scene.img=Image.new('RGBA',(72,68),(0,0,0,0));scene.px=scene.img.load()
+    ri=1.95
+    def slit(u,v,lit):
+        if int(u)%9 in (4,5) and 7<v<11:return STONE['deep']
+        return stone_courses(STONE,3,9)(u,v,lit)
+    parts=[]
+    # A curved curtain ring around an actual open paved court.
+    poly(scene,[P(scene,ri*math.cos(k*math.tau/40),ri*math.sin(k*math.tau/40),0)
+                for k in range(40)],lambda x,y:WHITE['dark'] if (x+2*y)%6 else STONE['line'])
+    for k in range(32):
+        a,b=k*math.tau/32,(k+1)*math.tau/32
+        ps=[(ri*math.cos(t),ri*math.sin(t)) for t in (a,b)]
+        parts.append((sum(sum(p) for p in ps)/2,'wall',ps))
+    # East is +i,-j; the single rectangular river-facing gate occupies that compass point.
+    for k in range(5):
+        a=-math.pi/4+k*math.tau/5
+        ci,cj=ri*math.cos(a),ri*math.sin(a)
+        parts.append((ci+cj,'gate' if k==0 else 'tower',(ci,cj)))
+    for _,kind,data in sorted(parts):
+        if kind=='wall':
+            (ai,aj),(bi,bj)=data
+            a,b=P(scene,ai,aj),P(scene,bi,bj)
+            lit=(ai+bi)<(aj+bj)
+            poly(scene,[a,b,(b[0],b[1]-16),(a[0],a[1]-16)],
+                 lambda x,y,lit=lit:STONE['line'] if y%3==0 else STONE['lit' if lit else 'dark'])
+            seg(scene,(a[0],a[1]-16),(b[0],b[1]-16),WHITE['lit'])
+            continue
+        ci,cj=data
+        if kind=='gate':
+            block(scene,ci-.52,cj-.52,1.04,1.04,22,STONE,slit)
+            band(scene,ci-.52,cj-.52,1.04,1.04,20,WHITE,2)
+            hip_roof(scene,ci-.65,cj-.65,1.3,1.3,23,7,CLAY)
+        else:
+            cylinder(scene,ci,cj,.62,.62,0,22,STONE,slit,segments=20)
+            cylinder(scene,ci,cj,.7,.7,21,2,WHITE,segments=20)
+            revolve(scene,ci,cj,.8,23,9,[(0,1),(1,.01)],CLAY,ribs=5,segments=20)
+    return scene.img
+
+
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
@@ -2660,6 +2711,7 @@ ICONS = {
     "pamukkale": pamukkale,
     "meritxell": meritxell,
     "rila": rila,
+    "soroca": soroca,
     **FLORA, **FAUNA,
 }
 

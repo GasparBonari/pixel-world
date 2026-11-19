@@ -189,6 +189,10 @@ COUNTRY_TIER = [
      # Rila Monastery complex in the Rilska valley, south of Sofia.
      "boat_bounds": (27.8, 42.0, 28.7, 43.8),
      "landmarks": [("rila", 23.3401159, 42.1333100)]},
+    {"adm0": "MDA", "bounds": (26.6, 45.4, 30.2, 48.5), "capital": "Chișinău", "cities": 9,
+     "trees": 7, "decoration_km": 40, "boats": 0,
+     # Soroca's fortress itself on the Moldovan bank of the Dniester. Moldova is landlocked.
+     "landmarks": [("soroca", 28.3054778, 48.1612167)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -236,6 +240,7 @@ VARIANTS = {
     "pamukkale": 1,
     "meritxell": 1,
     "rila": 1,
+    "soroca": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -507,7 +512,7 @@ def main():
                 kind = "pine" if lat >= 44 else "oak" if lat >= 40 else "olive"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
-            if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL", "DNK", "CZE", "POL", "LUX", "SVK", "HUN", "SVN"):
+            if spec["adm0"] in ("DEU", "NLD", "BEL", "GBR", "IRL", "DNK", "CZE", "POL", "LUX", "SVK", "HUN", "SVN", "MDA"):
                 kind = "pine" if (spec["adm0"] in ("DEU", "POL") and lat > 53 or spec["adm0"] in ("GBR", "DNK") and lat > 56
                                   or spec["adm0"] == "SVN" and lat > 46.2) else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
@@ -550,7 +555,7 @@ def main():
         if "boat_bounds" in spec:
             bw, bs, be, bn = spec["boat_bounds"]
             boats = [(lon, lat) for lon, lat in boats if bw <= lon <= be and bs <= lat <= bn]
-        for lon, lat in spread(boats, 2, spec.get("decoration_km", 75)*2, 53):
+        for lon, lat in spread(boats, spec.get("boats", 2), spec.get("decoration_km", 75)*2, 53):
             building("boat", lon, lat, 0, 0)
 
     icons.sort(key=lambda i: (-i[2] + i[4] * 0.01, i[1]))

@@ -21,6 +21,78 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Moldova marks Chișinău, spaced cities and Soroca without offshore boats', () => {
+  const region = COVERAGE.find((c) => c.id === 'chisinau');
+  assert.deepEqual(region.bounds, [26.6, 45.4, 30.2, 48.5]);
+  const at = (lon, lat) => icons.icons.filter((i) => i[5] === 1
+    && Math.abs(i[1] - lon) < .0001 && Math.abs(i[2] - lat) < .0001);
+  const kinds = (site) => at(...site).map((i) => icons.names[i[0]]).sort();
+  // Exact pinned Natural Earth spelling/anchors; Tiraspol and Dubăsari are within 75 km.
+  const cities = [[28.8577, 47.005], [27.9053, 47.7591], [28.1944, 45.9079]];
+  for (const [rank, city] of cities.entries()) {
+    assert.deepEqual(kinds(city), rank === 0 ? ['castle', 'house', 'house'] : ['church', 'house', 'house']);
+    for (const other of cities.slice(0, rank)) {
+      const rad = Math.PI / 180;
+      const km = 6371 * Math.acos(Math.sin(city[1] * rad) * Math.sin(other[1] * rad)
+        + Math.cos(city[1] * rad) * Math.cos(other[1] * rad) * Math.cos((city[0] - other[0]) * rad));
+      assert.ok(km >= 75, `${city} / ${other}: ${km} km`);
+    }
+  }
+  assert.deepEqual(at(29.64, 46.8531), []);
+  assert.deepEqual(at(29.1608, 47.2631), []);
+  const fortress = [28.3055, 48.1612];
+  assert.deepEqual(kinds(fortress), ['soroca']);
+  const trees = [[27.125, 48.125], [28.875, 48.125], [28.125, 47.375], [28.875, 47.375],
+    [29.625, 46.875], [28.375, 46.625], [28.875, 46.125]];
+  for (const site of trees) assert.deepEqual(kinds(site), ['oak']);
+  const tier = [...cities, fortress, ...trees].flatMap((site) => at(...site));
+  assert.equal(tier.length, 17);
+  const [west, south, east, north] = region.bounds;
+  for (const [, lon, lat] of tier)
+    assert.ok(west <= lon && lon <= east && south <= lat && lat <= north);
+  assert.equal(icons.icons.filter((i) => i[5] === 1 && icons.names[i[0]] === 'boat'
+    && west <= i[1] && i[1] <= east && south <= i[2] && i[2] <= north).length, 0);
+  assert.deepEqual(icons.frames[at(...fortress)[0][0]].slice(2), [72, 68]);
+});
+
+test('Chișinău supports focal arrival, bounded panning and zoom-out release', () => {
+  const scene = scenes.find((s) => s.id === 'chisinau');
+  assert.equal(scene.name, 'Chișinău');
+  assert.equal(scene.country, 'Moldova');
+  assert.deepEqual([scene.longitude, scene.latitude, scene.width, scene.height], [28.8353, 47.0228, 720, 520]);
+  const region = COVERAGE.find((c) => c.id === scene.id);
+  assert.deepEqual([region.longitude, region.latitude], [scene.longitude, scene.latitude]);
+  assert.equal(maxZoomAt(scene.longitude, scene.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(26.8, 48.3), COUNTRY_ZOOM.max);
+  // The shared 1.5° capital reach includes Bălți and Cahul, just as in other small countries.
+  for (const [lon, lat] of [[27.9053, 47.7591], [28.1944, 45.9079]])
+    assert.equal(maxZoomAt(lon, lat), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(30.5234, 50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  for (const viewport of [view, { width: 1000, height: 780 }]) {
+    let current = { longitude: scene.longitude, latitude: scene.latitude, zoom: 5 };
+    const focal = globePoint(scene.longitude, scene.latitude, current, viewport);
+    for (let step = 0; step < 8; step++)
+      current = zoomGlobe(current, current.zoom + .3, focal.x, focal.y, viewport);
+    assert.equal(current.zoom, CAPITAL_ZOOM.full);
+    assert.equal(current.capitalId, scene.id);
+    const after = globePoint(scene.longitude, scene.latitude, current, viewport);
+    assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
+    for (const [dx, dy] of [[100, 0], [-100, 0], [0, 100], [0, -100]]) {
+      for (let step = 0; step < 100; step++)
+        current = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      const edge = capitals.clampToCapitals(camera.rotateGlobe(current, dx, dy, viewport), scenes, viewport, 2);
+      assert.deepEqual(edge, current);
+      assert.equal(edge.capitalId, scene.id);
+      const rect = capitals.capitalRect(scene, edge, viewport, 2);
+      assert.ok(rect.x <= 1e-6 && rect.y <= 1e-6);
+      assert.ok(rect.x + rect.width >= viewport.width - 1e-6);
+      assert.ok(rect.y + rect.height >= viewport.height - 1e-6);
+    }
+    assert.equal(constrainGlobe({ ...current, zoom: 5 }).capitalId, undefined);
+    assert.equal(camera.activeCapital({ longitude: 26.1025, latitude: 44.4268, zoom: 7 }).id, 'bucharest');
+  }
+});
+
 test('Bulgaria marks Sofia, spaced cities and Rila Monastery within shared bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'sofia');
   assert.deepEqual(region.bounds, [22.3, 41.2, 28.7, 44.3]);

@@ -4801,6 +4801,118 @@ def sofia():
     return scene.img.convert('RGB')
 
 
+def chisinau():
+    import landmarks_moldova as md
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    kinds, elevation = {}, {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        # The old upper town rises southwest, above the Valea Morilor valley. The Bîc
+        # is outside this central view to the northeast; no downtown river is invented.
+        z = 18 if 125 < x < 240 and y > 425 else 10 if x < 230 and 275 < y < 405 else 8 if y > 365 and x < 445 else 0
+        if x < 65 and y > 445:
+            kind, z = 'water', 0  # Only the northeastern edge of the real southwest lake.
+        elif x < 110 and y > 410:
+            kind, z = 'grass', 0
+        elif x > 505 and 75 < y < 265:
+            kind = 'grass'  # Cathedral Park, extending around the cathedral/belfry axis.
+            if abs(y-(720-x)) < 8 or abs(y-(x*.5-160)) < 7:
+                kind = 'square'
+        elif 225 < x < 390 and 245 < y < 340:
+            kind = 'grass'  # Stephen the Great Park lies SW of its entrance statue.
+            if i % 10 == 0 or j % 10 == 0:
+                kind = 'square'
+        elif x < 225 and 245 < y < 300:
+            kind = 'grass'  # Ethnography Museum's garden lies north/east of its SW front.
+        elif abs(y-(x*.5+110)) < 10:
+            kind = 'cobble'  # Ștefan cel Mare Boulevard, along the isometric i axis.
+        elif 410 < x < 540 and 265 < y < 350 or 245 < x < 425 and 385 < y < 490:
+            kind = 'square'
+        elif i % 9 == 0 or j % 10 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'lot'
+        kinds[i,j], elevation[i,j] = kind, z
+
+    reserved, protected, silhouette = set(), [], set()
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a,b))
+                if kinds.get((a,b)) == 'lot':
+                    kinds[a,b] = 'square'
+
+    for name, builder, (wi,wj), _, (x,y), z in md.SITES:
+        ci,cj = tile(x,y)
+        i,j = ci-wi/2,cj-wj/2
+        builder(scene,i,j,z=z)
+        reserve(i-1,j-1,wi+2,wj+2)
+        study = iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
+        builder(study,i,j,z=z)
+        study.paint_objects()
+        l,t,r,b = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < l < r < WIDTH and 0 < t < b < HEIGHT, name
+        protected.append((l-5,t-5,r+5,b+6))
+        pixels=study.img.convert('RGB').load()
+        silhouette.update((sx-100,sy-100) for sy in range(t+100,b+100) for sx in range(l+100,r+100)
+                          if pixels[sx,sy] != (0,0,0))
+        for a in range(math.floor(i)-1,math.ceil(i+wi)+1):
+            for b in range(math.floor(j)-1,math.ceil(j+wj)+1):
+                if (a,b) in kinds:
+                    elevation[a,b] = z
+
+    # Continuous substrate under raised tiles avoids holes along the terraced upper town.
+    for i,j in kinds:
+        iso.ground_tile(scene,i,j,lambda x,y:md.GROUND['cobble'])
+    for i,j in sorted(kinds,key=lambda p:(sum(p),p[0])):
+        kind=kinds[i,j]
+        def color(x,y,kind=kind):
+            if kind=='water':
+                return md.GROUND['water_hi'] if h01(x//3,y,9200)<.025 else md.GROUND['water_dark' if h01(x//6,y//2,9201)<.25 else 'water']
+            if kind=='square':
+                return md.GROUND['joint'] if y%6==0 or (x+2*(y//6))%12==0 else md.GROUND['rose' if h01(x//12,y//6,9202)<.08 else 'square']
+            if kind=='cobble':
+                return md.GROUND['cobble_joint'] if (x+2*(y%2))%4==0 else md.GROUND['cobble']
+            if kind=='grass':
+                return md.GROUND['garden_hi' if h01(x,y,9203)<.1 else 'garden']
+            return ground_color('pave',x,y)
+        iso.ground_tile(scene,i,j,color,elevation[i,j],
+                        lambda x,y,lit:md.ROCK['line'] if y%4==0 else md.ROCK['lit' if lit else 'dark'])
+
+    for li in range(-12,112,3):
+        for lj in range(-12,112,3):
+            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):
+                continue
+            x,y=scene.screen(li+1.25,lj+1.5)
+            seed=int(h01(li,lj,9204)*10000)
+            floors=1+seed%2
+            if any(x+38>l and x-38<r and y+22>t and y-floors*12-28<b for l,t,r,b in protected):
+                continue
+            md.townhouse(scene,li,lj,floors=floors,seed=seed,z=elevation[li,lj])
+            reserved.update(cells)
+
+    trees=[round_tree(k,'#789953','#344D32') for k in range(4)]
+    for (i,j),kind in kinds.items():
+        if kind not in ('grass','square') or (i,j) in reserved:
+            continue
+        if h01(i,j,9205)>(.16 if kind=='grass' else .007):
+            continue
+        x,y=scene.screen(i+.5,j+.5,elevation[i,j])
+        if any((sx,sy) in silhouette for sx in range(int(x)-14,int(x)+15) for sy in range(int(y)-25,int(y)+7)):
+            continue
+        im=trees[(i+j)%4]
+        scene.add(i+j+1.5,lambda s,x=x,y=y,im=im:s.sprite(im,x,y+3))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -4876,6 +4988,8 @@ CAPITALS = [
      "render": andorra},
     {"id": "sofia", "name": "Sofia", "country": "Bulgaria", "longitude": 23.3219, "latitude": 42.6977,
      "render": sofia},
+    {"id": "chisinau", "name": "Chișinău", "country": "Moldova", "longitude": 28.8353, "latitude": 47.0228,
+     "render": chisinau},
 ]
 
 
