@@ -349,5 +349,14 @@
     "latitude": 53.9,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "pristina",
+    "name": "Pristina",
+    "country": "Kosovo",
+    "longitude": 21.1622,
+    "latitude": 42.6629,
+    "width": 720,
+    "height": 520
   }
 ]

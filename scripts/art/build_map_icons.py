@@ -197,6 +197,10 @@ COUNTRY_TIER = [
      "trees": 7, "boats": 0,
      # Mir Castle itself, southwest of Minsk; Belarus is landlocked.
      "landmarks": [("mir-castle", 26.473, 53.4512389)]},
+    {"adm0": "KOS", "bounds": (20.0, 41.8, 21.9, 43.3), "capital": "Pristina", "cities": 9,
+     # All pinned cities are within 75 km of Pristina. Keep city spacing;
+     # the smaller country only needs closer, country-index-filtered decoration.
+     "trees": 7, "decoration_grid": .05, "decoration_km": 20, "boats": 0, "landmarks": []},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -537,6 +541,10 @@ def main():
                 continue
             if spec["adm0"] == "MNE":
                 kind = "olive" if lat < 42.4 else "pine"
+                building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+                continue
+            if spec["adm0"] == "KOS":
+                kind = "pine" if lon < 20.6 else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if spec["adm0"] == "MKD":

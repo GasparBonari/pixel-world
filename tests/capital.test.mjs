@@ -21,6 +21,50 @@ const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
 
+test('Kosovo marks Pristina with in-country trees and no offshore boats', () => {
+  const region = COVERAGE.find((c) => c.id === 'pristina');
+  assert.deepEqual(region.bounds, [20.0, 41.8, 21.9, 43.3]);
+  const at = (lon, lat) => icons.icons.filter((i) => i[5] === 1
+    && Math.abs(i[1] - lon) < .0001 && Math.abs(i[2] - lat) < .0001);
+  // Natural Earth's exact KOS name and site; Prizren/Pec are within 75 km.
+  assert.deepEqual(at(21.165984, 42.66671).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  assert.deepEqual(at(20.750092, 42.22932), [], 'Prizren obeys the common city spacing');
+  assert.deepEqual(at(20.310739, 42.660328), [], 'Pec obeys the common city spacing');
+  const trees = [[21.075,43.125], [20.725,42.875], [20.325,42.625],
+    [20.925,42.425], [21.575,42.275], [20.825,42.075], [21.175,42.025]];
+  const country = [[21.165984,42.66671], ...trees]
+    .flatMap((site) => at(...site));
+  assert.equal(country.length, 10);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length, 1);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'oak').length, 6);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'boat').length, 0);
+  const [w,s,e,n] = region.bounds;
+  for (const [,lon,lat] of country)
+    assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Kosovo bounds`);
+});
+
+test('Pristina supports focal arrival and retains its visit among nearby covered capitals', () => {
+  const scene = scenes.find((s) => s.id === 'pristina');
+  assert.equal(scene.name, 'Pristina');
+  assert.equal(scene.country, 'Kosovo');
+  assert.deepEqual([scene.width,scene.height], [720,520]);
+  const region = COVERAGE.find((c) => c.id === scene.id);
+  assert.deepEqual([scene.longitude,scene.latitude], [region.longitude,region.latitude]);
+  assert.equal(maxZoomAt(scene.longitude,scene.latitude), CAPITAL_ZOOM.full);
+  assert.equal(maxZoomAt(30.5234,50.4501), MAX_GLOBE_ZOOM); // Kyiv remains uncovered.
+  let current = { longitude: 21.1, latitude: 42.8, zoom: 5 };
+  const focal = globePoint(scene.longitude,scene.latitude,current,view);
+  for (let step=0; step<8; step++)
+    current = zoomGlobe(current,current.zoom+.3,focal.x,focal.y,view);
+  assert.equal(current.zoom,CAPITAL_ZOOM.full);
+  assert.equal(current.capitalId,scene.id);
+  const after = globePoint(scene.longitude,scene.latitude,current,view);
+  assert.ok(Math.hypot(after.x-focal.x,after.y-focal.y)<1);
+  for (let step=0; step<100; step++)
+    current = capitals.clampToCapitals(camera.rotateGlobe(current,50,40,view),scenes,view,2);
+  assert.equal(camera.activeCapital(current).id,scene.id);
+});
+
 test('Belarus marks Minsk, spaced real cities and Mir Castle within shared bounds', () => {
   const region = COVERAGE.find((c) => c.id === 'minsk');
   assert.deepEqual(region.bounds, [23.1, 51.2, 32.8, 56.2]);

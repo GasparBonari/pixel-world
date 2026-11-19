@@ -5034,6 +5034,94 @@ def minsk():
     return scene.img.convert('RGB')
 
 
+def pristina():
+    import landmarks_kosovo as ks
+
+    scene = new_scene()
+
+    def tile(x,y):
+        return tile_of((x-WIDTH/2)/8,(y-scene.oy)/4)
+
+    # Geography first: the old town rises gently in the NE; the university
+    # campus is open to the south. Central streams are culverted, not visible rivers.
+    kinds,elev = {},{}
+    for i,j in visible_tiles(scene):
+        x,y = scene.screen(i+.5,j+.5)
+        z = 16 if x>660 else 8 if x>400 and y<305 else 0
+        # Mother Teresa pedestrian spine links the old town to the campus.
+        boulevard = abs(x-(365+y*.12))<15
+        campus = 320<x<570 and y>310
+        cathedral_garden = 130<x<330 and y>350
+        if boulevard:kind='rose'
+        elif campus or cathedral_garden or x>655:kind='grass'
+        elif i%10==0 or j%9==0:kind='cobble'
+        else:kind='lot'
+        kinds[(i,j)],elev[(i,j)] = kind,z
+
+    reserved,protected = set(),[]
+
+    def reserve(i,j,wi,wj):
+        for a in range(math.floor(i),math.ceil(i+wi)):
+            for b in range(math.floor(j),math.ceil(j+wj)):
+                reserved.add((a,b))
+                if (a,b) in kinds:kinds[(a,b)]='square'
+
+    for name,builder,(wi,wj),_,(x,y),z in ks.SITES:
+        ci,cj=tile(x,y)
+        i,j=ci-wi/2,cj-wj/2
+        reserve(i-.8,j-.8,wi+1.6,wj+1.6)
+        for a in range(math.floor(i-1),math.ceil(i+wi+1)):
+            for b in range(math.floor(j-1),math.ceil(j+wj+1)):
+                elev[(a,b)]=z
+        builder(scene,i,j,z=z)
+        study=iso.Scene(WIDTH+200,HEIGHT+200,(scene.ox+100,scene.oy+100))
+        builder(study,i,j,z=z)
+        study.paint_objects()
+        l,t,r,b=(v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0<l<r<WIDTH and 0<t<b<HEIGHT,(name,l,t,r,b)
+        protected.append((l-5,t-5,r+5,b+7))
+
+    for (i,j) in sorted(kinds,key=lambda p:(sum(p),p[0])):
+        kind,z=kinds[(i,j)],elev[(i,j)]
+        def color(x,y,kind=kind):
+            if kind=='grass':return ks.GROUND['grass_light' if h01(x,y,9401)<.13 else 'grass']
+            if kind=='square':return ks.GROUND['square' if (x+2*(y%3))%9 else 'joint']
+            if kind=='cobble':return ks.GROUND['cobble' if (x+2*(y%2))%5 else 'cobble_joint']
+            if kind=='rose':return ks.GROUND['rose' if (x+2*(y%4))%10 else 'joint']
+            return ks.GROUND['pave' if h01(x,y,9402)>.08 else 'joint']
+        iso.ground_tile(scene,i,j,color,z,iso.stone_wall(ks.GROUND['rock']) if z else None)
+
+    # Varied plaster/timber houses stay low beside the museum and tall monuments.
+    # Protect the entire measured painted silhouette, including towers and roof caps.
+    for li in range(-12,112,4):
+        for lj in range(-12,112,4):
+            cells=[(a,b) for a in range(li,li+3) for b in range(lj,lj+3)]
+            if not all(kinds.get(c)=='lot' and c not in reserved for c in cells):continue
+            z=elev[(li,lj)]
+            if any(elev[c]!=z for c in cells):continue
+            seed=int(h01(li,lj,9403)*10000)
+            floors=1+seed%3
+            x,y=scene.screen(li+1.3,lj+1.5,z)
+            if any(x+31>l and x-31<r and y+18>t and y-floors*12-29<b for l,t,r,b in protected):continue
+            ks.townhouse(scene,li,lj,floors=floors,seed=seed,z=z)
+            reserved.update(cells)
+
+    trees=[round_tree(k,'#718D51','#334A30') for k in range(3)]
+    for (i,j),kind in kinds.items():
+        if kind not in ('grass','rose') or (i,j) in reserved:continue
+        if h01(i,j,9404)>(.14 if kind=='grass' else .07):continue
+        x,y=scene.screen(i+.5,j+.5,elev[(i,j)])
+        if any(x+12>l and x-12<r and y+6>t and y-23<b for l,t,r,b in protected):continue
+        im=trees[(i+j)%3]
+        scene.add(i+j+1.5,lambda s,x=x,y=y,im=im:s.sprite(im,x,y+3))
+        if kind=='grass' and (i+j)%5==0:
+            # Small planted beds on the campus, not a blanket of grass everywhere.
+            ks.poly(scene,list(ks.corners(scene,i+.15,j+.15,.7,.7,elev[(i,j)]+.1)),
+                 lambda x,y:ks.GROUND['flower' if (x+y)%3 else 'grass_light'])
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -5113,6 +5201,8 @@ CAPITALS = [
      "render": chisinau},
     {"id": "minsk", "name": "Minsk", "country": "Belarus", "longitude": 27.5667, "latitude": 53.9,
      "render": minsk},
+    {"id": "pristina", "name": "Pristina", "country": "Kosovo", "longitude": 21.1622, "latitude": 42.6629,
+     "render": pristina},
 ]
 
 
