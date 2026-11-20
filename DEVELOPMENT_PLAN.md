@@ -48,6 +48,7 @@ The reference’s quest lists, avatar, XP, badges, statistics, and parchment car
 | 2 | Earth and universe | An attractive, responsive opening planet | Core implemented; visual refinement and platform validation active |
 | 3 | Continent/country visuals and continuous zoom | Richer geography appears while zooming into the same world | Implemented for Europe |
 | 4 | Detailed capital visuals | Recognizable capital scenes, one per country | 44 European capitals built; paused until the Phase 5 playtest |
+| 4b | Living world | The world moves on its own: space and planet first, then board, country tier and capitals | Space and planet done; board next |
 | 5 | Gameplay slice | "Find it" loop, collectibles, discovery states, and saved progress on three capitals; playtest gate | Next |
 | 6 | UI kit and game feel | Pixel UI components, scene animation, sound, real day/night, accessibility | Planned |
 | 7 | World progress, Quests and Passport | Three tabs, clouds over undiscovered countries, daily place, travel track, stamps, My World | Planned |
@@ -1339,6 +1340,16 @@ Building coordinates use centres of OSM building bounding boxes fetched from /ap
 
 **Limits:** the cathedral icon/gable scrolls, City Hall crest, church rose tracery, opera sculpture anatomy/lyre and monument relief/heraldic identities remain compressed or omitted as stated per model. The library's full stylobate/pane count, exact terrain heights and bridge engineering details are illustrative. Physical iOS/Android devices, native runtime performance, Safari and EAS builds are not verified. Export checks validate the bundles/assets, not device rendering. Six landmark silhouettes/counts, settings, explicit front turns and material depth were visually checked against the fact sheets and benchmarks.
 
+## Phase 4b — Living world
+
+Started 20 November 2026, before the gameplay slice: animation of the map itself, from space inward. One 12-frames-a-second clock drives everything, and the system reduce-motion setting keeps the scene still. Rules: [ART_CONTRACT §9](docs/art/ART_CONTRACT.md#9-motion-the-living-world-started-20-november-2026).
+
+- [x] **L-01 — Space and planet.** Idle spin after 3 seconds without input, drifting clouds and wave highlights, twinkling and flashing stars, a shooting star every 11 seconds, a floating satellite with a panel glint and blinking beacon. Verified in Chrome (390×844): the spin starts after 3 seconds, stops on a drag and resumes; reduce motion shows zero changed pixels over 9 seconds. Not yet measured on a physical phone: an idle screen now redraws the full-screen shader 12 times a second.
+- [ ] **L-02 — Continent board.** Sea glints and coastline foam, animal idle frames (2–3 frames, each animal's own rhythm), boats drifting on fixed routes, birds with shadows, occasional tree sway and volcano smoke. Icon frames are added to `sprites.py` and the atlas.
+- [ ] **L-03 — Country tier.** Waving pennants on the capital markers, chimney smoke from houses, the selected pin bouncing.
+- [ ] **L-04 — Capital scenes.** Water shimmer, chimney smoke, flags, boats, birds and a few two-frame people at the anchors exported by P5-01.
+- [ ] **L-05 — Measure on devices.** Frame time and battery on a mid-range Android phone and an iPhone, idle and while zooming; lower the idle rate or pause off-screen effects if needed.
+
 ## Phase 5 — Gameplay slice on three capitals
 
 **Dependencies:** the Lisbon, Paris, and Athens scenes (built). New capitals stay paused until P5-08 passes.
@@ -1362,7 +1373,7 @@ Building coordinates use centres of OSM building bounding boxes fetched from /ap
 - [ ] **P6-02 — Nine-slice frame generator.** A script in `scripts/art/` writes in-palette frames (parchment and navy panels; gold, cream, and green buttons; chip; tab; progress-bar parts) and 16×16 UI icons, drawn with nearest-neighbour sampling.
 - [ ] **P6-03 — Pixel UI components.** `PixelPanel`, `PixelButton` (drops 1 UI pixel when pressed, with a haptic tap), `Chip`, `SegmentedProgress`, `Badge`, `TabBar`, `CollectibleCard`, `Stamp`. Stepped, frame-like motion that respects reduced-motion settings. No frosted glass, gradients, or soft glows.
 - [ ] **P6-04 — `/ui-kit` route.** Every component shown over the globe, the Europe board, and a capital scene; checked on phones, then applied to the Phase 5 screens.
-- [ ] **P6-05 — Animate the scenes.** Overlays at the P5-01 anchors: water shimmer, chimney smoke, waving flags, drifting boats, birds, a few two-frame people. Seeded and stable, batched into one draw, paused off-screen; measure frame cost.
+- [ ] **P6-05 — Animate the scenes.** Moved to Phase 4b (L-02 to L-04), which started early.
 - [ ] **P6-06 — Sound and haptics.** A short chiptune loop per continent; sounds for finding, stamping, and buttons. CC0 or generated audio with sources recorded; mute setting; follows the phone's silent mode. Check the SDK 58 docs before choosing modules.
 - [ ] **P6-07 — Real day and night.** Light the globe from the sun's actual position, and tint capital scenes by their local time, with lit windows at night. Computed on the device, no network.
 - [ ] **P6-08 — Accessibility pass.** Large-text mode, colour-blind-safe statuses (symbol and number, never colour alone), screen-reader labels, and the "find it" assist.

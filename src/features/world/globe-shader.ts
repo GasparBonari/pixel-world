@@ -16,6 +16,8 @@ uniform float2 viewport;
 uniform float2 angles;
 uniform float radius;
 uniform float zoom;
+// Seconds in whole animation frames (motion.ts); 0 keeps the scene still (reduce motion).
+uniform float time;
 uniform float2 textureSize;
 uniform float2 boardSize;
 
@@ -186,7 +188,8 @@ half4 main(float2 position) {
 
   float oceanTone = floor((terrain*0.7+grain*0.3)*5.0)/5.0;
   float3 ocean = mix(float3(0.09,0.27,0.60),float3(0.16,0.45,0.75),oceanTone);
-  float wave = step(0.85,surfaceNoise(uv,float2(85,420),float2(0)));
+  // Wave highlights drift slowly east (one noise cell, about 4 degrees, every 30 s).
+  float wave = step(0.85,surfaceNoise(uv-float2(time/2700.0,0),float2(85,420),float2(0)));
   ocean = mix(ocean,float3(0.32,0.63,0.84),wave*0.32);
 
   float isLand = step(0.5,data.r);
@@ -206,8 +209,10 @@ half4 main(float2 position) {
   color = mix(color,float3(0.25,0.39,0.26),border*0.65);
 
   float cloudFade = 1.0-smoothstep(0.5,1.8,zoom);
-  float clouds = cloudField(uv);
-  float shadow = step(0.68,cloudField(uv+float2(0.003,0.004)))*cloudFade;
+  // Weather drifts east over the surface: once round the planet in 15 minutes.
+  float2 weather = uv-float2(time/900.0,0);
+  float clouds = cloudField(weather);
+  float shadow = step(0.68,cloudField(weather+float2(0.003,0.004)))*cloudFade;
   color = mix(color,color*float3(0.61,0.69,0.78),shadow*0.55);
   float cover = step(0.68,clouds)*cloudFade;
   float3 cloudColor = clouds > 0.76 ? float3(0.98,1.0,0.96) : float3(0.79,0.89,0.93);

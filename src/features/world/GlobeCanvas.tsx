@@ -36,6 +36,7 @@ import { clampToCapitals } from './capitals';
 import { MapIcons } from './MapIcons';
 import { MapStatus } from './MapStatus';
 import { MapSurface } from './MapSurface';
+import { useWorldClock } from './use-world-clock';
 
 const effect = Skia.RuntimeEffect.Make(globeShader);
 // Globe (32 MiB decoded), board (8 MiB) and icon sheet, each decoded once per app session.
@@ -96,23 +97,29 @@ function GlobeScene({
     };
   }, []);
   const camera = useSharedValue(openingCamera);
+  const { time, touch } = useWorldClock(camera);
   // Icon pixels are two-thirds of a terrain pixel (3 points on a phone -> 2 points).
   const iconScale = (Math.max(1.25, Math.min(viewport.width, viewport.height) / CELLS_ACROSS) * 2) / 3;
   const [snapshot, setSnapshot] = useState(openingCamera);
-  const reset = useCallback(() => camera.set(openingCamera), [camera, openingCamera]);
+  const reset = useCallback(() => {
+    touch();
+    camera.set(openingCamera);
+  }, [camera, openingCamera, touch]);
   const zoom = useCallback(
     (delta: number, x: number, y: number) => {
+      touch();
       const next = zoomGlobe(camera.get(), camera.get().zoom + delta, x, y, viewport);
       camera.set(clampToCapitals(next, capitals, viewport, iconScale));
     },
-    [camera, viewport, iconScale]
+    [camera, viewport, iconScale, touch]
   );
   const rotate = useCallback(
     (dx: number, dy: number) => {
+      touch();
       const next = rotateGlobe(camera.get(), dx, dy, viewport);
       camera.set(clampToCapitals(next, capitals, viewport, iconScale));
     },
-    [camera, viewport, iconScale]
+    [camera, viewport, iconScale, touch]
   );
 
   useAnimatedReaction(
@@ -124,10 +131,13 @@ function GlobeScene({
       if (next !== previous) scheduleOnRN(setSnapshot, camera.get());
     }
   );
+  // Any touch stops the idle spin, even one that doesn't move far enough to start a drag.
   const pan = usePanGesture({
     maxPointers: 1,
     minDistance: 6,
+    onTouchesDown: () => touch(),
     onUpdate: (event) => {
+      touch();
       camera.set(
         clampToCapitals(
           rotateGlobe(camera.get(), event.changeX, event.changeY, viewport),
@@ -140,6 +150,7 @@ function GlobeScene({
   });
   const pinch = usePinchGesture({
     onUpdate: (event) => {
+      touch();
       camera.set(
         clampToCapitals(
           zoomGlobe(
@@ -164,6 +175,7 @@ function GlobeScene({
       angles: [(c.longitude * Math.PI) / 180, (c.latitude * Math.PI) / 180],
       radius: globeRadius(viewport) * 2 ** c.zoom,
       zoom: c.zoom,
+      time: time.get(),
       textureSize: [4096, 2048],
       boardSize: [2048, 1024],
     };

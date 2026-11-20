@@ -324,3 +324,19 @@ These are drawn in the mockups to show the target composition.
 - **Icons (`scripts/art/sprites.py`), clouds and parchment UI** in the mockups are original pixel art made for this project. Ninja Adventure tiles (CC0) are only used at the capital scale.
 - **Pixelify Sans:** SIL Open Font License 1.1.
 - **Reference:** the GlobeQuest concept image guides the style. Nothing from it is copied into project assets.
+
+## 9. Motion: the living world (started 20 November 2026)
+
+The world moves a little on its own, like a game's idle scene. Code: `src/features/world/motion.ts` (timing rules), `use-world-clock.ts` (the clock), the `time` uniform in `globe-shader.ts` and `space-shader.ts`.
+
+- **One clock, pixel-art frame rate.** Every animation reads one `time` value that advances in whole frames at **12 per second**. The scene redraws only when it ticks, so an idle screen costs 12 redraws a second, not 60; gestures still redraw at the display rate.
+- **Stepped, never smooth.** Sprites change frame, positions move in whole pixels and effects switch between a few tones. Nothing slides between pixels.
+- **Fixed to the world.** Anything on the planet (clouds, waves) moves in longitude and latitude, so panning never makes it shimmer. Space effects are fixed to the screen, like a distant backdrop.
+- **Reduce motion.** With the system setting on, the clock never starts: `time` stays 0, the planet doesn't spin, and every effect shows its still frame, identical to the scene before animation existed.
+- **Space and planet (done):**
+  - **Idle spin.** 3 seconds after the last touch, drag, scroll, key or reset, the planet eases (over 2 seconds) into turning west to east at 3° a second, one turn in two minutes. Any input stops it at once. The spin is full at planet zoom and fades out by zoom 1.5, where the continent board takes over.
+  - **Weather.** Clouds and their shadows drift east, once around the planet in 15 minutes. Ocean wave highlights drift east more slowly.
+  - **Stars.** About a third of the small stars twinkle with a brief dip, each at its own rhythm; the gold stars' rays grow for a moment, then rest shorter.
+  - **Shooting star.** Every 11 seconds, a one-pixel diagonal streak with a plus-shaped head and a fading tail crosses the upper sky for three quarters of a second, starting somewhere new each time. It passes behind the planet and the moon.
+  - **Satellite.** Floats in a slow 36-second loop in whole pixels, a sunlight glint sweeps across its solar arrays, and its antenna beacon blinks once a second. A full orbit was rejected: the space layer is drawn only around the planet, so a satellite crossing in front of it would vanish as if behind it.
+- **Next:** the continent board (sea glints, animal idle frames, drifting boats, birds), then the country tier (capital pennants, chimney smoke), then capital scenes (water, smoke, flags, people; needs landmark and anchor data from P5-01).
