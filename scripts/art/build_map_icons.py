@@ -319,6 +319,148 @@ def spread(candidates, count, spacing_km, seed, taken=(), taken_km=None):
     return chosen
 
 
+# Country-tier icons appear in zoom steps, each once it no longer overlaps an icon already shown.
+# Icons have a fixed screen size while the globe grows with 2**zoom, so the zoom at which two
+# icons stop overlapping can be computed here, once, instead of every frame on the device.
+# An icon's appearance zoom is where it is fully visible; it fades in over the 0.6 zoom before it
+# (MapIcons), and may touch its neighbours only while still faint.
+ICON_PX_PER_RADIAN = 0.41 * 130 * 1.5  # globe radius in icon pixels at zoom 0: globeRadius / iconScale
+APPEAR_FIRST = 5.0  # COUNTRY_ZOOM.full
+APPEAR_STEP = 0.2
+APPEAR_LAST = 6.2  # icons that only fit later are dropped; COUNTRY_ZOOM.max is 6.4
+ICON_GAP = 1  # icon pixels kept clear between neighbours
+NEAR_DEGREES = 2.5  # pairs farther apart than this are already clear at APPEAR_FIRST
+SOLID_ALPHA = 128  # ground shadows (27% black) and transparent margins may overlap
+
+
+def solid_boxes(sheet, frames):
+    """Each frame's opaque pixels as (left, top, right, bottom) around its drawing anchor.
+
+    MapIcons draws a frame with its bottom-centre (x = width / 2, y = height - 1) at the anchor.
+    """
+    boxes = []
+    for x, y, w, h in frames:
+        alpha = sheet.crop((x, y, x + w, y + h)).getchannel("A")
+        left, top, right, bottom = alpha.point(lambda v: 255 if v > SOLID_ALPHA else 0).getbbox()
+        boxes.append((left - w / 2, top - h + 1, right - w / 2, bottom - h + 1))
+    return boxes
+
+
+def clear_zoom(a, b, boxes):
+    """Lowest zoom from which icons a and b ([frame, lon, lat, dx, dy, ...]) never overlap on screen."""
+    (al, at, ar, ab), (bl, bt, br, bb) = boxes[a[0]], boxes[b[0]]
+    dlon = (b[1] - a[1] + 180) % 360 - 180
+    mid = math.radians((a[2] + b[2]) / 2)
+    # Per axis: separation per unit of globe radius (east +x, north -y), the constant icon-pixel
+    # offset between the two boxes' centres, and the separation they need.
+    axes = (
+        (math.radians(dlon) * math.cos(mid), (b[3] + (bl + br) / 2) - (a[3] + (al + ar) / 2),
+         (ar - al + br - bl) / 2 + ICON_GAP),
+        (-math.radians(b[2] - a[2]), (b[4] + (bt + bb) / 2) - (a[4] + (at + ab) / 2),
+         (ab - at + bb - bt) / 2 + ICON_GAP),
+    )
+    radius = math.inf
+    for per_radius, offset, need in axes:
+        if abs(per_radius) < 1e-12:
+            radius = min(radius, 0 if abs(offset) >= need else math.inf)
+        else:
+            toward = offset if per_radius > 0 else -offset
+            radius = min(radius, max(0.0, (need - toward) / abs(per_radius)))
+    if radius == 0:
+        return -math.inf
+    if radius == math.inf:
+        return math.inf
+    # 1% margin for the globe's curvature away from the screen centre.
+    return math.log2(radius * 1.01 / ICON_PX_PER_RADIAN)
+
+
+MAX_NUDGE = 40  # icon pixels a capital or landmark may be drawn away from its real site
+SIDE_TOLERANCE = 12  # icon pixels at APPEAR_FIRST (about 30 km) under which either side is fair
+
+
+def nudge(icon, placed, boxes):
+    """Draw a capital or landmark beside the capitals and landmarks already placed, not under them.
+
+    Some landmarks lie within a few kilometres of their capital (Meritxell, Trakai, Karlštejn), far
+    closer than two icons' width at country zoom. Shift the drawing offset by the shortest move
+    that clears every placed icon from APPEAR_FIRST, only ever away from the icon covering it
+    most, in the quadrant where the site really lies, so the two keep their real compass relation.
+    The longitude and latitude stay the real site. Without a clear spot it takes the move from
+    which it can appear earliest.
+    """
+    blockers = [o for o in placed if clear_zoom(icon, o, boxes) > APPEAR_FIRST]
+    if not blockers:
+        return
+    main = max(blockers, key=lambda o: clear_zoom(icon, o, boxes))
+    # Real offset from the covering icon in icon pixels at APPEAR_FIRST (east +x, south +y).
+    px = ICON_PX_PER_RADIAN * 2 ** APPEAR_FIRST
+    east = math.radians((icon[1] - main[1] + 180) % 360 - 180) * math.cos(math.radians(icon[2])) * px
+    south = math.radians(main[2] - icon[2]) * px
+    # Keep the real side; an axis on which the two are closer than SIDE_TOLERANCE may use either.
+    signs = [[1 if real >= 0 else -1] + ([-1 if real >= 0 else 1] if abs(real) < SIDE_TOLERANCE else [])
+             for real in (east, south)]
+    moves = sorted(
+        ((sx * x, sy * y, (sx != signs[0][0]) + (sy != signs[1][0]))
+         for x in range(MAX_NUDGE + 1) for y in range(MAX_NUDGE + 1)
+         if 0 < x * x + y * y <= MAX_NUDGE * MAX_NUDGE
+         for sx in signs[0] for sy in signs[1]),
+        key=lambda m: (m[2], m[0] ** 2 + m[1] ** 2, m))
+    best = (max(clear_zoom(icon, o, boxes) for o in placed), 0, 0)
+    for x, y, _ in moves:
+        trial = icon[:3] + [icon[3] + x, icon[4] + y] + icon[5:]
+        clear = max(clear_zoom(trial, o, boxes) for o in placed)
+        if clear <= APPEAR_FIRST:
+            icon[3], icon[4] = trial[3], trial[4]
+            return
+        if clear < best[0] - 0.05:  # otherwise, the move that lets it appear earliest
+            best = (clear, x, y)
+    icon[3] += best[1]
+    icon[4] += best[2]
+
+
+def assign_appearance(icons, boxes):
+    """Replace each country-tier icon's priority with the zoom at which it is fully visible.
+
+    Icons are placed in priority order (capital, landmark, large town, town, tree, boat). Each one
+    appears at the first zoom step from which it overlaps no icon placed before it that is already
+    visible, so once shown it never has to disappear. Continent icons stay visible, except those
+    covering a capital or landmark: they get a seventh field, 1, and fade out as the country
+    tier fades in. Returns all icons kept and the country icons dropped because they would only
+    fit beyond APPEAR_LAST.
+    """
+    def near(a, b):
+        dlon = abs((b[1] - a[1] + 180) % 360 - 180) * math.cos(math.radians(a[2]))
+        return abs(b[2] - a[2]) <= NEAR_DEGREES and dlon <= NEAR_DEGREES
+
+    shown = [(icon, -math.inf) for icon in icons if icon[5] == 0]
+    kept, dropped = [], []
+    for icon in sorted((i for i in icons if i[5] == 1), key=lambda i: i[6]):
+        if icon[6][0] <= 1:  # capitals and landmarks: continent decoration makes way
+            for other, _ in [s for s in shown if s[0][5] == 0 and near(icon, s[0])]:
+                if clear_zoom(icon, other, boxes) > APPEAR_FIRST:
+                    other[6:] = [1]
+                    shown.remove((other, -math.inf))
+            nudge(icon, [o for o, _ in shown if o[5] == 1 and near(icon, o)], boxes)
+        appear = APPEAR_FIRST
+        for other, other_appear in shown:
+            if not near(icon, other):
+                continue
+            clear = clear_zoom(icon, other, boxes)
+            if clear > other_appear:  # the other icon is visible while the two still overlap
+                appear = max(appear, clear)
+        if appear != math.inf:  # inf: it sits exactly on an icon already shown
+            steps = math.ceil(round((appear - APPEAR_FIRST) / APPEAR_STEP, 6))
+            appear = round(APPEAR_FIRST + steps * APPEAR_STEP, 1)
+        if appear > APPEAR_LAST:
+            dropped.append(icon)
+            continue
+        icon[6] = appear
+        shown.append((icon, appear))
+        kept.append(icon)
+    kept_ids = {id(i) for i in kept}
+    return [i for i in icons if i[5] == 0 or id(i) in kept_ids], dropped
+
+
 def in_bounds(lon, lat, bounds):
     west, south, east, north = bounds
     return south <= lat <= north and (lon >= west or lon <= east if west > east else west <= lon <= east)
@@ -472,8 +614,9 @@ def main():
         raise ValueError("places-10m checksum mismatch")
     places = [f["properties"] for f in json.loads(places_raw)["features"]]
 
-    def building(kind, lon, lat, dx, dy, seed=0):
-        icons.append([frame_index(kind, seed), round(lon, 4), round(lat, 4), dx, dy, 1])
+    def building(kind, lon, lat, dx, dy, seed=0, priority=(4, 0)):
+        # The seventh field holds the placement priority until assign_appearance replaces it.
+        icons.append([frame_index(kind, seed), round(lon, 4), round(lat, 4), dx, dy, 1, priority])
 
     for spec in COUNTRY_TIER:
         w, s_, e, n = spec["bounds"]
@@ -493,21 +636,16 @@ def main():
             towns.append(here)
             lon, lat = here
             rank = len(towns) - 1
+            # One sprite per place. The capital and the two largest towns appear first; smaller
+            # towns alternate between a church and a house as more room opens up (assign_appearance).
             if city["name"] == spec["capital"]:
-                building("house", lon, lat, -9, -2, 0)
-                building("house", lon, lat, 10, -1, 1)
-                building("castle", lon, lat, 0, 0)
+                building("castle", lon, lat, 0, 0, priority=(0, 0))
             elif rank <= 2:
-                building("house", lon, lat, -8, 1, rank)
-                building("church", lon, lat, 0, 0)
-                building("house", lon, lat, 8, 2, rank + 1)
-            elif rank % 2:
-                building("church", lon, lat, 0, 0)
+                building("church", lon, lat, 0, 0, priority=(2, rank))
             else:
-                building("house", lon, lat, -5, -1, rank)
-                building("house", lon, lat, 5, 1, rank + 1)
+                building("church" if rank % 2 else "house", lon, lat, 0, 0, rank, priority=(3, rank))
         for kind, lon, lat in spec.get("landmarks", []):
-            building(kind, lon, lat, 0, 0)
+            building(kind, lon, lat, 0, 0, priority=(1, 0))
             towns.append((lon, lat))
         trees, boats = [], []
         step = spec.get("decoration_grid", GRID)
@@ -612,9 +750,8 @@ def main():
             bw, bs, be, bn = spec["boat_bounds"]
             boats = [(lon, lat) for lon, lat in boats if bw <= lon <= be and bs <= lat <= bn]
         for lon, lat in spread(boats, spec.get("boats", 2), spec.get("decoration_km", 75)*2, 53):
-            building("boat", lon, lat, 0, 0)
+            building("boat", lon, lat, 0, 0, priority=(5, 0))
 
-    icons.sort(key=lambda i: (-i[2] + i[4] * 0.01, i[1]))
 
     images = [sprites.ICONS[kind](seed) for kind, seed in FRAMES]
     sheet = Image.new("RGBA", (sum(img.width + 1 for img in images), max(img.height for img in images)))
@@ -623,15 +760,28 @@ def main():
         sheet.alpha_composite(img, (x, 0))
         frames.append([x, 0, img.width, img.height])
         x += img.width + 1
+    icons, dropped = assign_appearance(icons, solid_boxes(sheet, frames))
+    icons.sort(key=lambda i: (-i[2] + i[4] * 0.01, i[1]))
     sheet.save(SHEET, optimize=True)
+    # "omitted": country icons left out because they would only fit beyond APPEAR_LAST. The app
+    # ignores them; tests use them to check the builder's site choices separately from placement.
     DATA.write_text(json.dumps(
-        {"names": [kind for kind, _ in FRAMES], "frames": frames, "icons": icons},
+        {"names": [kind for kind, _ in FRAMES], "frames": frames, "icons": icons,
+         "omitted": [icon[:6] for icon in dropped]},
         separators=(",", ":"),
     ) + "\n")
     kinds = {}
     for frame, *_ in icons:
         kinds[FRAMES[frame][0]] = kinds.get(FRAMES[frame][0], 0) + 1
     print(f"{len(icons)} icons, sheet {sheet.size} {SHEET.stat().st_size} bytes:", kinds)
+    steps = {}
+    for icon in icons:
+        if icon[5] == 1:
+            steps[icon[6]] = steps.get(icon[6], 0) + 1
+    gone = {}
+    for frame, *_ in dropped:
+        gone[FRAMES[frame][0]] = gone.get(FRAMES[frame][0], 0) + 1
+    print("country icons per appearance zoom:", dict(sorted(steps.items())), "dropped:", gone)
 
 
 if __name__ == "__main__":

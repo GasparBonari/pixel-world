@@ -16,7 +16,10 @@ const cameraUrl = transpile('globe-camera');
 const camera = await import(cameraUrl);
 const capitals = await import(transpile('capitals', { './globe-camera': cameraUrl }));
 const scenes = JSON.parse(readFileSync(new URL('../src/data/capitals.json', import.meta.url), 'utf8'));
-const icons = JSON.parse(readFileSync(new URL('../src/data/map-icons.json', import.meta.url), 'utf8'));
+const iconData = JSON.parse(readFileSync(new URL('../src/data/map-icons.json', import.meta.url), 'utf8'));
+// These tests check the builder's choice of sites and sprites. Icons it omitted because they only
+// fit beyond country zoom are still its choice, so they count here; board.test.mjs checks placement.
+const icons = { ...iconData, icons: [...iconData.icons, ...iconData.omitted] };
 const { maxZoomAt, constrainGlobe, zoomGlobe, globePoint, COVERAGE, COUNTRY_ZOOM, CAPITAL_ZOOM, MAX_GLOBE_ZOOM } = camera;
 const view = { width: 390, height: 844 };
 const lisbon = scenes.find((s) => s.id === 'lisbon');
@@ -32,8 +35,8 @@ test('Russia marks Moscow, nine spaced cities, Elbrus and domestic decorations a
     [60.598014, 56.851976], [43.998149, 56.334953], [50.149349, 53.196953],
     [73.398008, 54.991934], [49.124399, 55.751888], [61.436722, 55.156937]];
   for (const [rank, city] of cities.entries()) {
-    assert.deepEqual(kinds(city), rank === 0 ? ['castle', 'house', 'house']
-      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(kinds(city), rank === 0 ? ['castle']
+      : rank <= 2 ? ['church'] : rank % 2 ? ['church'] : ['house']);
     for (const other of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(city[1] * rad) * Math.sin(other[1] * rad)
@@ -49,7 +52,7 @@ test('Russia marks Moscow, nine spaced cities, Elbrus and domestic decorations a
   for (const site of trees) assert.deepEqual(kinds(site), ['pine']);
   for (const site of boats) assert.deepEqual(kinds(site), ['boat']);
   const sites = [...cities, [42.4378432, 43.3524103], ...trees, ...boats];
-  assert.equal(sites.flatMap((site) => at(...site)).length, 28);
+  assert.equal(sites.flatMap((site) => at(...site)).length, 19);
   const [west, south, east, north] = region.bounds;
   for (const [, lon, lat] of sites.flatMap((site) => at(...site))) {
     assert.ok(camera.longitudeInBounds(lon, west, east) && south <= lat && lat <= north);
@@ -108,8 +111,8 @@ test('Ukraine marks Kyiv, spaced real cities, Khotyn and in-bounds decoration', 
     [30.708055, 46.491962], [37.828034, 48.001948], [24.029996, 49.83498],
     [33.344983, 47.928326], [31.984342, 46.967739], [37.556198, 47.096181]];
   for (const [rank, city] of cities.entries()) {
-    assert.deepEqual(kinds(city), rank === 0 ? ['castle', 'house', 'house']
-      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(kinds(city), rank === 0 ? ['castle']
+      : rank <= 2 ? ['church'] : rank % 2 ? ['church'] : ['house']);
     for (const other of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(city[1] * rad) * Math.sin(other[1] * rad)
@@ -126,7 +129,7 @@ test('Ukraine marks Kyiv, spaced real cities, Khotyn and in-bounds decoration', 
   for (const site of boats) assert.deepEqual(kinds(site), ['boat']);
   const [w, s, e, n] = region.bounds;
   const additions = [...cities, [26.49833, 48.52194], ...trees, ...boats].flatMap((site) => at(...site));
-  assert.equal(additions.length, 28);
+  assert.equal(additions.length, 19);
   for (const [, lon, lat] of additions)
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Ukraine bounds`);
 });
@@ -171,14 +174,14 @@ test('Kosovo marks Pristina with in-country trees and no offshore boats', () => 
   const at = (lon, lat) => icons.icons.filter((i) => i[5] === 1
     && Math.abs(i[1] - lon) < .0001 && Math.abs(i[2] - lat) < .0001);
   // Natural Earth's exact KOS name and site; Prizren/Pec are within 75 km.
-  assert.deepEqual(at(21.165984, 42.66671).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  assert.deepEqual(at(21.165984, 42.66671).map((i) => icons.names[i[0]]).sort(), ['castle']);
   assert.deepEqual(at(20.750092, 42.22932), [], 'Prizren obeys the common city spacing');
   assert.deepEqual(at(20.310739, 42.660328), [], 'Pec obeys the common city spacing');
   const trees = [[21.075,43.125], [20.725,42.875], [20.325,42.625],
     [20.925,42.425], [21.575,42.275], [20.825,42.075], [21.175,42.025]];
   const country = [[21.165984,42.66671], ...trees]
     .flatMap((site) => at(...site));
-  assert.equal(country.length, 10);
+  assert.equal(country.length, 8);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length, 1);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'oak').length, 6);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'boat').length, 0);
@@ -220,8 +223,8 @@ test('Belarus marks Minsk, spaced real cities and Mir Castle within shared bound
     [30.1853, 55.1887], [23.8341, 53.6779], [23.7, 52.1],
     [29.1928, 53.1266], [26.0134, 53.1368], [26.0941, 52.1279]];
   for (const [rank, city] of cities.entries()) {
-    assert.deepEqual(kinds(city), rank === 0 ? ['castle', 'house', 'house']
-      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(kinds(city), rank === 0 ? ['castle']
+      : rank <= 2 ? ['church'] : rank % 2 ? ['church'] : ['house']);
     for (const other of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(city[1] * rad) * Math.sin(other[1] * rad)
@@ -289,7 +292,7 @@ test('Moldova marks Chișinău, spaced cities and Soroca without offshore boats'
   // Exact pinned Natural Earth spelling/anchors; Tiraspol and Dubăsari are within 75 km.
   const cities = [[28.8577, 47.005], [27.9053, 47.7591], [28.1944, 45.9079]];
   for (const [rank, city] of cities.entries()) {
-    assert.deepEqual(kinds(city), rank === 0 ? ['castle', 'house', 'house'] : ['church', 'house', 'house']);
+    assert.deepEqual(kinds(city), rank === 0 ? ['castle'] : ['church']);
     for (const other of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(city[1] * rad) * Math.sin(other[1] * rad)
@@ -305,7 +308,7 @@ test('Moldova marks Chișinău, spaced cities and Soroca without offshore boats'
     [29.625, 46.875], [28.375, 46.625], [28.875, 46.125]];
   for (const site of trees) assert.deepEqual(kinds(site), ['oak']);
   const tier = [...cities, fortress, ...trees].flatMap((site) => at(...site));
-  assert.equal(tier.length, 17);
+  assert.equal(tier.length, 11);
   const [west, south, east, north] = region.bounds;
   for (const [, lon, lat] of tier)
     assert.ok(west <= lon && lon <= east && south <= lat && lat <= north);
@@ -363,8 +366,8 @@ test('Bulgaria marks Sofia, spaced cities and Rila Monastery within shared bound
     [27.4746, 42.5146], [25.9733, 43.8537], [25.6227, 42.4231],
     [24.6134, 43.4238], [26.9294, 43.27], [23.237, 43.414]];
   for (const [rank, city] of cities.entries()) {
-    assert.deepEqual(kinds(city), rank === 0 ? ['castle', 'house', 'house']
-      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(kinds(city), rank === 0 ? ['castle']
+      : rank <= 2 ? ['church'] : rank % 2 ? ['church'] : ['house']);
     for (const other of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(city[1] * rad) * Math.sin(other[1] * rad)
@@ -379,7 +382,7 @@ test('Bulgaria marks Sofia, spaced cities and Rila Monastery within shared bound
     [22.875, 42.375], [26.375, 42.125], [27.875, 41.875], [23.375, 41.625]];
   const boats = [[28.375, 42.625]]; // Only one fits the unchanged 150 km boat spacing.
   const tier = [...cities, monastery, ...trees, ...boats].flatMap((site) => at(...site));
-  assert.equal(tier.length, 27);
+  assert.equal(tier.length, 18);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'pine').length, 2);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'oak').length, 5);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat').length, 1);
@@ -434,11 +437,11 @@ test('Andorra marks its pinned capital, Meritxell and three native-filtered pine
     && west <= i[1] && i[1] <= east && south <= i[2] && i[2] <= north);
   const at = (lon, lat) => tier.filter((i) => Math.abs(i[1] - lon) < .0001 && Math.abs(i[2] - lat) < .0001);
   // Natural Earth's exact capital name is Andorra; other towns are all within 75 km.
-  assert.deepEqual(at(1.5165, 42.5).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  assert.deepEqual(at(1.5165, 42.5).map((i) => icons.names[i[0]]).sort(), ['castle']);
   assert.deepEqual(at(1.5909, 42.5546).map((i) => icons.names[i[0]]), ['meritxell']);
   const trees = [[1.465, 42.605], [1.615, 42.485], [1.695, 42.435]];
   for (const site of trees) assert.deepEqual(at(...site).map((i) => icons.names[i[0]]), ['pine']);
-  assert.equal(tier.length, 7);
+  assert.equal(tier.length, 5);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat').length, 0);
   // The inland sanctuary has an appended native sprite at its expected dimensions.
   const frame = icons.frames[at(1.5909, 42.5546)[0][0]];
@@ -488,8 +491,8 @@ test('Turkey marks Ankara as capital, eight spaced cities and Pamukkale within s
     [32.4731, 37.877], [30.698, 36.8919], [39.72, 40.98]];
   for (const [rank, city] of cities.entries()) {
     assert.deepEqual(at(...city).map((i) => icons.names[i[0]]).sort(), rank === 0
-      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
-        : rank % 2 ? ['church'] : ['house', 'house']);
+      ? ['castle'] : rank <= 2 ? ['church']
+        : rank % 2 ? ['church'] : ['house']);
     for (const other of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(city[1] * rad) * Math.sin(other[1] * rad)
@@ -502,7 +505,7 @@ test('Turkey marks Ankara as capital, eight spaced cities and Pamukkale within s
     [39.375, 39.125], [43.875, 39.125], [40.875, 38.875], [32.875, 37.625]];
   const boats = [[35.875, 42.125], [30.625, 36.125]];
   const tier = [...cities, ...trees, ...boats, [29.1233, 37.9239]].flatMap((site) => at(...site));
-  assert.equal(tier.length, 28);
+  assert.equal(tier.length, 19);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'oak').length, 6);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'olive').length, 1);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat').length, 2);
@@ -544,8 +547,8 @@ test('Greece marks Athens, eight spaced cities and Meteora inside the country bo
     [25.1305,35.325],[22.42,39.6304],[20.8509,39.6679],
     [24.0156,35.5122],[22.1142,37.0389],[24.4018,40.9412]];
   for (const [rank,city] of cities.entries()) {
-    assert.deepEqual(kinds(city), rank===0 ? ['castle','house','house']
-      : rank<=2 ? ['church','house','house'] : rank%2 ? ['church'] : ['house','house']);
+    assert.deepEqual(kinds(city), rank===0 ? ['castle']
+      : rank<=2 ? ['church'] : rank%2 ? ['church'] : ['house']);
     for (const other of cities.slice(0,rank)) {
       const rad=Math.PI/180;
       const km=6371*Math.acos(Math.sin(city[1]*rad)*Math.sin(other[1]*rad)
@@ -561,7 +564,7 @@ test('Greece marks Athens, eight spaced cities and Meteora inside the country bo
     [20.625,38.375],[26.875,37.625],[25.875,36.875]];
   const boats = [[19.375,39.375],[21.375,36.375]];
   const country = [...cities,monastery,...trees,...boats].flatMap((site) => at(...site));
-  assert.equal(country.length,28);
+  assert.equal(country.length,19);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length,3);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'oak').length,1);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'olive').length,3);
@@ -615,12 +618,12 @@ test('North Macedonia marks Skopje, Bitola and Kaneo with landlocked decorations
   const churchSite = [20.7888,41.1111];
   const trees = [[21.95,42.05],[20.65,41.65],[21.45,41.65],[22.85,41.65],
     [21.85,41.55],[22.55,41.35],[21.85,41.25]];
-  assert.deepEqual(kinds(cities[0]), ['castle','house','house']);
-  assert.deepEqual(kinds(cities[1]), ['church','house','house']);
+  assert.deepEqual(kinds(cities[0]), ['castle']);
+  assert.deepEqual(kinds(cities[1]), ['church']);
   assert.deepEqual(kinds(churchSite), ['kaneo']);
   assert.deepEqual(at(20.9701,42.0092), [], 'Tetovo respects the unchanged 75 km rule');
   const country = [...cities,churchSite,...trees].flatMap((site) => at(...site));
-  assert.equal(country.length,14);
+  assert.equal(country.length,10);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length,2);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'oak').length,5);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'boat').length,0);
@@ -673,16 +676,16 @@ test('Albania marks Tirana, spaced cities and Krujë inside its bounds', () => {
   const trees = [[19.75,42.65],[20.55,41.45],[19.35,41.35],[20.35,41.15],
     [19.55,41.05],[20.05,40.55],[20.55,40.05]];
   const boats = [[19.25,40.75],[19.25,39.85]];
-  assert.deepEqual(kinds(cities[0]), ['castle','house','house']);
-  for (const city of cities.slice(1,3)) assert.deepEqual(kinds(city), ['church','house','house']);
+  assert.deepEqual(kinds(cities[0]), ['castle']);
+  for (const city of cities.slice(1,3)) assert.deepEqual(kinds(city), ['church']);
   assert.deepEqual(kinds(cities[3]), ['church']);
-  assert.deepEqual(kinds(cities[4]), ['house','house']);
+  assert.deepEqual(kinds(cities[4]), ['house']);
   assert.deepEqual(kinds(cities[5]), ['church']);
   assert.deepEqual(kinds(fortress), ['kruje']);
   for (const site of [[20.0838,41.1215],[19.4482,41.3178],[19.573,40.73]])
     assert.deepEqual(at(...site), [], `${site}: city spacing`);
   const country = [...cities,fortress,...trees,...boats].flatMap((site) => at(...site));
-  assert.equal(country.length,23);
+  assert.equal(country.length,16);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length,4);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'olive').length,3);
   for (const site of boats) assert.deepEqual(kinds(site), ['boat']);
@@ -743,10 +746,10 @@ test('Montenegro marks Podgorica and Upper Ostrog with decorations inside its bo
   const trees = [[19.375,43.325], [19.225,43.175], [19.575,42.975], [20.125,42.925],
     [19.725,42.825], [18.925,42.375], [19.025,42.125]];
   const boats = [[18.675,42.275], [19.025,42.025]];
-  assert.deepEqual(kinds(capital), ['castle', 'house', 'house']);
+  assert.deepEqual(kinds(capital), ['castle']);
   assert.deepEqual(kinds(monastery), ['ostrog']);
   const country = [capital,monastery,...trees,...boats].flatMap((site) => at(...site));
-  assert.equal(country.length, 13);
+  assert.equal(country.length, 11);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length, 5);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'olive').length, 2);
   for (const boat of boats) assert.deepEqual(kinds(boat), ['boat']);
@@ -797,14 +800,14 @@ test('Serbia marks Belgrade, spaced cities and Golubac within its bounds', () =>
   const trees = [[19.125, 45.875], [21.125, 45.125], [19.875, 44.875], [20.625, 44.375],
     [21.875, 43.875], [19.875, 43.625], [22.625, 43.375]];
   const fortress = [21.6785, 44.6612];
-  assert.deepEqual(kinds(cities[0]), ['castle', 'house', 'house']);
-  for (const city of cities.slice(1, 3)) assert.deepEqual(kinds(city), ['church', 'house', 'house']);
+  assert.deepEqual(kinds(cities[0]), ['castle']);
+  for (const city of cities.slice(1, 3)) assert.deepEqual(kinds(city), ['church']);
   assert.deepEqual(kinds(cities[3]), ['church']);
   assert.deepEqual(kinds(fortress), ['golubac']);
   for (const site of [[19.8499,45.2504], [20.3301,43.8897], [20.3995,45.3786]])
     assert.deepEqual(at(...site), [], `${site}: respects the city spacing rule`);
   const country = [...cities, ...trees, fortress].flatMap((site) => at(...site));
-  assert.equal(country.length, 18);
+  assert.equal(country.length, 12);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'oak').length, 3);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'pine').length, 4);
   assert.equal(country.filter((i) => icons.names[i[0]] === 'boat').length, 0, 'Serbia is landlocked');
@@ -864,11 +867,11 @@ test('Bosnia and Herzegovina marks Sarajevo, spaced cities and Stari Most within
   const trees = [[17.625, 45.125], [19.125, 44.875], [16.125, 44.625], [17.375, 44.375],
     [16.625, 43.875], [19.125, 43.625], [18.125, 42.875]];
   const bridge = [17.815, 43.3373];
-  assert.deepEqual(kinds(cities[0]), ['castle', 'house', 'house']);
-  for (const city of cities.slice(1)) assert.deepEqual(kinds(city), ['church', 'house', 'house']);
+  assert.deepEqual(kinds(cities[0]), ['castle']);
+  for (const city of cities.slice(1)) assert.deepEqual(kinds(city), ['church']);
   assert.deepEqual(kinds(bridge), ['stari-most']);
   const country = [...cities, ...trees, bridge].flatMap((site) => at(...site));
-  assert.equal(country.length, 17);
+  assert.equal(country.length, 11);
   for (const [, lon, lat] of country) {
     const [w, s, e, n] = region.bounds;
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Bosnia and Herzegovina bounds`);
@@ -917,16 +920,16 @@ test('Croatia marks Zagreb, spaced cities and Plitvice Lakes within its bounds',
     [16.625, 43.125], [16.125, 43.875], [13.625, 44.125], [15.375, 43.125]];
   const sites = [...cities, [15.6079, 44.9025], ...decorations];
   const country = sites.flatMap((site) => at(...site));
-  assert.equal(country.length, 23);
+  assert.equal(country.length, 16);
   for (const [, lon, lat] of country) {
     const [w, s, e, n] = region.bounds;
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Croatia bounds`);
   }
   const kinds = (site) => at(...site).map((i) => icons.names[i[0]]).sort();
-  assert.deepEqual(kinds(cities[0]), ['castle', 'house', 'house']);
-  for (const town of cities.slice(1, 3)) assert.deepEqual(kinds(town), ['church', 'house', 'house']);
+  assert.deepEqual(kinds(cities[0]), ['castle']);
+  for (const town of cities.slice(1, 3)) assert.deepEqual(kinds(town), ['church']);
   assert.deepEqual(kinds(cities[3]), ['church']);
-  assert.deepEqual(kinds(cities[4]), ['house', 'house']);
+  assert.deepEqual(kinds(cities[4]), ['house']);
   assert.deepEqual(kinds(cities[5]), ['church']);
   const radians = (n) => n*Math.PI/180;
   const km = ([a, b], [c, d]) => {
@@ -974,13 +977,13 @@ test('Slovenia marks Ljubljana, Maribor and Bled Island within its bounds', () =
   const cities = [[14.515, 46.0553], [15.65, 46.5405]];
   const sites = [...cities, [14.09, 46.3622], [15.125, 46.125], [13.625, 45.625], [14.375, 45.625]];
   const country = sites.flatMap((site) => at(...site));
-  assert.equal(country.length, 10);
+  assert.equal(country.length, 6);
   for (const [, lon, lat] of country) {
     const [w, s, e, n] = region.bounds;
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Slovenia bounds`);
   }
-  assert.deepEqual(at(...cities[0]).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
-  assert.deepEqual(at(...cities[1]).map((i) => icons.names[i[0]]).sort(), ['church', 'house', 'house']);
+  assert.deepEqual(at(...cities[0]).map((i) => icons.names[i[0]]).sort(), ['castle']);
+  assert.deepEqual(at(...cities[1]).map((i) => icons.names[i[0]]).sort(), ['church']);
   const radians = (n) => n*Math.PI/180;
   const h = Math.sin(radians(cities[1][1]-cities[0][1])/2)**2 + Math.cos(radians(cities[0][1]))
     * Math.cos(radians(cities[1][1])) * Math.sin(radians(cities[1][0]-cities[0][0])/2)**2;
@@ -1024,14 +1027,14 @@ test('Lithuania marks Vilnius, spaced cities and Trakai Island Castle within its
     [22.125, 55.375], [26.125, 55.375], [24.875, 55.125], [22.875, 54.875],
     [24.375, 54.375], [20.875, 55.125]];
   const country = sites.flatMap((site) => at(...site));
-  assert.equal(country.length, 19);
+  assert.equal(country.length, 13);
   for (const [, lon, lat] of country) {
     const [w, s, e, n] = region.bounds;
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Lithuania bounds`);
   }
   for (const [rank, site] of cities.entries()) {
     assert.deepEqual(at(...site).map((i) => icons.names[i[0]]).sort(), rank === 0
-      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house'] : ['church']);
+      ? ['castle'] : rank <= 2 ? ['church'] : ['church']);
     for (const other of cities.slice(rank+1)) {
       const radians = (n) => n*Math.PI/180;
       const h = Math.sin(radians(other[1]-site[1])/2)**2 + Math.cos(radians(site[1]))
@@ -1080,15 +1083,15 @@ test('Latvia marks Riga, spaced cities and Rundāle Palace within its bounds', (
     [21.625, 56.875], [24.875, 56.625], [26.375, 56.625], [22.375, 56.375],
     [27.625, 56.125], [23.875, 57.875], [21.375, 57.625]];
   const country = sites.flatMap((site) => at(...site));
-  assert.equal(country.length, 22);
+  assert.equal(country.length, 15);
   for (const [, lon, lat] of country) {
     const [w, s, e, n] = region.bounds;
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Latvia bounds`);
   }
   for (const [rank, site] of cities.entries()) {
     assert.deepEqual(at(...site).map((i) => icons.names[i[0]]).sort(), rank === 0
-      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
-        : rank % 2 ? ['church'] : ['house', 'house']);
+      ? ['castle'] : rank <= 2 ? ['church']
+        : rank % 2 ? ['church'] : ['house']);
     for (const other of cities.slice(rank+1)) {
       const radians = (n) => n*Math.PI/180;
       const h = Math.sin(radians(other[1]-site[1])/2)**2 + Math.cos(radians(site[1]))
@@ -1138,15 +1141,15 @@ test('Estonia marks Tallinn, five spaced cities and Kuressaare within its bounds
     [25.625, 59.125], [25.375, 58.375], [24.375, 57.875], [26.375, 57.875],
     [27.875, 57.875], [27.125, 59.625], [22.125, 58.625]];
   const country = sites.flatMap((site) => at(...site));
-  assert.equal(country.length, 22);
+  assert.equal(country.length, 15);
   for (const [, lon, lat] of country) {
     const [w, s, e, n] = region.bounds;
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Estonia bounds`);
   }
   for (const [rank, site] of cities.entries()) {
     assert.deepEqual(at(...site).map((i) => icons.names[i[0]]).sort(), rank === 0
-      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
-        : rank % 2 ? ['church'] : ['house', 'house']);
+      ? ['castle'] : rank <= 2 ? ['church']
+        : rank % 2 ? ['church'] : ['house']);
     for (const other of cities.slice(rank+1)) {
       const radians = (n) => n*Math.PI/180;
       const h = Math.sin(radians(other[1]-site[1])/2)**2 + Math.cos(radians(site[1]))
@@ -1194,11 +1197,11 @@ test('Hungary marks Budapest, spaced cities and Tihany Abbey within its bounds',
   const cities = [[19.0814, 47.502], [20.78, 48.1004], [21.63, 47.5305],
     [20.15, 46.2504], [18.22, 46.0804], [17.63, 47.7004], [19.7, 46.9],
     [16.6287, 47.2253], [21.101, 46.672]];
-  assert.deepEqual(at(...cities[0]).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  assert.deepEqual(at(...cities[0]).map((i) => icons.names[i[0]]).sort(), ['castle']);
   for (const site of cities.slice(1, 3))
-    assert.deepEqual(at(...site).map((i) => icons.names[i[0]]).sort(), ['church', 'house', 'house']);
+    assert.deepEqual(at(...site).map((i) => icons.names[i[0]]).sort(), ['church']);
   for (const [rank, site] of cities.entries()) {
-    if (rank > 2) assert.deepEqual(at(...site).map((i) => icons.names[i[0]]), rank % 2 ? ['church'] : ['house', 'house']);
+    if (rank > 2) assert.deepEqual(at(...site).map((i) => icons.names[i[0]]), rank % 2 ? ['church'] : ['house']);
     const [west, south, east, north] = region.bounds;
     assert.ok(west <= site[0] && site[0] <= east && south <= site[1] && site[1] <= north);
     for (const other of cities.slice(rank+1)) {
@@ -1259,9 +1262,9 @@ test('Slovakia marks Bratislava, spaced cities and Spiš Castle within its bound
   // Pinned Natural Earth capital and population order; the 75 km filter also
   // excludes Prešov near Košice and Banská Bystrica near Zvolen.
   const cities = [[17.117, 48.15], [21.25, 48.7304], [18.7494, 49.2198], [19.1332, 48.5837]];
-  assert.deepEqual(at(...cities[0]).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  assert.deepEqual(at(...cities[0]).map((i) => icons.names[i[0]]).sort(), ['castle']);
   for (const site of cities.slice(1, 3))
-    assert.deepEqual(at(...site).map((i) => icons.names[i[0]]).sort(), ['church', 'house', 'house']);
+    assert.deepEqual(at(...site).map((i) => icons.names[i[0]]).sort(), ['church']);
   assert.deepEqual(at(...cities[3]).map((i) => icons.names[i[0]]), ['church']);
   assert.equal(at(20.7683, 49.0006).filter((i) => icons.names[i[0]] === 'spis-castle').length, 1);
   const trees = [[19.375, 49.375], [21.375, 49.375], [18.375, 48.875], [22.375, 48.875],
@@ -1325,7 +1328,7 @@ test('Luxembourg marks its capital, Vianden and only domestic decorations', () =
   const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
   // The pinned Natural Earth capital is named Luxembourg. Its other two cities
   // are less than 75 km away, so the existing city-spacing rule retains only it.
-  assert.deepEqual(at(6.13, 49.6117).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  assert.deepEqual(at(6.13, 49.6117).map((i) => icons.names[i[0]]).sort(), ['castle']);
   assert.equal(at(6.2022, 49.935).filter((i) => icons.names[i[0]] === 'vianden').length, 1);
   for (const [lon, lat] of [[6.1667, 49.8833], [6.3333, 49.7]])
     assert.equal(at(lon, lat).length, 0, 'nearby towns must respect the 75 km spacing rule');
@@ -1381,8 +1384,8 @@ test('Poland marks Warsaw, spaced city groups and Malbork inside its own bounds'
     [18.01, 53.1204], [22.5727, 51.2504]];
   for (const [rank, [lon, lat]] of cities.entries()) {
     const names = at(lon, lat).map((i) => icons.names[i[0]]).sort();
-    assert.deepEqual(names, rank === 0 ? ['castle', 'house', 'house']
-      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(names, rank === 0 ? ['castle']
+      : rank <= 2 ? ['church'] : rank % 2 ? ['church'] : ['house']);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
@@ -1398,7 +1401,7 @@ test('Poland marks Warsaw, spaced city groups and Malbork inside its own bounds'
   const boats = [[15.375, 54.625], [19.625, 54.625]];
   for (const [lon, lat] of boats) assert.equal(at(lon, lat).filter((i) => icons.names[i[0]] === 'boat').length, 1);
   const country = [...cities, ...trees, ...boats, [19.0278, 54.0397]].flatMap(([lon, lat]) => at(lon, lat));
-  assert.equal(country.length, 28);
+  assert.equal(country.length, 19);
   const [w, s, e, n] = poland.bounds;
   for (const [, lon, lat] of country) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
 });
@@ -1445,8 +1448,8 @@ test('Czechia marks Prague, spaced city groups and Karlštejn inside its country
     [17.65, 49.2304], [15.76, 50.0404], [15.08, 50.8], [14.46, 48.98]];
   for (const [rank, [lon, lat]] of cities.entries()) {
     const names = at(lon, lat).map((i) => icons.names[i[0]]).sort();
-    assert.deepEqual(names, rank === 0 ? ['castle', 'house', 'house']
-      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(names, rank === 0 ? ['castle']
+      : rank <= 2 ? ['church'] : rank % 2 ? ['church'] : ['house']);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(lat*rad)*Math.sin(otherLat*rad)
@@ -1459,7 +1462,7 @@ test('Czechia marks Prague, spaced city groups and Karlštejn inside its country
     [18.375, 49.375], [13.375, 49.125], [16.125, 48.875]];
   for (const [lon, lat] of trees) assert.equal(at(lon, lat).filter((i) => icons.names[i[0]] === 'oak').length, 1);
   const country = [...cities, ...trees, [14.1881, 49.9394]].flatMap(([lon, lat]) => at(lon, lat));
-  assert.equal(country.length, 24);
+  assert.equal(country.length, 16);
   const [w, s, e, n] = czechia.bounds;
   for (const [, lon, lat] of country) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat'
@@ -1600,7 +1603,7 @@ test("Germany's country tier marks Berlin, spaced cities and Neuschwanstein with
   // Pinned Natural Earth populated-place coordinate, rather than the capital illustration anchor.
   const berlin = at(13.3996, 52.5238);
   assert.equal(berlin.filter((i) => icons.names[i[0]] === 'castle').length, 1);
-  assert.equal(berlin.filter((i) => icons.names[i[0]] === 'house').length, 2);
+  assert.equal(berlin.length, 1, 'one sprite per place');
   const landmark = at(10.7492, 47.5576).find((i) => icons.names[i[0]] === 'neuschwanstein');
   assert.ok(landmark, 'Neuschwanstein at Hohenschwangau');
   const cities = [
@@ -1610,8 +1613,8 @@ test("Germany's country tier marks Berlin, spaced cities and Neuschwanstein with
   const [w, s, e, n] = germany.bounds;
   for (const [rank, [lon, lat]] of cities.entries()) {
     const kinds = at(lon, lat).map((i) => icons.names[i[0]]).sort();
-    assert.deepEqual(kinds, rank === 0 ? ['castle', 'house', 'house'] : rank <= 2
-      ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(kinds, rank === 0 ? ['castle'] : rank <= 2
+      ? ['church'] : rank % 2 ? ['church'] : ['house']);
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
@@ -1669,8 +1672,8 @@ test("Netherlands marks Amsterdam before nearby larger metros, spaced towns and 
   const [w, s, e, n] = netherlands.bounds;
   for (const [rank, [lon, lat]] of cities.entries()) {
     const kinds = at(lon, lat).map((i) => icons.names[i[0]]).sort();
-    assert.deepEqual(kinds, rank === 0 ? ['castle', 'house', 'house'] : rank <= 2
-      ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(kinds, rank === 0 ? ['castle'] : rank <= 2
+      ? ['church'] : rank % 2 ? ['church'] : ['house']);
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
@@ -1710,8 +1713,8 @@ test("Belgium marks Brussels, spaced cities and Gravensteen within its own bound
   const [w, s, e, n] = belgium.bounds;
   for (const [rank, [lon, lat]] of cities.entries()) {
     const kinds = at(lon, lat).map((i) => icons.names[i[0]]).sort();
-    assert.deepEqual(kinds, rank === 0 ? ['castle', 'house', 'house'] : rank <= 2
-      ? ['church', 'house', 'house'] : ['church']);
+    assert.deepEqual(kinds, rank === 0 ? ['castle'] : rank <= 2
+      ? ['church'] : ['church']);
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
@@ -1755,8 +1758,8 @@ test('United Kingdom marks London, nine spaced cities and Stonehenge within its 
   const [w, s, e, n] = uk.bounds;
   for (const [rank, [lon, lat]] of cities.entries()) {
     const kinds = at(lon, lat).map((i) => icons.names[i[0]]).sort();
-    assert.deepEqual(kinds, rank === 0 ? ['castle', 'house', 'house'] : rank <= 2
-      ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(kinds, rank === 0 ? ['castle'] : rank <= 2
+      ? ['church'] : rank % 2 ? ['church'] : ['house']);
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
@@ -1822,8 +1825,8 @@ test('Ireland marks Dublin first, spaced cities and the Rock of Cashel within it
   const [w, s, e, n] = ireland.bounds;
   for (const [rank, [lon, lat]] of cities.entries()) {
     const kinds = at(lon, lat).map((i) => icons.names[i[0]]).sort();
-    assert.deepEqual(kinds, rank === 0 ? ['castle', 'house', 'house'] : rank <= 2
-      ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(kinds, rank === 0 ? ['castle'] : rank <= 2
+      ? ['church'] : rank % 2 ? ['church'] : ['house']);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
@@ -1832,7 +1835,7 @@ test('Ireland marks Dublin first, spaced cities and the Rock of Cashel within it
     }
   }
   const all = [...cities, ...decorations].flatMap(([lon, lat]) => at(lon, lat));
-  assert.equal(all.length, 25);
+  assert.equal(all.length, 17);
   for (const [, lon, lat] of all) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
   assert.equal(at(-7.8902, 52.52).filter((i) => icons.names[i[0]] === 'rock-of-cashel').length, 1);
   assert.equal(at(-9.0488, 53.2724).length, 0, 'Galway respects the spacing from Limerick');
@@ -1866,8 +1869,8 @@ test('Italy marks Rome first, nine spaced cities and Pisa inside its own bounds'
     [8.93, 44.41], [16.8728, 41.1142]];
   for (const [rank, [lon, lat]] of cities.entries()) {
     assert.deepEqual(at(lon, lat).map((i) => icons.names[i[0]]).sort(), rank === 0
-      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
-        : rank % 2 ? ['church'] : ['house', 'house']);
+      ? ['castle'] : rank <= 2 ? ['church']
+        : rank % 2 ? ['church'] : ['house']);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
@@ -1881,7 +1884,7 @@ test('Italy marks Rome first, nine spaced cities and Pisa inside its own bounds'
     [12.125, 43.125], [13.625, 41.625], [16.875, 39.625], [8.625, 39.125],
     [13.875, 37.375], [18.125, 41.375], [12.375, 38.375]];
   const italyIcons = cities.concat(decorations).flatMap(([lon, lat]) => at(lon, lat));
-  assert.equal(italyIcons.length, 28);
+  assert.equal(italyIcons.length, 19);
   for (const [, lon, lat] of italyIcons) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
   assert.deepEqual(italyIcons.filter((i) => ['pine', 'oak', 'olive'].includes(icons.names[i[0]]))
     .map((i) => icons.names[i[0]]).sort(), ['oak', 'oak', 'olive', 'olive', 'olive', 'pine', 'pine']);
@@ -1927,8 +1930,8 @@ test('Denmark marks København first, five spaced cities and Kronborg inside its
     [9.9166, 57.0337], [8.45, 55.467]];
   for (const [rank, [lon, lat]] of cities.entries()) {
     assert.deepEqual(at(lon, lat).map((i) => icons.names[i[0]]).sort(), rank === 0
-      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
-        : rank % 2 ? ['church'] : ['house', 'house']);
+      ? ['castle'] : rank <= 2 ? ['church']
+        : rank % 2 ? ['church'] : ['house']);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
@@ -1943,7 +1946,7 @@ test('Denmark marks København first, five spaced cities and Kronborg inside its
     [9.125, 56.125], [8.875, 55.125], [12.125, 55.125], [14.875, 55.125],
     [10.625, 54.875], [8.125, 57.125], [11.875, 56.625]];
   const denmarkIcons = cities.concat(decorations).flatMap(([lon, lat]) => at(lon, lat));
-  assert.equal(denmarkIcons.length, 22);
+  assert.equal(denmarkIcons.length, 15);
   const [w, s, e, n] = denmark.bounds;
   for (const [, lon, lat] of denmarkIcons) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
   assert.deepEqual(denmarkIcons.filter((i) => ['pine', 'oak'].includes(icons.names[i[0]]))
@@ -1991,8 +1994,8 @@ test('Sweden marks Stockholm first, nine spaced cities and Gripsholm inside its 
     [20.24, 63.83], [13.4999, 59.3671]];
   for (const [rank, [lon, lat]] of cities.entries()) {
     assert.deepEqual(at(lon, lat).map((i) => icons.names[i[0]]).sort(), rank === 0
-      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
-        : rank % 2 ? ['church'] : ['house', 'house']);
+      ? ['castle'] : rank <= 2 ? ['church']
+        : rank % 2 ? ['church'] : ['house']);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
@@ -2006,7 +2009,7 @@ test('Sweden marks Stockholm first, nine spaced cities and Gripsholm inside its 
     [20.625, 66.625], [18.375, 63.875], [14.625, 58.875], [18.375, 57.625],
     [14.125, 56.625], [19.625, 63.125], [18.125, 61.125]];
   const swedenIcons = cities.concat(decorations).flatMap(([lon, lat]) => at(lon, lat));
-  assert.equal(swedenIcons.length, 28);
+  assert.equal(swedenIcons.length, 19);
   const [w, s, e, n] = sweden.bounds;
   for (const [, lon, lat] of swedenIcons) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
   assert.deepEqual(swedenIcons.filter((i) => ['pine', 'oak'].includes(icons.names[i[0]]))
@@ -2056,8 +2059,8 @@ test('Norway marks Oslo first, nine spaced cities and Borgund inside its mainlan
     [6.388, 62.5454], [14.4293, 67.2764]];
   for (const [rank, [lon, lat]] of cities.entries()) {
     assert.deepEqual(at(lon, lat).map((i) => icons.names[i[0]]).sort(), rank === 0
-      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
-        : rank % 2 ? ['church'] : ['house', 'house']);
+      ? ['castle'] : rank <= 2 ? ['church']
+        : rank % 2 ? ['church'] : ['house']);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
@@ -2070,7 +2073,7 @@ test('Norway marks Oslo first, nine spaced cities and Borgund inside its mainlan
     [13.875, 64.875], [11.875, 63.375], [8.375, 62.375], [7.375, 60.125],
     [7.125, 59.125], [17.125, 69.875], [4.875, 58.625]];
   const norwayIcons = cities.concat(decorations).flatMap(([lon, lat]) => at(lon, lat));
-  assert.equal(norwayIcons.length, 28);
+  assert.equal(norwayIcons.length, 19);
   const [w, s, e, n] = norway.bounds;
   for (const [, lon, lat] of norwayIcons) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
   assert.deepEqual(norwayIcons.filter((i) => ['pine', 'oak'].includes(icons.names[i[0]]))
@@ -2107,9 +2110,9 @@ test('Finland marks Helsinki first, nine spaced cities and Olavinlinna within it
     [21.7749, 61.4789], [28.1833, 61.0671]];
   for (const [rank, [lon, lat]] of cities.entries()) {
     const names = at(lon, lat).map((i) => icons.names[i[0]]);
-    assert.deepEqual(names, rank === 0 ? ['house', 'house', 'castle']
-      : rank <= 2 ? ['church', 'house', 'house']
-        : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(names, rank === 0 ? ['castle']
+      : rank <= 2 ? ['church']
+        : rank % 2 ? ['church'] : ['house']);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
@@ -2122,7 +2125,7 @@ test('Finland marks Helsinki first, nine spaced cities and Olavinlinna within it
     [23.625, 67.625], [26.875, 67.625], [26.125, 64.625], [24.875, 62.125],
     [27.125, 60.875], [22.875, 64.125], [28.125, 60.375]];
   const finlandIcons = cities.concat(decorations).flatMap(([lon, lat]) => at(lon, lat));
-  assert.equal(finlandIcons.length, 28);
+  assert.equal(finlandIcons.length, 19);
   const [w, s, e, n] = finland.bounds;
   for (const [, lon, lat] of finlandIcons) assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
   assert.equal(finlandIcons.filter((i) => icons.names[i[0]] === 'pine').length, 7);
@@ -2161,8 +2164,8 @@ test('Iceland marks Reykjavík, five spaced city groups and Gullfoss within its 
     [-14.395, 65.2674], [-15.2139, 64.2723]];
   for (const [rank, [lon, lat]] of cities.entries()) {
     const names = at(lon, lat).map((i) => icons.names[i[0]]);
-    assert.deepEqual(names, rank === 0 ? ['house', 'house', 'castle']
-      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(names, rank === 0 ? ['castle']
+      : rank <= 2 ? ['church'] : rank % 2 ? ['church'] : ['house']);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
@@ -2171,7 +2174,7 @@ test('Iceland marks Reykjavík, five spaced city groups and Gullfoss within its 
     }
   }
   assert.equal(at(-20.1225, 64.3271).filter((i) => icons.names[i[0]] === 'gullfoss').length, 1);
-  assert.equal(tier.length, 22);
+  assert.equal(tier.length, 15);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'pine').length, 7);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat').length, 2);
 });
@@ -2208,8 +2211,8 @@ test('Switzerland marks Bern first, six spaced city groups and Chillon within it
   for (const [rank, [lon, lat]] of cities.entries()) {
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n);
     const names = at(lon, lat).map((i) => icons.names[i[0]]);
-    assert.deepEqual(names, rank === 0 ? ['house', 'house', 'castle']
-      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(names, rank === 0 ? ['castle']
+      : rank <= 2 ? ['church'] : rank % 2 ? ['church'] : ['house']);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
@@ -2280,13 +2283,13 @@ test('Austria marks Vienna first, seven spaced cities and Melk Abbey within its 
   const sites = [...cities, [15.3315, 48.2286], [16.375, 48.625], [13.625, 47.625],
     [10.625, 47.375], [12.375, 47.375], [14.625, 47.375], [16.375, 47.375], [12.875, 46.625]];
   const country = sites.flatMap(([lon, lat]) => at(lon, lat));
-  assert.equal(country.length, 23);
+  assert.equal(country.length, 15);
   for (const [, lon, lat] of country)
     assert.ok(w <= lon && lon <= e && s <= lat && lat <= n, `${lon},${lat} inside Austria bounds`);
   for (const [rank, [lon, lat]] of cities.entries()) {
     const names = at(lon, lat).map((i) => icons.names[i[0]]);
-    assert.deepEqual(names, rank === 0 ? ['house', 'house', 'castle']
-      : rank <= 2 ? ['church', 'house', 'house'] : rank % 2 ? ['church'] : ['house', 'house']);
+    assert.deepEqual(names, rank === 0 ? ['castle']
+      : rank <= 2 ? ['church'] : rank % 2 ? ['church'] : ['house']);
     for (const [otherLon, otherLat] of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(lat * rad) * Math.sin(otherLat * rad)
@@ -2328,14 +2331,14 @@ test('Malta marks Valletta and Gozo Citadel, with island decorations inside its 
   const at = (lon, lat) => tier.filter((i) => Math.abs(i[1]-lon) < .0001 && Math.abs(i[2]-lat) < .0001);
   // Pinned Natural Earth spelling/site. No other city in this small archipelago
   // clears the unchanged 75 km city-spacing rule.
-  assert.deepEqual(at(14.5147, 35.8997).map((i) => icons.names[i[0]]).sort(), ['castle', 'house', 'house']);
+  assert.deepEqual(at(14.5147, 35.8997).map((i) => icons.names[i[0]]).sort(), ['castle']);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'castle').length, 1);
-  assert.equal(tier.filter((i) => icons.names[i[0]] === 'house').length, 2);
+  assert.equal(tier.filter((i) => icons.names[i[0]] === 'house').length, 0);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'church').length, 0);
   assert.equal(at(14.2394, 36.0464).filter((i) => icons.names[i[0]] === 'gozo-citadel').length, 1);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'olive').length, 2);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat').length, 2);
-  assert.equal(tier.length, 8);
+  assert.equal(tier.length, 6);
   for (const [lon, lat, kind] of [[14.3875,35.9125,'olive'], [14.5125,35.7875,'olive'],
     [14.6375,35.9625,'boat'], [14.3625,35.7625,'boat']])
     assert.equal(at(lon,lat).filter((i) => icons.names[i[0]] === kind).length, 1);
@@ -2374,8 +2377,8 @@ test('Romania marks Bucharest, eight spaced cities and Bran within the shared bo
     [23.8259, 44.3263], [28.61, 44.2027], [21.92, 47.05]];
   for (const [rank, city] of cities.entries()) {
     assert.deepEqual(at(...city).map((i) => icons.names[i[0]]).sort(), rank === 0
-      ? ['castle', 'house', 'house'] : rank <= 2 ? ['church', 'house', 'house']
-        : rank % 2 ? ['church'] : ['house', 'house']);
+      ? ['castle'] : rank <= 2 ? ['church']
+        : rank % 2 ? ['church'] : ['house']);
     for (const other of cities.slice(0, rank)) {
       const rad = Math.PI / 180;
       const km = 6371 * Math.acos(Math.sin(city[1] * rad) * Math.sin(other[1] * rad)
@@ -2389,7 +2392,7 @@ test('Romania marks Bucharest, eight spaced cities and Bran within the shared bo
     [26.625, 45.625], [21.875, 45.125], [25.875, 45.125], [24.875, 44.125]];
   const tier = [...cities, ...trees, [25.3672, 45.515], [29.125, 44.625]]
     .flatMap((site) => at(...site));
-  assert.equal(tier.length, 27);
+  assert.equal(tier.length, 18);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'pine').length, 1);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'oak').length, 6);
   assert.equal(tier.filter((i) => icons.names[i[0]] === 'boat').length, 1);
@@ -2432,13 +2435,13 @@ test('Cyprus marks Nicosia, spaced Paphos and Choirokoitia inside its bounds', (
     scale === 1 && west <= lon && lon <= east && south <= lat && lat <= north);
   const at = (lon, lat) => tier.filter((icon) => icon[1] === lon && icon[2] === lat)
     .map(([frame]) => icons.names[frame]).sort();
-  assert.deepEqual(at(33.3666, 35.1667), ['castle', 'house', 'house']);
+  assert.deepEqual(at(33.3666, 35.1667), ['castle']);
   // Paphos is the only other Natural Earth CYP city at least 75 km from Nicosia.
-  assert.deepEqual(at(32.4225, 34.7559), ['church', 'house', 'house']);
+  assert.deepEqual(at(32.4225, 34.7559), ['church']);
   assert.deepEqual(at(33.344, 34.7971), ['choirokoitia']);
   const kinds = tier.map(([frame]) => icons.names[frame]).sort();
-  assert.deepEqual(kinds, ['boat', 'boat', 'castle', 'choirokoitia', 'church', 'house', 'house',
-    'house', 'house', 'olive', 'olive', 'olive', 'olive', 'pine', 'pine', 'pine']);
+  assert.deepEqual(kinds, ['boat', 'boat', 'castle', 'choirokoitia', 'church',
+    'olive', 'olive', 'olive', 'olive', 'pine', 'pine', 'pine']);
 });
 
 test('Liechtenstein marks Vaduz and its Alpine pines inside the shared bounds', () => {
@@ -2453,9 +2456,7 @@ test('Liechtenstein marks Vaduz and its Alpine pines inside the shared bounds', 
   const tier = icons.icons.filter(([, lon, lat, , , scale]) =>
     scale === 1 && west <= lon && lon <= east && south <= lat && lat <= north);
   const group = tier.filter(([, lon, lat]) => lon === 9.5167 && lat === 47.1337);
-  assert.deepEqual(group.map(([frame, , , dx, dy]) => [icons.names[frame], dx, dy]), [
-    ['house', -9, -2], ['house', 10, -1], ['castle', 0, 0],
-  ]);
+  assert.deepEqual(group.map(([frame, , , dx, dy]) => [icons.names[frame], dx, dy]), [['castle', 0, 0]]);
   const pines = tier.filter(([frame]) => icons.names[frame] === 'pine');
   assert.deepEqual(pines.map(([, lon, lat, dx]) => [lon, lat, dx]), [
     [9.485, 47.165, 0], [9.485, 47.095, 22],

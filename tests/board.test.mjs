@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { inflateSync } from 'node:zlib';
 import test from 'node:test';
 import ts from 'typescript';
 
@@ -133,4 +134,133 @@ test('every continent view at board zoom shows local animals and plants on the n
     assert.ok(species.size >= 2, `${continent} shows several species: ${[...species]}`);
     assert.ok(visible.some((i) => !NATIVE[kindOf(i)] && kindOf(i) !== 'mountain'), `${continent} plants`);
   }
+});
+
+// Country-tier placement (build_map_icons.py: assign_appearance), checked with the app's own projection.
+const PHONE = { width: 390, height: 844 };
+// GlobeCanvas: one icon pixel is max(1.25, min(width, height) / CELLS_ACROSS) * 2 / 3 points.
+const ICON_POINTS = (Math.max(1.25, Math.min(PHONE.width, PHONE.height) / 130) * 2) / 3;
+const COUNTRY_FULL = 5.0; // COUNTRY_ZOOM.full: the first country icons are fully visible
+const STRUCTURES = new Set(['church', 'house', 'oak', 'pine', 'olive', 'boat']);
+
+/** Each frame's opaque pixels (alpha > 128) around the drawing anchor, from the RGBA sprite sheet. */
+function solidBoxes() {
+  const bytes = readFileSync(new URL('../assets/world/map-icons.png', import.meta.url));
+  const width = bytes.readUInt32BE(16);
+  const height = bytes.readUInt32BE(20);
+  assert.deepEqual([bytes[24], bytes[25], bytes[28]], [8, 6, 0], '8-bit RGBA, not interlaced');
+  const chunks = [];
+  for (let at = 8; at < bytes.length; ) {
+    const length = bytes.readUInt32BE(at);
+    if (bytes.toString('latin1', at + 4, at + 8) === 'IDAT') chunks.push(bytes.subarray(at + 8, at + 8 + length));
+    at += length + 12;
+  }
+  const raw = inflateSync(Buffer.concat(chunks));
+  const stride = width * 4;
+  const pixels = Buffer.alloc(stride * height);
+  for (let y = 0; y < height; y++) {
+    const filter = raw[y * (stride + 1)];
+    for (let x = 0; x < stride; x++) {
+      const value = raw[y * (stride + 1) + 1 + x];
+      const left = x >= 4 ? pixels[y * stride + x - 4] : 0;
+      const up = y > 0 ? pixels[(y - 1) * stride + x] : 0;
+      const corner = x >= 4 && y > 0 ? pixels[(y - 1) * stride + x - 4] : 0;
+      const p = left + up - corner; // PNG filters: none, sub, up, average, Paeth
+      const predictor = [0, left, up, (left + up) >> 1,
+        Math.abs(p - left) <= Math.abs(p - up) && Math.abs(p - left) <= Math.abs(p - corner) ? left
+          : Math.abs(p - up) <= Math.abs(p - corner) ? up : corner][filter];
+      pixels[y * stride + x] = (value + predictor) & 255;
+    }
+  }
+  return icons.frames.map(([fx, fy, w, h]) => {
+    let [left, top, right, bottom] = [w, h, 0, 0];
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++)
+        if (pixels[((fy + y) * width + fx + x) * 4 + 3] > 128) {
+          left = Math.min(left, x); right = Math.max(right, x + 1);
+          top = Math.min(top, y); bottom = Math.max(bottom, y + 1);
+        }
+    return [left - w / 2, top - h + 1, right - w / 2, bottom - h + 1];
+  });
+}
+const boxes = solidBoxes();
+const country = icons.icons.filter((i) => i[5] === 1);
+/** Screen rectangle (points) of an icon's opaque pixels, as MapIcons draws it. */
+function screenBox(icon, camera) {
+  const point = globeCamera.globePoint(icon[1], icon[2], camera, PHONE);
+  const [left, top, right, bottom] = boxes[icon[0]];
+  const x = Math.round(point.x + icon[3] * ICON_POINTS);
+  const y = Math.round(point.y + icon[4] * ICON_POINTS);
+  return [x + left * ICON_POINTS, y + top * ICON_POINTS, x + right * ICON_POINTS, y + bottom * ICON_POINTS];
+}
+/** Overlap in points of two icons on a camera centred between them (positive means they overlap). */
+function overlap(a, b, zoom) {
+  const camera = {
+    longitude: a[1] + (((b[1] - a[1] + 540) % 360) - 180) / 2,
+    latitude: (a[2] + b[2]) / 2,
+    zoom,
+  };
+  const [al, at, ar, ab] = screenBox(a, camera);
+  const [bl, bt, br, bb] = screenBox(b, camera);
+  return Math.min(Math.min(ar, br) - Math.max(al, bl), Math.min(ab, bb) - Math.max(at, bt));
+}
+const near = (a, b) =>
+  Math.abs(a[2] - b[2]) < 3 && Math.abs(((b[1] - a[1] + 540) % 360) - 180) * Math.cos((a[2] * Math.PI) / 180) < 3;
+
+test('country icons appear in 0.2 zoom steps between full country zoom and 6.2, nudged at most 40 icon pixels', () => {
+  assert.ok(country.length > 500 && country.length < 700, `${country.length} country icons`);
+  for (const [frame, lon, lat, dx, dy, , appear] of country) {
+    assert.ok(appear >= COUNTRY_FULL && appear <= 6.2, `${icons.names[frame]} at ${lon},${lat}: ${appear}`);
+    assert.ok(Math.abs(appear * 5 - Math.round(appear * 5)) < 1e-9, `${appear} is on the 0.2 grid`);
+    assert.ok(Math.hypot(dx, dy) <= 40, `${icons.names[frame]} at ${lon},${lat} drawn ${dx},${dy} away`);
+  }
+  // Most of each country is there as soon as the tier is fully in.
+  assert.ok(country.filter((i) => i[6] === COUNTRY_FULL).length > country.length * 0.6);
+});
+
+test('no two country icons overlap once both are fully visible, up to the deepest country zoom', () => {
+  for (const [index, a] of country.entries()) {
+    for (const b of country.slice(index + 1)) {
+      if (!near(a, b)) continue;
+      for (const zoom of [Math.max(a[6], b[6]), 6.4]) {
+        const amount = overlap(a, b, zoom);
+        assert.ok(amount <= 1, `${icons.names[a[0]]} ${a[1]},${a[2]} and ${icons.names[b[0]]} ${b[1]},${b[2]} overlap ${amount.toFixed(1)} pt at ${zoom}`);
+      }
+    }
+  }
+});
+
+test('country icons clear the continent icons that stay; covered continent icons make way', () => {
+  const continent = icons.icons.filter((i) => i[5] === 0);
+  const yielding = continent.filter((i) => i[6] === 1);
+  assert.ok(yielding.length > 0 && yielding.length < 30, `${yielding.length} continent icons make way`);
+  for (const a of country) {
+    for (const b of continent) {
+      if (b[6] === 1 || !near(a, b)) continue;
+      const amount = overlap(a, b, a[6]);
+      assert.ok(amount <= 1, `${icons.names[a[0]]} ${a[1]},${a[2]} covers ${icons.names[b[0]]} ${b[1]},${b[2]} by ${amount.toFixed(1)} pt`);
+    }
+  }
+  // Each one that makes way really sat on a capital or landmark at full country zoom.
+  for (const b of yielding) {
+    assert.ok(country.some((a) => !STRUCTURES.has(icons.names[a[0]]) && near(a, b) && overlap(a, b, COUNTRY_FULL) > -2),
+      `${icons.names[b[0]]} at ${b[1]},${b[2]}`);
+  }
+});
+
+test('every capital and landmark is drawn; only towns and decoration are omitted, and only for lack of room', () => {
+  assert.ok(icons.omitted.length < 80, `${icons.omitted.length} omitted`);
+  for (const icon of icons.omitted) {
+    const kind = icons.names[icon[0]];
+    assert.ok(STRUCTURES.has(kind), `${kind} at ${icon[1]},${icon[2]} must be drawn`);
+    // At the last appearance step it would still touch a drawn icon (or a continent icon that stays).
+    const blockers = icons.icons.filter((other) => (other[5] === 1 || other[6] !== 1) && near(icon, other));
+    assert.ok(blockers.some((other) => overlap(icon, other, 6.2) > -2 * ICON_POINTS),
+      `${kind} at ${icon[1]},${icon[2]} would fit by zoom 6.2`);
+  }
+  const drawn = new Set(country.map((i) => icons.names[i[0]]));
+  for (const kind of icons.names.filter((name) => !STRUCTURES.has(name) && name !== 'castle'))
+    if (country.some((i) => icons.names[i[0]] === kind) || icons.omitted.some((i) => icons.names[i[0]] === kind))
+      assert.ok(drawn.has(kind), kind);
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'castle').length, 44, 'one castle per capital');
 });

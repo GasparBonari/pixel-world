@@ -10,10 +10,11 @@ Add **{COUNTRY}** and its capital **{CAPITAL}** to Pixel World, at the same leve
 
 1. **Continent zoom (about 6×):** the night-sea board with flora, fauna and mountain icons. It already exists, so don't touch it.
 2. **Country zoom (zoom 4.4–6.4, only over a covered country):** a few buildings at the country's real cities, plus a few trees, boats, and at most one or two famous country landmarks at their real sites.
-   - The capital is a `castle` with two `house` icons.
-   - The next two cities are a `church` between houses.
-   - Other cities, at least 75 km apart, alternate between a church and a house pair.
+   - One sprite per place. The capital is a `castle`.
+   - The next two cities are a `church` each.
+   - Other cities, at least 75 km apart, alternate between a `church` and a `house`.
    - Examples of landmarks: Spain's La Mancha windmills, France's Mont-Saint-Michel and Saint-Émilion vineyards.
+   - **Placement is automatic; don't hand-place offsets.** The builder reveals icons in zoom steps so they never overlap once fully visible, draws a landmark that sits on its capital a few pixels aside, and leaves out towns or trees that only fit beyond zoom 6.2 (listed under `omitted`). The rules are in `docs/art/ART_CONTRACT.md` §3a.
 3. **Capital zoom (zoom 6.3–7.0, only within 1.5° of the capital):** one detailed isometric city scene, 720×520 art pixels.
    - It grows out of the capital's location and can be panned.
    - It is an **illustration**: the capital's real landmarks in their real relative positions (north at the top, west on the left), with distances compressed to fit. It is not a street-accurate map.
@@ -156,7 +157,7 @@ Use this every time you place something "at one end":
    .venv/bin/python scripts/art/check_capital.py <id>
    ```
    It must print `OK`: no `REVERSED` pairs, rank correlation 1.00 on both axes, `hidden=0` and `clipped=0` for every landmark, and no overlaps. Then look at `assets/world/capitals/<id>.png` against your fact sheets, especially water, hills, banks and districts. The checker can't see those. Iterate until both pass.
-4. **Add the country tier,** then run `.venv/bin/python scripts/art/build_map_icons.py`. Check that every country-tier icon lies inside the country's bounds; the tests enforce this.
+4. **Add the country tier,** then run `.venv/bin/python scripts/art/build_map_icons.py`. Check that every country-tier icon lies inside the country's bounds; the tests enforce this. The build prints how many country icons appear at each zoom step and which were left out. Your landmark must not be among them, and `tests/board.test.mjs` checks that nothing overlaps.
 5. **Add `COVERAGE`,** then check in the browser:
    - start `npm run web`;
    - open `http://localhost:8081/?lon=<lon>&lat=<lat>&zoom=5` for the country and `...&zoom=7` for the capital;
