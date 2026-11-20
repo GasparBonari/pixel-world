@@ -333,3 +333,12 @@ test('the atlas fits every phone GPU and holds a pose frame for each animated sp
   // Pose frames are never placed as icons themselves.
   for (const [frame] of icons.icons) assert.ok(!icons.names[frame].includes('@'));
 });
+
+test('the shaders’ random function uses no sine, so every GPU draws the same pattern', () => {
+  // A sin-based hash loses precision on large inputs (world cells at country zoom number in the
+  // thousands) by a different amount on each GPU; on real GPUs it turned sea glints and grass
+  // specks into dense streaks. The arithmetic hash is exact enough everywhere.
+  const shader = readFileSync(new URL('../src/features/world/globe-shader.ts', import.meta.url), 'utf8');
+  const body = shader.slice(shader.indexOf('float hash(float2 p)'), shader.indexOf('float noise(float2 p)'));
+  assert.ok(body.includes('fract') && !/\bsin\s*\(/.test(body), body);
+});

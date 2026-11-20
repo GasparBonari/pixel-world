@@ -63,9 +63,13 @@ The sea is a **night sea**, so the map stays continuous with the starry space sc
 | 4–6 | `sea_band` | `#25579A` |
 | 7–11 | `night_band` | `#1D4272` |
 | 12+ | `night` | `#16325A` |
+| 17+, in broad patches | `night_deep` | `#112A4E` |
+
+- **Loose, dithered band edges** (20 November 2026). The distances above are a guide, not exact rings: each edge wanders up to about a pixel either way along the coast (world-anchored noise), and a world-anchored checkerboard dithers it, so neighbouring tones blend instead of stepping. Far from shore, broad patches of `night_deep` (also dithered) give the open sea some depth; they are illustrative, not bathymetry.
+- **Wave crests.** Beyond the bands (distance 12+), a fifth of the blocks of 9×6 wave cells hold one small crest in `wave` (`#234F8B`): two pixels on top, one either side below. A wave cell scales longitude by latitude, so its pixels are never narrower than a screen pixel and the crest never breaks up. Crests roll a pixel east and back, and now and then their top glints (§9).
 
 - **Raised land.** Land pixels on a top or left coast use `land_hi` (`#B9DD63`). Under every south-facing coast, the two water pixels below become a cliff face: `cliff_top` (`#5F8A2C`), then `cliff` (`#41662A`).
-- **Sparkles.** In open water (distance 6 or more), a 5×5 sparkle on about 0.12% of pixels and a single `sparkle` dot on about 0.3%.
+- **Sparkles.** In open water (distance 6 or more), a single `sparkle` dot on about 0.2% of pixels; with motion on they twinkle (§9). The mockups' 5×5 sparkles are not in the app; the wave crests' glints take their place.
 - **Clouds.** Two puffy clouds per screen over open water: white with a flat `cloud_shade` base and no outline.
 - **Lakes** large enough to read are `coast_band`. Rivers are omitted at continent scale, as in the concept image.
 - **Small islands** always keep at least one land pixel, so small countries stay visible and selectable.
@@ -344,7 +348,7 @@ The world moves a little on its own, like a game's idle scene. Code: `src/featur
   - **Animals** stand still most of the time, blink for two frames and shift their weight for 1.5 seconds once every 5–8 seconds, each on its own rhythm (a phase from its site). The orca has no visible eye and stays still.
   - **Trees** lean as gusts sweep east across the map, 40 degrees of longitude every 7 seconds, so a forest ripples in turn rather than every tree twitching alone.
   - **Windmill** sails turn 30 degrees every third of a second (three poses make a quarter turn). **Volcano** ash puffs every 2 seconds. **Boats** bob a pixel on a 1.6-second swell.
-  - **Sea.** Glints twinkle (the same number lit at once as the still scene's fixed set), and broken lines of surf roll in from 3.5 terrain pixels out to the shore every 3 seconds, out of step along the coast. Lakes ripple by the same rule.
+  - **Sea.** Glints twinkle (the same number lit at once as the still scene's fixed set), wave crests roll a pixel east and back and their tops glint now and then, and broken lines of surf roll in from 3.5 terrain pixels out to the shore every 3 seconds, out of step along the coast. Lakes ripple by the same rule.
   - **Birds.** 48 flocks of three gulls (`src/features/world/flocks.ts`), each flying its own great circle at 0.5–0.9 degrees a second, so they come over the horizon rather than appear. Wings beat four times a second; a shadow falls 14 icon pixels below and 2 east. They fade in with the board's icons and are hidden entirely under reduce motion.
   - **Atlas.** Frames are shelf-packed into rows at most 2048 pixels wide, which every phone GPU accepts (it was a single 3922-pixel row).
 - **Next:** the country tier (capital pennants, chimney smoke, the selected pin), then capital scenes (water, smoke, flags, people; needs landmark and anchor data from P5-01).

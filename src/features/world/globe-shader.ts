@@ -26,6 +26,8 @@ const float3 COAST_BAND = float3(0.180,0.427,0.686);
 const float3 SEA_BAND = float3(0.145,0.341,0.604);
 const float3 NIGHT_BAND = float3(0.114,0.259,0.447);
 const float3 NIGHT = float3(0.086,0.196,0.353);
+const float3 NIGHT_DEEP = float3(0.067,0.161,0.302);
+const float3 WAVE = float3(0.137,0.310,0.545);
 const float3 SPARKLE = float3(0.624,0.765,0.910);
 const float3 LAND_HI = float3(0.725,0.867,0.388);
 const float3 CLIFF_TOP = float3(0.373,0.541,0.173);
@@ -43,7 +45,15 @@ const float3 SNOW = float3(0.957,0.965,0.933);
 const float3 BORDER = float3(0.933,0.961,0.784);
 const float3 RELIEF = float3(0.651,0.659,0.384);
 
-float hash(float2 p) { return fract(sin(dot(p,float2(127.1,311.7)))*43758.5453); }
+// Arithmetic hash ("hash without sine", after Dave Hoskins). A sin-based hash loses precision on
+// large inputs, by a different amount on each GPU: at country zoom, world cells number in the
+// thousands and it turned sea glints and grass specks into dense vertical streaks on real GPUs,
+// while software rendering looked fine. This one gives the same values everywhere.
+float hash(float2 p) {
+  float3 q = fract(float3(p.xyx)*0.1031);
+  q += dot(q,q.yzx+33.33);
+  return fract((q.x+q.y)*q.z);
+}
 float noise(float2 p) {
   float2 cell = floor(p), f = fract(p);
   f = f*f*(3.0-2.0*f);
@@ -117,7 +127,7 @@ float3 boardColor(float2 point, float cell, float3 here, float lon, float lat, f
     // Glints twinkle, each lit for 40% of its own 3-second cycle; the same number shows at once as
     // the fixed set a still scene keeps.
     float glint = hash(worldCell);
-    if (cells >= 6.0 && (time > 0.0 ? glint < 0.01 && fract(time*0.33+hash(worldCell+3.0)) < 0.4 : glint < 0.004))
+    if (cells >= 6.0 && (time > 0.0 ? glint < 0.005 && fract(time*0.33+hash(worldCell+3.0)) < 0.4 : glint < 0.002))
       return SPARKLE;
     // Surf: broken lines of foam roll in from 3.5 cells out to the shore every 3 seconds, out of
     // step along the coast.
@@ -125,9 +135,27 @@ float3 boardColor(float2 point, float cell, float3 here, float lon, float lat, f
       float swell = 3.5*(1.0-fract(time/3.0+surfaceNoise(here.xy,float2(90,60),float2(5.0))*2.0));
       if (abs(cells-swell) < 0.5 && hash(worldCell+9.0) < 0.6) return mix(COAST_BAND,EDGE_LIGHT,0.7);
     }
-    if (cells <= 3.0) return COAST_BAND;
-    if (cells <= 6.0) return SEA_BAND;
-    if (cells <= 11.0) return NIGHT_BAND;
+    // The bands follow the shore loosely: each edge wanders up to about a pixel either way along the
+    // coast, and a world-anchored checkerboard dithers it so neighbouring tones blend.
+    float checker = mod(worldCell.x+worldCell.y,2.0)-0.5;
+    float depth = cells+(surfaceNoise(here.xy,float2(260,170),float2(11.0))-0.5)*2.4+checker*0.7;
+    if (depth <= 3.0) return COAST_BAND;
+    if (depth <= 6.0) return SEA_BAND;
+    // Wave crests over open water: in a fifth of the blocks of 9x6 wave cells, a small crest (two
+    // pixels on top, one either side below) that rolls a pixel east and back; now and then its top
+    // glints. Wave cells scale longitude by latitude, so a cell is never narrower than a screen pixel.
+    float2 waveCell = floor(float2(lon*cos(radians(lat)),lat)*perDegree);
+    float2 block = floor(waveCell/float2(9.0,6.0));
+    if (depth > 11.0 && hash(block+31.0) < 0.2) {
+      float roll = time > 0.0 ? mod(floor(time*1.2+hash(block+5.0)*2.0),2.0) : 0.0;
+      float2 crest = waveCell-block*float2(9.0,6.0)-float2(1.0+floor(hash(block+13.0)*4.0)+roll,1.0+floor(hash(block+17.0)*3.0));
+      bool top = crest.y == 1.0 && (crest.x == 1.0 || crest.x == 2.0);
+      if (top || (crest.y == 0.0 && (crest.x == 0.0 || crest.x == 3.0)))
+        return top && time > 0.0 && fract(time*0.5+hash(block+7.0)) < 0.12 ? SPARKLE : WAVE;
+    }
+    if (depth <= 11.0) return NIGHT_BAND;
+    // Far from shore, broad patches of deeper water a shade darker.
+    if (depth > 16.0 && surfaceNoise(here.xy,float2(36,24),float2(2.0))+checker*0.05 > 0.56) return NIGHT_DEEP;
     return NIGHT;
   }
 
