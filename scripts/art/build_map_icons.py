@@ -222,6 +222,19 @@ COUNTRY_TIER = [
      "trees": 2, "tree_bounds": (9.48, 47.07, 9.49, 47.17),
      "decoration_grid": .01, "decoration_km": 4, "boats": 0, "landmarks": []},
 ]
+# Building family per country (sprites.STYLES): its capital, churches and houses share one regional
+# architecture, so neighbouring regions look different (ART_CONTRACT.md §3a).
+FAMILY = {
+    **dict.fromkeys(("AUT", "CZE", "SVK", "HUN", "SVN", "DEU", "CHE", "LIE", "POL", "LTU"), "central"),
+    **dict.fromkeys(("PRT", "ESP", "ITA", "MLT", "HRV"), "mediterranean"),
+    **dict.fromkeys(("FRA", "BEL", "NLD", "LUX", "GBR", "IRL", "AND"), "atlantic"),
+    **dict.fromkeys(("NOR", "SWE", "FIN", "DNK", "ISL", "EST", "LVA"), "nordic"),
+    **dict.fromkeys(("RUS", "UKR", "BLR", "MDA", "ROU", "BGR", "SRB", "MKD", "MNE", "GRC", "CYP"), "orthodox"),
+    **dict.fromkeys(("BIH", "ALB", "KOS", "TUR"), "ottoman"),
+}
+# Places of worship where a town's landmark is usually a mosque: every town, or alternating with a
+# church (Bosnia: Orthodox Banja Luka keeps a church, Tuzla gets a mosque; Kosovo's tier has no town).
+MOSQUES = {"TUR": "all", "ALB": "all", "BIH": "alternate", "KOS": "alternate"}
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
 GRID = 0.25  # degrees per placement-grid cell
@@ -232,7 +245,10 @@ VARIANTS = {
     "mountain": 3, "hill": 2, "oak": 3, "pine": 2, "olive": 2, "acacia": 2, "baobab": 1,
     "palm": 2, "bamboo": 1, "eucalyptus": 2, "fern": 1, "grass": 2, "cactus": 1, "dune": 1,
     "red-rock": 1, "volcano": 1, "glacier": 2, "iceberg": 2,
-    "castle": 1, "church": 1, "house": 2, "boat": 1, "windmill": 1, "mont-saint-michel": 1, "vineyard": 1,
+    # Town buildings: seed = family index (capital, church) or family index * 2 + material (house).
+    "capital": len(sprites.FAMILIES), "church": len(sprites.FAMILIES), "mosque": 1,
+    "house": 2 * len(sprites.FAMILIES),
+    "boat": 1, "windmill": 1, "mont-saint-michel": 1, "vineyard": 1,
     **{animal: 1 for animal in sprites.FAUNA},
     "neuschwanstein": 1,
     "kinderdijk": 1,
@@ -329,6 +345,7 @@ APPEAR_FIRST = 5.0  # COUNTRY_ZOOM.full
 APPEAR_STEP = 0.2
 APPEAR_LAST = 6.2  # icons that only fit later are dropped; COUNTRY_ZOOM.max is 6.4
 ICON_GAP = 1  # icon pixels kept clear between neighbours
+ZOOM_LIMIT = 7.0  # CAPITAL_ZOOM.full: country icons stay visible around a capital scene
 NEAR_DEGREES = 2.5  # pairs farther apart than this are already clear at APPEAR_FIRST
 SOLID_ALPHA = 128  # ground shadows (27% black) and transparent margins may overlap
 
@@ -347,7 +364,8 @@ def solid_boxes(sheet, frames):
 
 
 def clear_zoom(a, b, boxes):
-    """Lowest zoom from which icons a and b ([frame, lon, lat, dx, dy, ...]) never overlap on screen."""
+    """Lowest zoom from which icons a and b ([frame, lon, lat, dx, dy, ...]) no longer overlap on
+    screen, up to ZOOM_LIMIT; -inf if they never do, inf if they still overlap at the limit."""
     (al, at, ar, ab), (bl, bt, br, bb) = boxes[a[0]], boxes[b[0]]
     dlon = (b[1] - a[1] + 180) % 360 - 180
     mid = math.radians((a[2] + b[2]) / 2)
@@ -359,19 +377,21 @@ def clear_zoom(a, b, boxes):
         (-math.radians(b[2] - a[2]), (b[4] + (bt + bb) / 2) - (a[4] + (at + ab) / 2),
          (ab - at + bb - bt) / 2 + ICON_GAP),
     )
-    radius = math.inf
+    # The separation on each axis is linear in the globe radius R, so the boxes overlap on that
+    # axis for one open interval of R, and overlap on screen where both axes' intervals meet.
+    low, high = 0.0, math.inf
     for per_radius, offset, need in axes:
         if abs(per_radius) < 1e-12:
-            radius = min(radius, 0 if abs(offset) >= need else math.inf)
-        else:
-            toward = offset if per_radius > 0 else -offset
-            radius = min(radius, max(0.0, (need - toward) / abs(per_radius)))
-    if radius == 0:
-        return -math.inf
-    if radius == math.inf:
-        return math.inf
+            if abs(offset) >= need:
+                return -math.inf  # this axis never overlaps
+            continue
+        a, b = (-need - offset) / per_radius, (need - offset) / per_radius
+        low, high = max(low, min(a, b)), min(high, max(a, b))
     # 1% margin for the globe's curvature away from the screen centre.
-    return math.log2(radius * 1.01 / ICON_PX_PER_RADIAN)
+    low, high = low / 1.01, high * 1.01
+    if low >= high or low >= ICON_PX_PER_RADIAN * 2 ** ZOOM_LIMIT or high <= 0:
+        return -math.inf  # they never overlap at a zoom the app can reach
+    return math.log2(high / ICON_PX_PER_RADIAN) if high < math.inf else math.inf
 
 
 MAX_NUDGE = 40  # icon pixels a capital or landmark may be drawn away from its real site
@@ -435,12 +455,14 @@ def assign_appearance(icons, boxes):
     shown = [(icon, -math.inf) for icon in icons if icon[5] == 0]
     kept, dropped = [], []
     for icon in sorted((i for i in icons if i[5] == 1), key=lambda i: i[6]):
-        if icon[6][0] <= 1:  # capitals and landmarks: continent decoration makes way
+        if icon[6][0] <= 1:
+            # Capitals and landmarks: step aside from the ones already placed, then continent
+            # decoration still under them makes way.
+            nudge(icon, [o for o, _ in shown if o[5] == 1 and near(icon, o)], boxes)
             for other, _ in [s for s in shown if s[0][5] == 0 and near(icon, s[0])]:
                 if clear_zoom(icon, other, boxes) > APPEAR_FIRST:
                     other[6:] = [1]
                     shown.remove((other, -math.inf))
-            nudge(icon, [o for o, _ in shown if o[5] == 1 and near(icon, o)], boxes)
         appear = APPEAR_FIRST
         for other, other_appear in shown:
             if not near(icon, other):
@@ -629,6 +651,18 @@ def main():
             # Anchor it first so the 75 km spacing filter cannot discard the capital itself.
             key=lambda p: (p["name"] != spec["capital"], -p["pop_max"]))
         towns = []
+        family = sprites.FAMILIES.index(FAMILY[spec["adm0"]])
+        worship = 0  # towns given a church or mosque so far
+
+        def place_of_worship(lon, lat, priority):
+            nonlocal worship
+            mosques = MOSQUES.get(spec["adm0"])
+            if mosques == "all" or (mosques == "alternate" and worship % 2 == 1):
+                building("mosque", lon, lat, 0, 0, priority=priority)
+            else:
+                building("church", lon, lat, 0, 0, family, priority=priority)
+            worship += 1
+
         for city in cities:
             here = (city["longitude"], city["latitude"])
             if any(great_circle_km(here, t) < 75 for t in towns) or len(towns) >= spec["cities"]:
@@ -636,14 +670,15 @@ def main():
             towns.append(here)
             lon, lat = here
             rank = len(towns) - 1
-            # One sprite per place. The capital and the two largest towns appear first; smaller
-            # towns alternate between a church and a house as more room opens up (assign_appearance).
+            # One sprite per place, in the country's building family. The capital and the two
+            # largest towns appear first; smaller towns alternate between a church (or mosque) and
+            # a house as more room opens up (assign_appearance).
             if city["name"] == spec["capital"]:
-                building("castle", lon, lat, 0, 0, priority=(0, 0))
-            elif rank <= 2:
-                building("church", lon, lat, 0, 0, priority=(2, rank))
+                building("capital", lon, lat, 0, 0, family, priority=(0, 0))
+            elif rank <= 2 or rank % 2:
+                place_of_worship(lon, lat, (2, rank) if rank <= 2 else (3, rank))
             else:
-                building("church" if rank % 2 else "house", lon, lat, 0, 0, rank, priority=(3, rank))
+                building("house", lon, lat, 0, 0, family * 2 + rank // 2 % 2, priority=(3, rank))
         for kind, lon, lat in spec.get("landmarks", []):
             building(kind, lon, lat, 0, 0, priority=(1, 0))
             towns.append((lon, lat))

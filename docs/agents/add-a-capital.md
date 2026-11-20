@@ -10,9 +10,10 @@ Add **{COUNTRY}** and its capital **{CAPITAL}** to Pixel World, at the same leve
 
 1. **Continent zoom (about 6×):** the night-sea board with flora, fauna and mountain icons. It already exists, so don't touch it.
 2. **Country zoom (zoom 4.4–6.4, only over a covered country):** a few buildings at the country's real cities, plus a few trees, boats, and at most one or two famous country landmarks at their real sites.
-   - One sprite per place. The capital is a `castle`.
-   - The next two cities are a `church` each.
+   - One sprite per place, in the country's building family. The capital is a `capital` marker (a walled town with a gold star).
+   - The next two cities are a `church` each (a `mosque` in Turkey and Albania; Bosnia and Kosovo alternate).
    - Other cities, at least 75 km apart, alternate between a `church` and a `house`.
+   - **Add the country to `FAMILY` in `build_map_icons.py`** (central, mediterranean, atlantic, nordic, orthodox or ottoman; see `docs/art/ART_CONTRACT.md` §3a). The build fails without it.
    - Examples of landmarks: Spain's La Mancha windmills, France's Mont-Saint-Michel and Saint-Émilion vineyards.
    - **Placement is automatic; don't hand-place offsets.** The builder reveals icons in zoom steps so they never overlap once fully visible, draws a landmark that sits on its capital a few pixels aside, and leaves out towns or trees that only fit beyond zoom 6.2 (listed under `omitted`). The rules are in `docs/art/ART_CONTRACT.md` §3a.
 3. **Capital zoom (zoom 6.3–7.0, only within 1.5° of the capital):** one detailed isometric city scene, 720×520 art pixels.

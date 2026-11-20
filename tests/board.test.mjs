@@ -141,7 +141,7 @@ const PHONE = { width: 390, height: 844 };
 // GlobeCanvas: one icon pixel is max(1.25, min(width, height) / CELLS_ACROSS) * 2 / 3 points.
 const ICON_POINTS = (Math.max(1.25, Math.min(PHONE.width, PHONE.height) / 130) * 2) / 3;
 const COUNTRY_FULL = 5.0; // COUNTRY_ZOOM.full: the first country icons are fully visible
-const STRUCTURES = new Set(['church', 'house', 'oak', 'pine', 'olive', 'boat']);
+const STRUCTURES = new Set(['church', 'mosque', 'house', 'oak', 'pine', 'olive', 'boat']);
 
 /** Each frame's opaque pixels (alpha > 128) around the drawing anchor, from the RGBA sprite sheet. */
 function solidBoxes() {
@@ -204,6 +204,8 @@ function overlap(a, b, zoom) {
   const [bl, bt, br, bb] = screenBox(b, camera);
   return Math.min(Math.min(ar, br) - Math.max(al, bl), Math.min(ab, bb) - Math.max(at, bt));
 }
+/** Zooms from `from` to capital zoom (7.0), where country icons stay visible around a capital scene. */
+const zooms = (from) => Array.from({ length: Math.round((7 - from) * 10) + 1 }, (_, i) => from + i / 10);
 const near = (a, b) =>
   Math.abs(a[2] - b[2]) < 3 && Math.abs(((b[1] - a[1] + 540) % 360) - 180) * Math.cos((a[2] * Math.PI) / 180) < 3;
 
@@ -218,11 +220,11 @@ test('country icons appear in 0.2 zoom steps between full country zoom and 6.2, 
   assert.ok(country.filter((i) => i[6] === COUNTRY_FULL).length > country.length * 0.6);
 });
 
-test('no two country icons overlap once both are fully visible, up to the deepest country zoom', () => {
+test('no two country icons overlap once both are fully visible, up to capital zoom', () => {
   for (const [index, a] of country.entries()) {
     for (const b of country.slice(index + 1)) {
       if (!near(a, b)) continue;
-      for (const zoom of [Math.max(a[6], b[6]), 6.4]) {
+      for (const zoom of zooms(Math.max(a[6], b[6]))) {
         const amount = overlap(a, b, zoom);
         assert.ok(amount <= 1, `${icons.names[a[0]]} ${a[1]},${a[2]} and ${icons.names[b[0]]} ${b[1]},${b[2]} overlap ${amount.toFixed(1)} pt at ${zoom}`);
       }
@@ -237,13 +239,16 @@ test('country icons clear the continent icons that stay; covered continent icons
   for (const a of country) {
     for (const b of continent) {
       if (b[6] === 1 || !near(a, b)) continue;
-      const amount = overlap(a, b, a[6]);
-      assert.ok(amount <= 1, `${icons.names[a[0]]} ${a[1]},${a[2]} covers ${icons.names[b[0]]} ${b[1]},${b[2]} by ${amount.toFixed(1)} pt`);
+      for (const zoom of zooms(a[6])) {
+        const amount = overlap(a, b, zoom);
+        assert.ok(amount <= 1, `${icons.names[a[0]]} ${a[1]},${a[2]} covers ${icons.names[b[0]]} ${b[1]},${b[2]} by ${amount.toFixed(1)} pt at ${zoom}`);
+      }
     }
   }
-  // Each one that makes way really sat on a capital or landmark at full country zoom.
+  // Each one that makes way would come within the 1-icon-pixel gap of a capital or landmark.
   for (const b of yielding) {
-    assert.ok(country.some((a) => !STRUCTURES.has(icons.names[a[0]]) && near(a, b) && overlap(a, b, COUNTRY_FULL) > -2),
+    assert.ok(country.some((a) => !STRUCTURES.has(icons.names[a[0]]) && near(a, b)
+      && zooms(COUNTRY_FULL).some((zoom) => overlap(a, b, zoom) > -ICON_POINTS - 1)),
       `${icons.names[b[0]]} at ${b[1]},${b[2]}`);
   }
 });
@@ -259,8 +264,35 @@ test('every capital and landmark is drawn; only towns and decoration are omitted
       `${kind} at ${icon[1]},${icon[2]} would fit by zoom 6.2`);
   }
   const drawn = new Set(country.map((i) => icons.names[i[0]]));
-  for (const kind of icons.names.filter((name) => !STRUCTURES.has(name) && name !== 'castle'))
+  for (const kind of icons.names.filter((name) => !STRUCTURES.has(name) && name !== 'capital'))
     if (country.some((i) => icons.names[i[0]] === kind) || icons.omitted.some((i) => icons.names[i[0]] === kind))
       assert.ok(drawn.has(kind), kind);
-  assert.equal(country.filter((i) => icons.names[i[0]] === 'castle').length, 44, 'one castle per capital');
+  assert.equal(country.filter((i) => icons.names[i[0]] === 'capital').length, 44, 'one capital marker per capital');
+});
+
+test('each capital, church and house is drawn in its country’s building family', () => {
+  // Frames of a town kind are ordered by family (sprites.FAMILIES); houses have two per family.
+  const FAMILIES = ['central', 'mediterranean', 'atlantic', 'nordic', 'orthodox', 'ottoman'];
+  const familyOf = (icon) => {
+    const kind = icons.names[icon[0]];
+    const frames = icons.names.flatMap((name, index) => (name === kind ? [index] : []));
+    return FAMILIES[Math.floor(frames.indexOf(icon[0]) / (kind === 'house' ? 2 : 1))];
+  };
+  const capitalAt = (lon, lat) =>
+    country.find((i) => icons.names[i[0]] === 'capital' && Math.abs(i[1] - lon) < 0.01 && Math.abs(i[2] - lat) < 0.01);
+  for (const [name, lon, lat, family] of [
+    ['Vienna', 16.3647, 48.202, 'central'], ['Lisbon', -9.1468, 38.7247, 'mediterranean'],
+    ['Paris', 2.3314, 48.8686, 'atlantic'], ['Oslo', 10.748, 59.9186, 'nordic'],
+    ['Moscow', 37.6136, 55.7541, 'orthodox'], ['Ankara', 32.8624, 39.9292, 'ottoman'],
+  ]) assert.equal(familyOf(capitalAt(lon, lat)), family, name);
+  // Whole regions keep their family: the Alps and Danube (Austria and its central neighbours) and
+  // Scandinavia (Norway, Sweden, Finland).
+  const inside = ([w, s, e, n]) => (i) => w <= i[1] && i[1] <= e && s <= i[2] && i[2] <= n;
+  const towns = (i) => ['capital', 'church', 'house'].includes(icons.names[i[0]]);
+  for (const [bounds, family] of [[[9.5, 46.35, 17.2, 49.05], 'central'], [[4.5, 58, 31, 71], 'nordic']])
+    for (const icon of country.filter(inside(bounds)).filter(towns))
+      assert.equal(familyOf(icon), family, `${icons.names[icon[0]]} at ${icon[1]},${icon[2]}`);
+  // Mosques stand only in Turkey, Albania, Bosnia and Kosovo.
+  for (const icon of country.filter((i) => icons.names[i[0]] === 'mosque'))
+    assert.ok(icon[1] > 15.7 && icon[2] < 45.3, `mosque at ${icon[1]},${icon[2]}`);
 });

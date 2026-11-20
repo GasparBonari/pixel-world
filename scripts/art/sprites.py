@@ -197,17 +197,17 @@ def hill(seed=0):
     return mountain(seed, snow=False, width=17, height=12, cap="grass")
 
 
-def _box(s, x0, y0, x1, y1, lit_cols=1, shade_cols=1):
-    """Whitewashed wall: lit west column, shaded east columns."""
+def _box(s, x0, y0, x1, y1, lit_cols=1, shade_cols=1, P=C):
+    """Plain wall: lit west column, shaded east columns. P is the palette (whitewash by default)."""
     for y in range(y0, y1 + 1):
         for x in range(x0, x1 + 1):
             tone = "wall_hi" if x < x0 + lit_cols else "wall_sh" if x > x1 - shade_cols else "wall"
             if y == y1:
                 tone = "wall_dk" if x > x1 - shade_cols else "wall_sh"
-            s.put(x, y, C[tone], C["wall_ol"])
+            s.put(x, y, P[tone], P["wall_ol"])
 
 
-def _cone(s, cx, top, base_y, half):
+def _cone(s, cx, top, base_y, half, P=C):
     """Conical tower roof: highlight streak, lit west half, shaded east half."""
     for y in range(top, base_y + 1):
         w = half * (y - top + 1) / (base_y - top + 1)
@@ -215,10 +215,10 @@ def _cone(s, cx, top, base_y, half):
             dx = x + 0.5 - cx
             if abs(dx) <= w + 0.25:
                 tone = "roof_sh" if dx > 0.3 else "roof_hi" if -1.4 < dx <= -0.4 and y < base_y else "roof"
-                s.put(x, y, C[tone], C["roof_ol"])
+                s.put(x, y, P[tone], P["roof_ol"])
 
 
-def _gable(s, x0, x1, top, base_y):
+def _gable(s, x0, x1, top, base_y, P=C):
     """Pitched roof seen from the front: two slopes meeting at the ridge."""
     cx = (x0 + x1 + 1) / 2
     for y in range(top, base_y + 1):
@@ -227,15 +227,15 @@ def _gable(s, x0, x1, top, base_y):
             dx = x + 0.5 - cx
             if abs(dx) <= w:
                 tone = "roof_sh" if dx > 0 else "roof_hi" if y == base_y or abs(dx) > w - 1 else "roof"
-                s.put(x, y, C[tone], C["roof_ol"])
+                s.put(x, y, P[tone], P["roof_ol"])
 
 
-def _tower(s, x0, x1, top, bottom, roof_top):
-    _box(s, x0, top, x1, bottom)
-    _cone(s, (x0 + x1 + 1) / 2, roof_top, top - 1, (x1 - x0 + 3) / 2)
+def _tower(s, x0, x1, top, bottom, roof_top, P=C):
+    _box(s, x0, top, x1, bottom, P=P)
+    _cone(s, (x0 + x1 + 1) / 2, roof_top, top - 1, (x1 - x0 + 3) / 2, P=P)
     mid = (x0 + x1) // 2
-    s.put(mid, top + 2, C["window"], C["wall_ol"])
-    s.put(mid, top + 3, C["window"], C["wall_ol"])
+    s.put(mid, top + 2, P["window"], P["wall_ol"])
+    s.put(mid, top + 3, P["window"], P["wall_ol"])
 
 
 def castle(seed=0):
@@ -269,48 +269,323 @@ def castle(seed=0):
     return s.image()
 
 
-def church(seed=0):
-    """Parish church: nave with red roof, bell tower with dome and gold cross, rose window."""
-    s = Sprite(19, 25)
-    ground_shadow(s, 9.5, 23.4, 8.5, 1.2)
-    _box(s, 2, 15, 16, 22, lit_cols=2, shade_cols=3)
-    _gable(s, 2, 16, 10, 14)
-    for y in range(19, 23):
-        for x in range(8, 11):
-            if not (y == 19 and x != 9):
-                s.put(x, y, C["door"], C["wall_ol"])
-    s.put(9, 16, C["glass"], C["wall_ol"])
-    s.put(5, 18, C["window"], C["wall_ol"])
-    s.put(13, 18, C["window"], C["wall_ol"])
-    # Bell tower rising behind the façade, with a red dome and gold cross.
-    _box(s, 7, 5, 11, 11, lit_cols=1, shade_cols=1)
-    s.put(9, 7, C["window"], C["wall_ol"])
-    s.put(9, 8, C["window"], C["wall_ol"])
-    for y, half in ((3, 1.6), (4, 2.6)):
-        for x in range(7, 12):
-            dx = x + 0.5 - 9.5
+# Regional building families (ART_CONTRACT.md §3a). Every covered country draws its towns,
+# churches and capital in one family, so neighbouring regions look different and the map shows a
+# little real architecture. Palettes override C's wall and roof tones; glass, doors and gold stay
+# shared. The order of FAMILIES is part of the sprite-sheet layout: frame seeds encode it.
+def _palette(**tones):
+    return {**C, **{k: hex_rgb(v) for k, v in tones.items()}}
+
+
+def _ramp(prefix, hi, base, sh, dk, ol):
+    """Five wall tones under one prefix: prefix_hi, prefix, prefix_sh, prefix_dk, prefix_ol."""
+    return {f"{prefix}_hi": hi, prefix: base, f"{prefix}_sh": sh, f"{prefix}_dk": dk, f"{prefix}_ol": ol}
+
+
+WHITEWASH = ("#FFFFFF", "#F4F0E6", "#D9D0BE", "#B8AB93", "#55483A")
+STYLES = {
+    # Austria, Czechia, Slovakia, Hungary, Slovenia, Germany, Switzerland, Poland, Lithuania: ochre
+    # plaster ("Schönbrunn yellow") and half-timbering, steep brown-red tiles, baroque towers with
+    # green copper onions.
+    "central": _palette(
+        **_ramp("wall", "#F7E2A4", "#EBC97C", "#CBA461", "#A9834A", "#5C4429"),
+        **_ramp("alt", "#FBF3E0", "#F0E5CB", "#D3C4A2", "#D3C4A2", "#5C4429"),
+        **_ramp("kirk", "#F7E2A4", "#EBC97C", "#CBA461", "#A9834A", "#5C4429"),
+        roof_hi="#D9775A", roof="#B5523F", roof_sh="#8B3A2F", roof_ol="#4C2119",
+        dome_hi="#B9E4CF", dome="#79BFA1", dome_sh="#4D8F78", dome_ol="#23463B",
+        beam="#6E4A33", beam_ol="#3A2A20",
+    ),
+    # Portugal, Spain, Italy, Malta, Croatia: whitewash and warm ochre, low terracotta roofs,
+    # square bell towers (campanili) beside the nave.
+    "mediterranean": _palette(
+        **_ramp("wall", *WHITEWASH),
+        **_ramp("alt", "#FCEBC2", "#F3D597", "#D6B271", "#B48E52", "#5C4429"),
+        **_ramp("kirk", *WHITEWASH),
+        roof_hi="#F29C68", roof="#D66B40", roof_sh="#A64D2F", roof_ol="#56271A",
+        dome_hi="#F29C68", dome="#D66B40", dome_sh="#A64D2F", dome_ol="#56271A",
+    ),
+    # France, Belgium, the Netherlands, Luxembourg, the UK, Ireland, Andorra: grey stone and red
+    # brick under blue-grey slate, Gothic churches with tall pointed spires.
+    "atlantic": _palette(
+        **_ramp("wall", "#E6E3DA", "#CBC7BB", "#A6A296", "#848175", "#3E3C38"),
+        **_ramp("alt", "#E0957A", "#BF6646", "#954B33", "#753A28", "#40201A"),
+        **_ramp("kirk", "#E6E3DA", "#CBC7BB", "#A6A296", "#848175", "#3E3C38"),
+        roof_hi="#93A0B5", roof="#69758E", roof_sh="#4C566C", roof_ol="#232838",
+        dome_hi="#93A0B5", dome="#69758E", dome_sh="#4C566C", dome_ol="#232838",
+    ),
+    # Norway, Sweden, Finland, Denmark, Iceland, Estonia, Latvia: falu-red and ochre timber with
+    # white trims and dark roofs; white churches with slim black spires.
+    "nordic": _palette(
+        **_ramp("wall", "#D65A4B", "#AC3A2F", "#842A22", "#651F1A", "#3A1210"),
+        **_ramp("alt", "#F7D682", "#E6B955", "#C2953A", "#9C742A", "#4F3A16"),
+        **_ramp("kirk", *WHITEWASH),
+        roof_hi="#727782", roof="#4D515B", roof_sh="#363940", roof_ol="#1A1C20",
+        dome_hi="#727782", dome="#4D515B", dome_sh="#363940", dome_ol="#1A1C20",
+        trim="#FFFFFF",
+    ),
+    # Russia, Ukraine, Belarus, Moldova, Romania, Bulgaria, Serbia, North Macedonia, Montenegro,
+    # Greece, Cyprus: pastel plaster under green metal roofs; white churches with blue domes.
+    "orthodox": _palette(
+        **_ramp("wall", "#FFF4D6", "#F3E0AE", "#D5BE86", "#B19A62", "#5A4A30"),
+        **_ramp("alt", "#EAF3FA", "#C7DCEC", "#9FBBD2", "#7E9BB4", "#2F4357"),
+        **_ramp("kirk", *WHITEWASH),
+        roof_hi="#8FD1A0", roof="#52A56C", roof_sh="#38794E", roof_ol="#1D3F28",
+        dome_hi="#9CCBF5", dome="#4583D3", dome_sh="#2D5D9E", dome_ol="#172F55",
+    ),
+    # Bosnia and Herzegovina, Albania, Kosovo, Turkey: Ottoman houses, white plaster over stone,
+    # low red tile roofs; mosques with lead domes and slender minarets.
+    "ottoman": _palette(
+        **_ramp("wall", "#FFFDF6", "#F2ECDD", "#D6CCB6", "#B4A88E", "#4E4236"),
+        **_ramp("alt", "#E7DFCF", "#CDBFA6", "#A99A7F", "#887960", "#463C2F"),
+        **_ramp("kirk", "#E7DFCF", "#CDBFA6", "#A99A7F", "#887960", "#463C2F"),
+        roof_hi="#EA875F", roof="#C8603E", roof_sh="#984531", roof_ol="#4F2218",
+        dome_hi="#D2DBE3", dome="#9DABB9", dome_sh="#717F8F", dome_ol="#2F3640",
+    ),
+}
+FAMILIES = list(STYLES)
+# How each family builds: house roof pitch, church form, and the cap on the capital's hall tower.
+FORMS = {
+    "central": dict(roof_top=0, church="onion", cap="cone"),
+    "mediterranean": dict(roof_top=3, church="campanile", cap="cone"),
+    "atlantic": dict(roof_top=0, church="spire", cap="spire"),
+    "nordic": dict(roof_top=1, church="spire", cap="spire"),
+    "orthodox": dict(roof_top=2, church="domes", cap="onion"),
+    "ottoman": dict(roof_top=3, church="campanile", cap="cone"),
+}
+# Fortification stone for capital walls, shared by every family.
+STONE = dict(wall_hi=hex_rgb("#FFF8E8"), wall=hex_rgb("#EADFC6"), wall_sh=hex_rgb("#C2B396"),
+             wall_dk=hex_rgb("#9C8C70"), wall_ol=hex_rgb("#4A3D30"))
+GILT = dict(dome_hi=hex_rgb("#FFEA9E"), dome=hex_rgb("#F2C14E"), dome_sh=hex_rgb("#BF8A2E"),
+            dome_ol=hex_rgb("#6A4614"))
+STAR_GOLD = (hex_rgb("#FFE07A"), hex_rgb("#F2C14E"), hex_rgb("#7A4E16"))  # light, gold, outline
+
+
+def _walls(P, prefix):
+    """P with its wall tones taken from another ramp (alt, kirk) or a dict of tones."""
+    if isinstance(prefix, dict):
+        return {**P, **prefix}
+    return {**P, "wall_hi": P[f"{prefix}_hi"], "wall": P[prefix], "wall_sh": P[f"{prefix}_sh"],
+            "wall_dk": P[f"{prefix}_dk"], "wall_ol": P[f"{prefix}_ol"]}
+
+
+def _onion(s, cx, rows, P):
+    """Onion dome, one half-width per row from top to bottom; lit upper-left, shaded east side."""
+    for i, (y, half) in enumerate(rows):
+        for x in range(int(cx - half - 1), int(cx + half + 1)):
+            dx = x + 0.5 - cx
             if abs(dx) <= half:
-                s.put(x, y, C["roof_sh" if dx > 0.4 else "roof_hi" if dx < -0.6 else "roof"], C["roof_ol"])
-    s.put(9, 0, C["gold"], C["bark_ol"])
-    s.put(9, 1, C["gold"], C["bark_ol"])
-    s.put(8, 1, C["gold"], C["bark_ol"])
-    s.put(10, 1, C["gold"], C["bark_ol"])
-    s.put(9, 2, C["gold"], C["bark_ol"])
+                tone = "dome_sh" if dx > half * 0.35 else "dome_hi" if dx < -half * 0.2 and i < len(rows) - 1 else "dome"
+                s.put(x, y, P[tone], P["dome_ol"])
+
+
+def _spire(s, cx, top, base_y, half, P):
+    """Tall pointed spire in the dome material: lit west half, shaded east half."""
+    for y in range(top, base_y + 1):
+        w = half * (y - top + 1) / (base_y - top + 1)
+        for x in range(int(cx - w - 1), int(cx + w + 1)):
+            dx = x + 0.5 - cx
+            if abs(dx) <= w + 0.3:
+                s.put(x, y, P["dome_sh" if dx > 0.2 else "dome_hi" if dx < -0.6 else "dome"], P["dome_ol"])
+
+
+def _cross(s, x, top):
+    gold, outline = C["gold"], C["bark_ol"]
+    for y in range(top, top + 3):
+        s.put(x, y, gold, outline)
+    s.put(x - 1, top + 1, gold, outline)
+    s.put(x + 1, top + 1, gold, outline)
+
+
+def _star(s, cx, top):
+    """Five-pointed gold star, the map symbol for a capital: 5 x 5 pixels centred on cx."""
+    light, gold, outline = STAR_GOLD
+    for dy, row in enumerate(("..#..", ".###.", "#####", ".###.", ".#.#.")):
+        for dx, cell in enumerate(row):
+            if cell == "#":
+                s.put(cx - 2 + dx, top + dy, light if (dx, dy) in ((2, 0), (1, 1), (2, 1), (1, 2)) else gold, outline)
+
+
+def _arch_door(s, x0, x1, top, bottom, P):
+    for y in range(top, bottom + 1):
+        for x in range(x0, x1 + 1):
+            if not (y == top and x in (x0, x1) and x1 > x0):
+                s.put(x, y, P["door"], P["wall_ol"])
+
+
+def town_house(seed=0, family=None):
+    """A town of a regional family, drawn as one house. Even seeds use the family's main walls,
+    odd seeds its second material (half-timber, pastel, brick, ochre timber, pale blue, stone)."""
+    family = family or FAMILIES[seed // 2 % len(FAMILIES)]
+    P, form = STYLES[family], FORMS[family]
+    second = seed % 2 == 1
+    W = _walls(P, "alt" if second else "wall")
+    s = Sprite(13, 14)
+    ground_shadow(s, 6.5, 12.4, 5.5, 1.0)
+    _box(s, 2, 7, 10, 12, lit_cols=1, shade_cols=2, P=W)
+    if family == "ottoman" and not second:  # plastered upper storey over a stone ground floor
+        for y in (11, 12):
+            for x in range(2, 11):
+                s.put(x, y, P["alt_sh" if x > 8 else "alt"], P["alt_ol"])
+    _gable(s, 2, 10, form["roof_top"], 6, P=P)
+    if family == "central" and second:
+        # Half-timbering: corner and middle posts, a rail and braces; one window, door off-centre.
+        for x in (2, 6, 10):
+            for y in range(7, 12):
+                s.put(x, y, P["beam"], P["beam_ol"])
+        for x in range(2, 11):
+            s.put(x, 9, P["beam"], P["beam_ol"])
+        for x, y in ((3, 8), (4, 7), (9, 8), (8, 7)):
+            s.put(x, y, P["beam"], P["beam_ol"])
+        s.put(4, 10, P["glass"], W["wall_ol"])
+        s.put(4, 11, P["window"], W["wall_ol"])
+        _arch_door(s, 8, 8, 10, 12, W)
+    else:
+        if family == "nordic":  # white corner boards
+            for y in range(7, 13):
+                s.put(2, y, P["trim"], W["wall_ol"])
+                s.put(10, y, P["trim"], W["wall_ol"])
+        for x in (4, 8):
+            s.put(x, 8, P["glass"], W["wall_ol"])
+            s.put(x, 9, P["window"], W["wall_ol"])
+        _arch_door(s, 6, 6, 10, 12, W)
+    if form["roof_top"] <= 1:  # chimney on steep roofs
+        s.put(8, form["roof_top"] + 1, P["roof_ol"], P["roof_ol"])
+        s.put(8, form["roof_top"] + 2, W["wall_dk"], W["wall_ol"])
     return s.image()
 
 
-def house(seed=0):
-    """Small whitewashed house with a red gable roof, door, window and chimney."""
-    s = Sprite(13, 13)
-    ground_shadow(s, 6.5, 11.4, 5.5, 1.0)
-    _box(s, 2, 6, 10, 11, lit_cols=1, shade_cols=2)
-    _gable(s, 2, 10, 1, 5)
-    for y in range(8, 12):
-        s.put(5, y, C["door"], C["wall_ol"])
-    s.put(8, 8, C["glass"], C["wall_ol"])
-    s.put(8, 9, C["window"], C["wall_ol"])
-    s.put(9, 2, C["wall_dk"], C["wall_ol"])
-    s.put(9, 1, C["wall_sh"], C["wall_ol"])
+def town_church(seed=0, family=None):
+    """A town's church in its family's form: baroque onion tower, campanile, Gothic spire or
+    Orthodox domes."""
+    family = family or FAMILIES[seed % len(FAMILIES)]
+    P, form = STYLES[family], FORMS[family]
+    K = _walls(P, "kirk")
+    s = Sprite(19, 26)
+    ground_shadow(s, 9.5, 24.4, 8.5, 1.2)
+    kind = form["church"]
+    if kind in ("onion", "spire"):
+        # Nave behind a full-height front tower.
+        _box(s, 2, 17, 16, 23, lit_cols=2, shade_cols=3, P=K)
+        _gable(s, 2, 16, 12, 16, P=P)
+        for x in (4, 14):
+            s.put(x, 19, P["glass"], K["wall_ol"])
+            s.put(x, 20, P["window"], K["wall_ol"])
+        _box(s, 7, 9, 11, 23, lit_cols=1, shade_cols=2, P=K)
+        for x in range(6, 13):
+            s.put(x, 9, K["wall_hi" if x < 9 else "wall_dk"], K["wall_ol"])
+        s.put(9, 11, P["window"], K["wall_ol"])
+        s.put(9, 12, P["window"], K["wall_ol"])
+        s.put(9, 14, K["wall_hi"] if kind == "onion" else P["window"], K["wall_ol"])  # clock or lancet
+        _arch_door(s, 8, 10, 20, 23, K)
+        if kind == "onion":
+            _onion(s, 9.5, [(3, 0.6), (4, 1.6), (5, 2.6), (6, 2.9), (7, 2.2), (8, 1.4)], P)
+            _cross(s, 9, 0)
+        else:
+            _spire(s, 9.5, 2, 8, 2.9, P)
+            s.put(9, 0, C["gold"], C["bark_ol"])
+            s.put(9, 1, C["gold"], C["bark_ol"])
+    elif kind == "campanile":
+        # Low nave with a square bell tower on its east side.
+        _box(s, 1, 17, 13, 23, lit_cols=2, shade_cols=2, P=K)
+        _gable(s, 1, 13, 14, 16, P=P)
+        s.put(7, 18, P["glass"], K["wall_ol"])  # small rose window
+        _arch_door(s, 6, 8, 20, 23, K)
+        _box(s, 12, 7, 16, 23, lit_cols=1, shade_cols=2, P=K)
+        for y in (8, 9, 10):  # two bell openings
+            s.put(13, y, P["window"], K["wall_ol"])
+            s.put(15, y, P["window"], K["wall_ol"])
+        for x in range(11, 18):
+            s.put(x, 11, K["wall_hi" if x < 14 else "wall_dk"], K["wall_ol"])
+        _cone(s, 14.5, 4, 6, 3.4, P=P)
+        _cross(s, 14, 1)
+    else:  # Orthodox: cross-in-square body, central drum and onion, two small corner onions
+        _box(s, 2, 16, 16, 23, lit_cols=2, shade_cols=3, P=K)
+        _gable(s, 2, 16, 14, 15, P=P)
+        for x in (5, 13):
+            s.put(x, 18, P["window"], K["wall_ol"])
+        _arch_door(s, 8, 10, 19, 23, K)
+        for x0, x1 in ((3, 5), (13, 15)):
+            _box(s, x0, 11, x1, 14, lit_cols=1, shade_cols=1, P=K)
+            _onion(s, (x0 + x1 + 1) / 2, [(8, 0.8), (9, 1.6), (10, 1.3)], P)
+            s.put((x0 + x1) // 2, 7, C["gold"], C["bark_ol"])
+        _box(s, 7, 9, 11, 14, lit_cols=1, shade_cols=2, P=K)
+        s.put(9, 11, P["window"], K["wall_ol"])
+        s.put(9, 12, P["window"], K["wall_ol"])
+        _onion(s, 9.5, [(3, 0.6), (4, 1.7), (5, 2.7), (6, 3.0), (7, 2.4), (8, 1.6)], P)
+        _cross(s, 9, 0)
+    return s.image()
+
+
+def mosque(seed=0):
+    """Ottoman mosque: prayer hall under a lead dome, arcaded porch and a slender pencil minaret
+    with one balcony and a pointed lead cap."""
+    P = STYLES["ottoman"]
+    K = _walls(P, "wall")
+    s = Sprite(19, 26)
+    ground_shadow(s, 9.5, 24.4, 8.5, 1.2)
+    _box(s, 1, 16, 13, 23, lit_cols=2, shade_cols=2, P=K)
+    for x in (3, 7, 11):  # porch arches
+        for y in range(20, 24):
+            s.put(x, y, P["window"], K["wall_ol"])
+    for x in range(1, 14):
+        s.put(x, 18, K["wall_dk" if x > 10 else "wall_sh"], K["wall_ol"])
+    # Dome on a low drum.
+    for y, half in ((10, 2.2), (11, 3.6), (12, 4.6), (13, 5.2), (14, 5.6), (15, 5.8)):
+        for x in range(0, 15):
+            dx = x + 0.5 - 7.5
+            if abs(dx) <= half:
+                tone = "dome_sh" if dx > half * 0.35 else "dome_hi" if dx < -half * 0.25 and y < 14 else "dome"
+                s.put(x, y, P[tone], P["dome_ol"])
+    s.put(7, 8, C["gold"], C["bark_ol"])
+    s.put(7, 9, C["gold"], C["bark_ol"])
+    # Minaret.
+    _box(s, 15, 6, 17, 23, lit_cols=1, shade_cols=1, P=K)
+    for x in range(14, 19):
+        s.put(x, 10, K["wall_hi" if x < 16 else "wall_dk"], K["wall_ol"])
+    _spire(s, 16.5, 1, 5, 1.8, P)
+    s.put(16, 0, C["gold"], C["bark_ol"])
+    return s.image()
+
+
+def capital_town(seed=0, family=None):
+    """A capital: walled town of its region's style, round corner towers with pennants, and a
+    hall tower crowned with a gold star (the map symbol for a capital)."""
+    family = family or FAMILIES[seed % len(FAMILIES)]
+    P, form = STYLES[family], FORMS[family]
+    W = {**P, **STONE}
+    s = Sprite(27, 27)
+    ground_shadow(s, 13.5, 25.4, 12.5, 1.3)
+    # Roofs of the town behind the wall.
+    for x0, x1, top, base in ((3, 8, 11, 15), (18, 23, 12, 16)):
+        _box(s, x0, base + 1, x1, 18, P=P)
+        _gable(s, x0, x1, top, base, P=P)
+    # Hall tower and its cap, then the star.
+    K = _walls(P, "kirk")
+    _box(s, 11, 10, 15, 18, lit_cols=1, shade_cols=2, P=K)
+    s.put(13, 12, P["window"], K["wall_ol"])
+    s.put(13, 13, P["window"], K["wall_ol"])
+    if form["cap"] == "onion":
+        _onion(s, 13.5, [(6, 1.0), (7, 2.2), (8, 2.6), (9, 1.8)], {**P, **GILT})
+    elif form["cap"] == "spire":
+        _spire(s, 13.5, 6, 9, 3.0, P)
+    else:
+        _cone(s, 13.5, 6, 9, 3.4, P=P)
+    _star(s, 13, 0)
+    s.put(13, 5, STAR_GOLD[2], STAR_GOLD[2])  # finial under the star
+    # Stone curtain wall with crenellations and a gate.
+    _box(s, 3, 18, 23, 24, lit_cols=1, shade_cols=2, P=W)
+    for x in range(3, 24, 2):
+        s.put(x, 17, W["wall_hi" if x < 13 else "wall_sh"], W["wall_ol"])
+    _arch_door(s, 12, 14, 20, 24, W)
+    # Round corner towers with cones in the family's roofing, and pennants.
+    for x0, x1 in ((0, 4), (22, 26)):
+        _box(s, x0, 14, x1, 24, lit_cols=1, shade_cols=2, P=W)
+        _cone(s, (x0 + x1 + 1) / 2, 9, 13, 3.2, P=P)
+        s.put((x0 + x1) // 2, 17, W["window"], W["wall_ol"])
+        mid = (x0 + x1) // 2
+        s.put(mid, 8, C["bark_ol"], C["bark_ol"])
+        s.put(mid, 7, C["bark_ol"], C["bark_ol"])
+        s.put(mid + 1, 7, C["flag"], C["roof_ol"])
     return s.image()
 
 
@@ -2885,7 +3160,8 @@ def choirokoitia(seed=0):
 
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
-    "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
+    # Town buildings by family: the seed selects the family (FAMILIES) and, for houses, the material.
+    "capital": capital_town, "church": town_church, "house": town_house, "mosque": mosque, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
     "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge, "rock-of-cashel": rock_of_cashel,
     "leaning-tower-pisa": leaning_tower_pisa, "kronborg": kronborg, "gripsholm": gripsholm, "borgund": borgund,
     "olavinlinna": olavinlinna,
@@ -2925,7 +3201,7 @@ ICONS = {
 def preview(path, scale=5):
     """Rows: buildings and landmarks, flora and landforms, fauna."""
     rows = [
-        ["tree", "pine", "mountain", "hill", "castle", "church", "house", "boat", "pin", "neuschwanstein"],
+        ["tree", "pine", "mountain", "hill", "capital", "church", "mosque", "house", "boat", "pin", "neuschwanstein"],
         list(FLORA),
         list(FAUNA)[:14],
         list(FAUNA)[14:],
