@@ -269,7 +269,7 @@ Use Expo's documented [AsyncStorage integration](https://docs.expo.dev/versions/
 
 Hydrate before accepting progress edits; keep transient camera/input state separate. Serialize writes to prevent an older save overwriting newer progress, validate/migrate the schema, and report save/load failure without silently discarding records. A corrupt record should offer an explicit reset rather than automatically wiping progress. Browser storage can be unavailable or cleared; local-only persistence is not a backup or cross-device sync.
 
-There is no active progress store or storage dependency. Reintroduce versioned country/capital/POI records, linked undo rules, ordered writes, recovery, and migrations when Phase 5 implements visits. Recent visits should derive from explicit dated records, not camera navigation.
+There is no active progress store or storage dependency. Reintroduce versioned country/capital/POI records, linked undo rules, ordered writes, recovery, and migrations when Phase 5 adds discovery records (P5-07); Phase 7 adds visits (P7-04). Recent visits should derive from explicit dated records, not camera navigation.
 
 No backend, authentication, GPS, background tracking, geocoder, or state-management dependency is needed for this slice. A future location provider can add verification evidence to the visit model without changing map geometry.
 

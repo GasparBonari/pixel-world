@@ -1,116 +1,155 @@
-# Pixel World — Project Vision
+# WorldQuest — Project Vision
 
-Status: proposal for review. Research date: 9 November 2026.
+Status: agreed direction, 20 November 2026. Replaces the 9 November proposal. "WorldQuest" is a working title; check app-store and trademark availability before building branding around it.
 
-Development phases and actionable tasks: [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md).
+Development phases and tasks: [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md). Map art rules: [docs/art/ART_CONTRACT.md](./docs/art/ART_CONTRACT.md). Architecture: [TECHNICAL_PLAN.md](./TECHNICAL_PLAN.md).
+
+**Explore. Discover. Learn. Collect.**
 
 ## The idea
 
-Pixel World turns real-world travel into a pixel-art adventure. Players explore Earth, discover countries and cities, and collect memories of places they have visited through small, locally relevant challenges.
+WorldQuest turns the real planet into a pixel-art adventure. Players spin a pixel Earth, zoom through continents and countries into illustrated capital scenes, and collect what they find there: landmarks, wildlife, landscapes. The geography is real; the visual language comes from classic 2D adventure games.
 
-The central experience is **Earth → continents → countries → cities → challenges**. Moving across those scales should feel like exploring a retro adventure game. The geography comes from the real world; its visual language comes from classic top-down games.
+People should open the app because they are curious about what they will find next, not because they need to look something up. A session can be five minutes with today's featured place, or an hour wandering a continent.
 
-Start by proving that this interaction is attractive and pleasant on a phone. The progression system can evolve after the visual and technical foundations work.
+## Who it is for
+
+Anyone curious about the world: geography fans, gamers, and travellers. **Nobody needs to travel to enjoy the app.** Virtual discovery is the core experience. Recording real trips is an optional personal layer on top of it.
 
 ## Product principles
 
-- **A recognizable Earth.** Coastlines, country locations, cities, and challenge coordinates should be geographically grounded. Decorative trees and buildings can be symbolic.
-- **One coherent art direction.** Terrain, markers, panels, and landmarks share a palette, pixel scale, outline weight, and lighting convention.
-- **Exploration without friction.** Pinch, drag, tap, and clear zoom controls make the world easy to navigate with one hand or two.
-- **A rewarding record of travel.** Visiting a place changes its appearance and creates a visible sense of progress.
-- **Small content, global structure.** Cover the planet at overview scale, then add detailed destinations through a repeatable data pipeline.
-- **A sustainable solo project.** Prefer free data, reusable art, local persistence, and a bounded prototype over services with recurring costs.
+- **The map is the main attraction.** It fills the screen. Interface appears in context — a sheet, a chip, a marker — and gets out of the way again. No dashboards over the world.
+- **Zooming is rewarding in itself.** Every scale reveals detail the previous one didn't have.
+- **A recognizable Earth.** Coastlines, countries, capitals, landmarks, and animal habitats are geographically grounded and sourced. Decorative trees, clouds, and houses can be illustrative, but never invent named places.
+- **One coherent art direction.** World, scenes, icons, panels, and buttons share one palette, one pixel treatment, and one lighting convention.
+- **Learn by noticing, not by reading.** Facts arrive attached to something on screen, in a sentence or two, not as articles.
+- **Honest progress.** Counts always show a real denominator ("3 of 7 landmarks"). Discovering a place is never confused with visiting it.
+- **A sustainable solo project.** Free data, generated art, local persistence, offline use, no backend, no recurring costs.
 
-## What exploration looks like
+## The journey
 
-| Scale | Player experience | Visual direction |
+| Scale | What the player sees | What they can do |
 | --- | --- | --- |
-| Planet | Recognize Earth, spin it, zoom toward a region | Required pixel-art globe inspired by the supplied reference: stepped pixels, green terrain, blue oceans, white clouds, shaded rim, and a dark star field |
-| Continent | Pan across recognizable landmasses | Broad land and water shapes, restrained terrain patterns |
-| Country | Select a place and see its exploration state | Borders, names, state colors, and an accessible selection highlight |
-| City or region | Find destinations and available activities | More detailed geography, reusable trees and buildings, city labels |
-| Point of interest | Open a challenge and record an experience | Pixel markers and a readable challenge panel |
+| Planet | Pixel Earth in a starry universe | Spin, pinch toward a region, see progress per continent |
+| Continent | A game-board map: night sea, puzzle-piece countries, flora, wildlife, mountains | Spot animals and landforms, pick a country |
+| Country | Richer terrain, real cities with small buildings, the capital | Open the country sheet, see what is left to discover |
+| Capital | An isometric diorama of the capital's real landmarks in their real relative positions | Find landmarks and hidden details, collect them |
 
-The globe is a presentation mode rather than a promise of a physically continuous 3D planet. A brief animated transition to a flat map is acceptable if it preserves the chosen location and feels deliberate. Seamless 3D globe-to-street rendering is outside the first MVP.
+The journey should feel continuous: the camera follows the chosen place and detail grows with zoom. Arriving at a capital may use a deliberate transition into its scene; a seamless planet-to-street 3D world is not a goal. Drill-down stops at capitals. Other cities appear only as small country-scale buildings.
 
-Browsing remains available before visiting a country. Unlocking changes progression and presentation; it should not prevent someone from learning about a future trip.
+## Two tracks: Discovery and Travel
 
-## Pixel-art direction
+Progress has two independent tracks. A country can be fully discovered and never visited, or visited and barely discovered. The interface shows them differently so they are never confused.
 
-Use **16×16 sprites** as the initial unit. Use 32×32 or larger multiples only for landmarks that need more detail. Establish a small shared palette, consistent silhouettes, and a fixed top-down/three-quarter sprite convention before expanding the art collection.
+**Discovery** (everyone, in the app):
 
-Generate the geographic base from data, using stepped coastlines, limited colors, simple water patterns, and reusable terrain motifs. Avoid treating a blurred or downsampled conventional street map as the final aesthetic. At close zoom, preserve recognizable road and coast relationships while simplifying decorative detail.
-
-Pan and zoom should move smoothly. Texture sampling should preserve hard pixel edges; an absolutely uniform pixel grid during every fractional zoom is not required. Prioritize readable geography and comfortable movement over rigid integer-only camera steps.
-
-Use a pixel font selectively for short labels if a suitable licensed font is chosen later. Challenge descriptions and accessibility settings need comfortable reading sizes. Status must also appear as text or symbols, so color is never the only signal.
-
-**Initial art source:** [Kenney Tiny Town](https://kenney.nl/assets/tiny-town) provides 16×16 CC0 tiles. [Kenney Pixel UI Pack](https://kenney.nl/assets/pixel-ui-pack) provides CC0 interface art. These are starting candidates, subject to a visual compatibility check. Only a few distinctive landmark sprites should need original drawing. The full asset and license shortlist is in [TECHNICAL_PLAN.md](./TECHNICAL_PLAN.md#free-data-and-art).
-
-## Exploration and progression
-
-Countries and locations have four displayed states:
-
-| State | Meaning in the prototype | Suggested treatment |
+| State | Meaning | Treatment |
 | --- | --- | --- |
-| Unvisited | No visit recorded | Muted terrain, outlined marker |
-| Visited | A visit is recorded; no available challenge is complete | Color restored, visit badge |
-| Partially explored | Some, but not all, available challenges are complete | Colored terrain, progress indicator |
-| Completed | Every challenge in a non-empty available content pack is complete | Distinct badge or border |
+| Undiscovered | The player has never opened this country | Muted colours, no count |
+| Discovered | The player has opened the country | Colour restored, "0 of N" count appears |
+| In progress | Some of its collectibles are found | Segmented progress bar, "n of N" |
+| Completed | Every collectible in a non-empty content pack is found | Completion badge or border |
 
-Completion means completion of the app's available activities, not complete knowledge of a country. Display a concrete denominator, such as **2 of 5 available challenges**, rather than suggesting that five activities represent an entire nation.
+Opening a country discovers it. Collectibles are earned by finding them (completing their challenge), not by scrolling past them. A country with no content is never shown as completed.
 
-For the prototype, use an explicitly labeled **manual visit record**. Players can record a past visit, undo it, and mark a challenge complete. This demonstrates state and persistence without pretending to verify travel. GPS verification, anti-cheating, and the handling of historical visits remain product decisions.
+**Travel** (optional, real life):
 
-Future rewards could include XP, a travel journal, country stamps, collectibles, achievements, and cosmetic unlocks. None is required to validate the map experience.
+| State | Meaning | Treatment |
+| --- | --- | --- |
+| No record | — | Nothing |
+| Want to go | On the player's wishlist | Wishlist marker |
+| Visited | The player recorded a real visit | Passport stamp, visited pin on the map |
+
+Visits are recorded manually and on trust: a dated check-in that can be undone. There is no GPS verification. Browsing or discovering never records travel.
+
+## What players discover
+
+**At launch**, collectibles come from content the project already researches and sources:
+
+- **Landmarks** — the real buildings and monuments in each capital scene, each with sourced coordinates.
+- **Wildlife** — native animals placed in sourced habitats on the continent board.
+- **Landscapes** — characteristic flora and landforms (volcanoes, glaciers, dunes, forests).
+
+Each collectible gets a pixel card with a name and one or two checked sentences.
+
+**Later**, and only as curated, fact-checked packs: foods, traditions, and historical facts. Writing and verifying cultural content for every country is the most expensive and riskiest content in the project, so it waits until the core loop is proven.
 
 ## Challenges
 
-Challenges should give players a reason to notice a place: a landmark, local food, a park, a cultural detail, or a short exploration route. The first content pack should favor public places and simple experiences that can be described accurately.
+Challenges ask the player to look at the world, not to recall general trivia. In priority order:
 
-Possible example prompts for Malta include discovering Valletta's waterfront, visiting a public garden, or trying pastizzi. These are content concepts, not verified venue recommendations; opening hours, access, precise coordinates, and descriptions must be checked when authoring the pack.
+1. **Find it.** Locate a landmark or hidden detail inside a capital scene ("Find the bridge with the dragons"). This is the signature challenge type: it suits pixel art and uses scenes that already exist.
+2. **Spot the animal.** Find or identify wildlife in its habitat on the continent board.
+3. **Map questions.** Questions answered by tapping the map ("Tap the country whose capital is Lisbon"), not multiple-choice quizzes about things the player can't see.
+4. **Country sets.** Find all of a country's collectibles to complete it.
 
-Keep challenge text separate from map art and player state. A destination can receive more activities without regenerating its terrain or resetting completed activities. Location-based activities need coordinates; a food experience can belong to a city or country without implying a particular restaurant.
+## Sessions and the daily loop
 
-## Proposed first MVP
+- **Five minutes:** each day features one country or capital with 3–5 discoveries. This gives a short session a clear goal and a reason to come back.
+- **Longer sessions:** free exploration, with any country's remaining collectibles always available.
+- No penalties for missing days in the first version. Streaks, if added, reward without punishing.
 
-The proposed slice covers a global overview, **Malta with a Valletta detail area**, and a second contrasting city area, provisionally **Rome, Italy**. Malta tests small-island visibility; Rome tests denser urban geometry and whether generation rules transfer to another destination. These are planning choices, not inferred player locations.
+## Progression and rewards
 
-Include:
+**First version:** collection counts, completion badges, and passport stamps — all derived from real records, all undoable without leaving rewards behind.
 
-1. A global Earth view with pan/zoom, country names, and selection.
-2. A spinning pixel-art globe with increasingly detailed country geography that keeps the original planet's palette, shading, and pixel treatment throughout zoom.
-3. All four country states, demonstrated through manual progress and clearly labeled sample data where needed.
-4. Generated city detail for two bounded areas, with about five challenges per destination.
-5. Country and challenge panels, manual completion, undo, and local persistence.
-6. A coherent pixel-art presentation on iOS, Android, and web, with platform verification tracked explicitly.
-7. An offline native walkthrough using bundled map and content packs; the web preview serves its own assets without external map APIs.
+**Deferred:** XP and levels. Add them only if playtesting shows progress feels flat without them.
 
-Outside detailed areas, the app should retain a useful overview and say **Detailed map not available yet**. Unsupported destinations can still be selected and recorded as visited. A country with no challenges must not be marked completed merely because its challenge count is zero.
+**Excluded:** in-app currencies, coins, gems, energy systems, and shops. Monetization is undecided, and nothing in the design should depend on it.
 
-Exclude authentication, payments, social features, background location, navigation directions, a full quest engine, worldwide street-level coverage, and a system for downloading arbitrary offline countries.
+## Visual identity and UI
+
+The interface is part of the same world as the map. Map art follows [ART_CONTRACT.md](./docs/art/ART_CONTRACT.md); the interface follows these rules:
+
+- **Two surfaces.** Night-navy for the frame (top bar, tab bar, sheets over the map) and cream parchment for content (cards, challenges, the passport).
+- **One gold button** for the main action on a screen. Cream bevelled buttons for everything else; green only for success and progress.
+- **One UI pixel = 2 points**, the same as map icons. Borders, bevels, notches, and shadows are whole UI pixels. Frames are nine-slice pixel art generated in the shared palette and drawn with nearest-neighbour sampling.
+- **Type.** Pixelify Sans for titles, labels, chips, and numbers, at fixed sizes. Longer text (collectible descriptions, challenge instructions) must stay comfortable to read; whether that is Pixelify Sans or a plainer companion font is decided by testing on a phone.
+- **Pixel icons** in the palette, not system symbols. No frosted glass, gradients, or soft glows on game UI.
+- **Stepped motion.** Short, frame-like animations (button press, card pop, stamp slam) instead of smooth fades. Respect reduced-motion settings.
+- **Never colour alone.** Every status also has a symbol or a number.
+
+**Navigation:** the map is home. A thin top bar shows overall progress. A three-tab bar: **World** (the map), **Quests** (today's featured place and open challenges), **Passport** (stamps, visited places, wishlist, collection). Country and collectible details open as sheets over the map so the camera never resets.
+
+## First playable release
+
+Covers the regions whose capital scenes exist — currently Europe.
+
+Includes:
+
+1. Globe → continent → country → capital journey with continuous camera.
+2. The discovery track: country states, landmark and wildlife collectibles, "find it" challenges in capital scenes, and clouds over undiscovered countries that clear as players explore.
+3. A daily featured place.
+4. The travel track: manual dated visits with undo, wishlist, home country, generated passport stamps, and a My World view of visited countries.
+5. Local, versioned persistence and full offline use on native.
+6. The pixel UI kit applied to the map overlay, country sheet, challenge, and passport.
+7. Game feel: animated scenes (water, smoke, flags, boats, birds, people), chiptune music and sound effects, haptics, and real day/night on the globe and in capitals.
+
+Excludes: accounts, backend, payments and currencies, social features and leaderboards, GPS verification, live online data, AI-generated facts, AR, avatars and characters, cities beyond capitals, food/tradition/history packs, and street-accurate city maps.
+
+**Build order:** prove the gameplay loop on three capitals and playtest it on phones before adding more capitals. Phases and tasks are in [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md).
+
+## Long term
+
+Every country and its capital, with increasingly detailed scenes. More challenge types on the same world (spot the animal, map questions), a wildlife field guide, shareable postcards, landmark close-ups, seasonal events, and curated cultural packs. Each addition reuses the same data pipeline and art rules rather than hand-drawing new maps.
 
 ## How we avoid drawing the world
 
-Use [Natural Earth](https://www.naturalearthdata.com/about/terms-of-use/), whose map data is public domain, for the broad geographic foundation. Use [OpenStreetMap](https://www.openstreetmap.org/copyright) data for selected detailed areas, respecting attribution and ODbL obligations.
-
-A build-time process converts geography into pixel-art terrain at several scales. Reusable art supplies forests, settlements, markers, and panels. Human effort goes into art rules, a small number of landmarks, and compelling challenges. Expanding coverage adds data packs through those same rules; it does not require drawing a new country map from scratch.
-
-This makes global coverage structurally possible. It does not make global detailed data processing, distribution, or content curation free. Start with bundled areas and measure the real costs before adding hosting.
+[Natural Earth](https://www.naturalearthdata.com/about/terms-of-use/) (public domain) supplies the global base; [OpenStreetMap](https://www.openstreetmap.org/copyright) data is used where finer geography is needed, with attribution. Build-time scripts turn geography into pixel terrain at each scale. Icons, buildings, and capital scenes are generated by the project's own art scripts under the art contract. Every landmark and animal placement records its sources. Human effort goes into art rules, landmark accuracy, and good challenges — not into drawing coastlines.
 
 ## What success means
 
-- Someone can move from the Earth view to a country, city, and challenge without explanation.
-- A short session feels like exploring a game world, and the selected real places remain recognizable.
-- Pan and pinch remain responsive on a representative mid-range phone.
-- Recording a visit visibly changes the country; progress survives closing and reopening the app.
-- Generating the second destination reuses the first destination's rules and reveals where they need improvement.
-- The entire demonstration works without a paid map API or a running backend.
+- Someone goes from the globe to a capital and finds their first collectible without explanation.
+- A five-minute session with the daily place feels complete; a longer one never runs out of things to find.
+- Players who never travel enjoy the app as much as those who do.
+- Recording a visit or finding a collectible visibly changes the world, and survives closing the app.
+- Pan, pinch, and scene transitions stay smooth on a mid-range phone.
+- Everything works offline with no paid API or running server.
 
-Performance, package-size, and compatibility targets are proposed in [TECHNICAL_PLAN.md](./TECHNICAL_PLAN.md#validation-experiments-and-decision-gates). They are acceptance criteria to test, not measured results.
+## Open decisions
 
-## Decisions to review
-
-The technical recommendation is a small Skia-based renderer using generated maps, with MapLibre as the alternative if custom camera or tile management becomes too expensive to maintain. Review the experiments before treating that choice as final.
-
-The globe is required for the first release. Remaining product choices include whether Malta and Rome are the right initial destinations and how travel should eventually be verified. The proposed MVP can test the experience with manual records while those longer-term decisions remain open.
+- **Name:** WorldQuest availability.
+- **XP and levels:** add or not, after playtesting the first version.
+- **Body font:** Pixelify Sans or a companion font for longer text.
+- **Daily place selection:** curated schedule or rotation through available content.
+- **Monetization:** undecided; must not shape the core design.

@@ -10,7 +10,9 @@ The previous Phase 3 navigation/visit implementation has been removed: parchment
 - **Country tier (Portugal):** a castle at Lisbon, church towns, houses, trees and boats at its real cities.
 - **Capital:** an isometric Lisbon scene that grows out of Lisbon's location and can be panned.
 
-Deep zoom is allowed only where detail exists. **Next:** a pin and name chip, the header and card, then more European countries and capitals through the same pipeline.
+Deep zoom is allowed only where detail exists.
+
+**Priority from 20 November 2026: gameplay before more capitals.** 44 European capital scenes exist, but nothing to do in them yet. New capitals pause until the Phase 5 gameplay slice (country sheet → capital scene → "find it" → collectible card → saved progress) has been built on three capitals and playtested on phones. The product direction is in [PROJECT_VISION.md](./PROJECT_VISION.md).
 
 ## The experience we are building
 
@@ -44,11 +46,13 @@ The reference’s quest lists, avatar, XP, badges, statistics, and parchment car
 | --- | --- | --- | --- |
 | 1 | App foundation | Expo app, routing, shared styling, and checks | Complete |
 | 2 | Earth and universe | An attractive, responsive opening planet | Core implemented; visual refinement and platform validation active |
-| 3 | Continent/country visuals and continuous zoom | Richer geography appears while zooming into the same world | Next |
-| 4 | Detailed capital visuals | The journey reaches recognizable Valletta scenery | Planned |
-| 5 | Exploration controls and saved visits | Lightweight contextual navigation and explicit local records support the finished map | Deferred until the visual journey works |
-| 6 | Game interface and progression | Quests, avatar/XP, badges, statistics, and collections reflect real records | Deferred |
-| 7 | Second capital and release validation | Rome reuses the visual pipeline; the two-capital experience is verified | Planned |
+| 3 | Continent/country visuals and continuous zoom | Richer geography appears while zooming into the same world | Implemented for Europe |
+| 4 | Detailed capital visuals | Recognizable capital scenes, one per country | 44 European capitals built; paused until the Phase 5 playtest |
+| 5 | Gameplay slice | "Find it" loop, collectibles, discovery states, and saved progress on three capitals; playtest gate | Next |
+| 6 | UI kit and game feel | Pixel UI components, scene animation, sound, real day/night, accessibility | Planned |
+| 7 | World progress, Quests and Passport | Three tabs, clouds over undiscovered countries, daily place, travel track, stamps, My World | Planned |
+| 8 | Resume capitals and release validation | New capitals ship with gameplay; platforms, performance, and offline use verified | Planned |
+| 9 | After the first release | More challenge types, field guide, postcards, seasonal events | Backlog |
 
 **Visual milestone before Phase 5:** demonstrate Earth → Europe → Malta → Valletta and back, with actual detail increasing at each scale. Minimal focus/back controls needed to demonstrate this belong to the visual work; visits, searchable global pickers, progress panels, and rewards do not.
 
@@ -123,6 +127,8 @@ The reference’s quest lists, avatar, XP, badges, statistics, and parchment car
 **Exit criteria:** zooming toward Europe and Malta reveals visibly richer geography, with no art-style switch, abrupt replacement image, or screen-sized UI blocking the map. A read-only globe enlarged to 16× does not meet this milestone.
 
 ## Phase 4 — Capital scenery: Lisbon first, then each country's capital
+
+**Status (20 November 2026): paused after Vaduz.** No new capitals until the Phase 5 playtest (P5-08) confirms what each scene needs for gameplay. Work resumes as P8-01, with every new capital shipping its landmark data and challenges.
 
 **Liechtenstein and Vaduz (20 November 2026).** The 720×520 north-up illustration follows the Alpine Rhine along the Swiss side of the valley, turning westward as it flows north. The Old Rhine Bridge crosses from Sevelen on the west bank to Vaduz on the east bank. The valley floor stays open by the embankments, with gravel bars and fields. The centre gathers around the Städtle pedestrian street and Peter-Kaiser-Platz east of the river, below the wooded bluff. The Red House sits north of the centre in Mitteldorf, with its vineyard to the south. Vaduz Castle sits on the eastern rock spur, above every other landmark. The [Vaduz visitor map](https://www.citytrain.li/application/files/7516/7541/6071/Vaduz_Ortsplan_2022.pdf), [municipal heritage register](https://www.vaduz.li/en/living-environment/living-building/listed-buildings) and [Alpine Rhine centreline](https://www.openstreetmap.org/way/1524365679) establish the layout. The river is regulated in this reach, and the mapped reach excludes boats.
 
@@ -1331,33 +1337,70 @@ Building coordinates use centres of OSM building bounding boxes fetched from /ap
 
 **Limits:** the cathedral icon/gable scrolls, City Hall crest, church rose tracery, opera sculpture anatomy/lyre and monument relief/heraldic identities remain compressed or omitted as stated per model. The library's full stylobate/pane count, exact terrain heights and bridge engineering details are illustrative. Physical iOS/Android devices, native runtime performance, Safari and EAS builds are not verified. Export checks validate the bundles/assets, not device rendering. Six landmark silhouettes/counts, settings, explicit front turns and material depth were visually checked against the fact sheets and benchmarks.
 
-## Phase 5 — Exploration controls and saved visits
+## Phase 5 — Gameplay slice on three capitals
 
-**Dependencies:** the four-scale visual journey.
+**Dependencies:** the Lisbon, Paris, and Athens scenes (built). New capitals stay paused until P5-08 passes.
 
-- [ ] **P5-01 — Add minimal contextual navigation.** Lightweight title/back/focus controls and accessible alternatives support map gestures. Any sheets remain optional/collapsible; preserve the mounted scene and parent camera.
-- [ ] **P5-02 — Add the approved location/POI catalog.** Stable IDs, parent relationships, multiple/no-capital cases, source provenance, and explicit detailed-coverage bounds. Document continent/territory policy.
-- [ ] **P5-03 — Add explicit visit/discovery actions.** Viewing a place never records travel. Define dated country/capital/POI visits and linked undo behavior before wiring UI.
-- [ ] **P5-04 — Add versioned local persistence.** Hydration, schema validation/migrations, ordered saves, failure/retry, and explicit reset. Keep transient camera/input state separate; install storage only when used.
-- [ ] **P5-05 — Verify exploration records.** Visit/undo, relaunch, corrupt/unavailable storage, content updates, and no progress changes from browsing.
+**Goal:** prove the core loop end to end before adding more content: country sheet → capital scene → "find it" → collectible card → saved progress.
 
-## Phase 6 — Game interface, quests, and progression
+- [ ] **P5-01 — Export landmark positions from the scene builder.** `scripts/art/build_capitals.py` also writes a data file per capital: each landmark's stable id, name, and hit shape in scene pixels, plus animation anchors (water regions, chimney tops, flagpoles, boat lanes) for P6-05. `check_capital.py` already measures each landmark's visibility and clipping; reuse that geometry. Scene PNG bytes stay unchanged. Tests check that every landmark has a non-empty, unclipped shape and list any too small to tap comfortably at phone scale.
+- [ ] **P5-02 — Add the content catalog.** Stable IDs and parent links for countries, capitals, and collectibles (landmarks, wildlife, landscapes). Each collectible has one or two checked sentences and its sources, drawn from the existing fact sheets and `scripts/geography/scenery.json`. Record which countries have content, so one without content is never shown as completed. Document continent/territory policy.
+- [ ] **P5-03 — Add minimal contextual navigation.** Title/back/focus controls and a country sheet over the map, with accessible alternatives to gestures. Sheets stay collapsible; the mounted scene and camera are preserved.
+- [ ] **P5-04 — Add discovery states.** Undiscovered / Discovered / In progress / Completed, derived from records. Opening a country discovers it; collectibles count only when found. Browsing never records travel.
+- [ ] **P5-05 — Build the "find it" challenge.** A prompt names a landmark or hidden detail; taps are tested against P5-01 shapes. Wrong taps get gentle feedback, and after several misses an assist highlights the area. Finding it opens the collectible card.
+- [ ] **P5-06 — Add collectible cards.** Name, pixel image cropped from the scene or its 4× study, one or two sentences, source link, and date found.
+- [ ] **P5-07 — Add versioned local persistence.** Hydration, schema validation/migrations, ordered saves, failure/retry, undo, and explicit reset. Keep transient camera/input state separate; install storage only when used. Verify relaunch, corrupt/unavailable storage, and content updates.
+- [ ] **P5-08 — Playtest gate.** Play the slice on a physical iPhone and Android phone. Record: whether "find it" is fun, whether landmarks are big enough to tap, whether UI fits over the scenes, which pipeline changes all capitals need, and the open decisions (XP, body font). Apply pipeline changes before resuming Phase 4.
 
-**Dependencies:** finished scenery and canonical exploration records.
+## Phase 6 — UI kit and game feel
 
-- [ ] **P6-01 — Author real capital activities.** Stable IDs, source-grounded places, original content, categories, and defined rewards.
-- [ ] **P6-02 — Add quest interactions.** Select a place, inspect/complete/undo an activity, and persist its record.
-- [ ] **P6-03 — Derive progress and rewards.** Activity denominators, XP/levels, badges/stamps, and undo rules use actual records; repeat completion cannot farm rewards.
-- [ ] **P6-04 — Add the reference-inspired HUD.** Avatar/XP, parchment cards, travel stats, recent visits, country summaries, and capital checklists complement the map. No placeholder rewards or fabricated percentages.
-- [ ] **P6-05 — Add working game destinations/settings.** Expo Router views for Quests, Collection, Progress, and Profile arrive with content; retain map/camera state.
+**Dependencies:** the Phase 5 slice, so components are judged on real screens.
 
-## Phase 7 — Rome, platform validation, and preview
+- [ ] **P6-01 — Game theme tokens.** Replace the template light/dark colours in `src/constants/theme.ts` with one game palette from the art contract (night navy, parchment, gold, progress green, ink). One UI pixel = 2 points; spacing and borders in whole UI pixels; fixed type sizes.
+- [ ] **P6-02 — Nine-slice frame generator.** A script in `scripts/art/` writes in-palette frames (parchment and navy panels; gold, cream, and green buttons; chip; tab; progress-bar parts) and 16×16 UI icons, drawn with nearest-neighbour sampling.
+- [ ] **P6-03 — Pixel UI components.** `PixelPanel`, `PixelButton` (drops 1 UI pixel when pressed, with a haptic tap), `Chip`, `SegmentedProgress`, `Badge`, `TabBar`, `CollectibleCard`, `Stamp`. Stepped, frame-like motion that respects reduced-motion settings. No frosted glass, gradients, or soft glows.
+- [ ] **P6-04 — `/ui-kit` route.** Every component shown over the globe, the Europe board, and a capital scene; checked on phones, then applied to the Phase 5 screens.
+- [ ] **P6-05 — Animate the scenes.** Overlays at the P5-01 anchors: water shimmer, chimney smoke, waving flags, drifting boats, birds, a few two-frame people. Seeded and stable, batched into one draw, paused off-screen; measure frame cost.
+- [ ] **P6-06 — Sound and haptics.** A short chiptune loop per continent; sounds for finding, stamping, and buttons. CC0 or generated audio with sources recorded; mute setting; follows the phone's silent mode. Check the SDK 58 docs before choosing modules.
+- [ ] **P6-07 — Real day and night.** Light the globe from the sun's actual position, and tint capital scenes by their local time, with lit windows at night. Computed on the device, no network.
+- [ ] **P6-08 — Accessibility pass.** Large-text mode, colour-blind-safe statuses (symbol and number, never colour alone), screen-reader labels, and the "find it" assist.
 
-- [ ] **P7-01 — Add Rome through the same pipeline.** Reuse capital preparation/style rules, then author places/activities without creating a new exploration flow.
-- [ ] **P7-02 — Validate platforms and accessibility.** Available Android/iPhone and Chromium/Safari; safe areas, targets, labels, reduced motion, sheet/gesture separation, tiny countries, date-line and polar behavior.
-- [ ] **P7-03 — Measure the real scenes.** Frame behavior, decoded/GPU/transient memory, cold loading, pack/app disk cost, and five-minute memory trends.
-- [ ] **P7-04 — Verify saved/offline behavior.** Installed native packs in airplane mode, relaunch, write failure/reset, reward undo, and content versions. Browser offline reload needs a separately tested cache strategy.
-- [ ] **P7-05 — Prepare the preview.** Retain attribution, regeneration instructions, coverage limits, a recorded four-scale walkthrough, and passing project checks.
+## Phase 7 — World progress, Quests, and Passport
+
+**Dependencies:** Phase 5 records and Phase 6 components.
+
+- [ ] **P7-01 — Three-tab navigation.** World (the map), Quests, and Passport through Expo Router. The map stays mounted and the camera is preserved.
+- [ ] **P7-02 — Clouds over undiscovered countries.** Pixel clouds or fog cover undiscovered countries and clear with a short stepped animation when discovered. Seeded per country; works on the globe and the board.
+- [ ] **P7-03 — Daily featured place.** One country or capital per day with 3–5 discoveries, shown in Quests. Document the selection rule (curated or rotating). No penalty for missed days. Optional, opt-in local reminder with no server.
+- [ ] **P7-04 — Travel track.** Dated manual visits with undo, a wishlist, and visited pins on the map, shown differently from discovery. Viewing or discovering never records travel.
+- [ ] **P7-05 — Generated passport stamps and the Passport.** Rule-built stamps per country (shape, flag colours, main landmark icon, date) from a build script. The Passport holds stamps by continent, visited places, the wishlist, and the collection.
+- [ ] **P7-06 — Home country and My World.** Choose a home country once; the globe opens over it. My World shows only visited countries lit, pixel flight arcs between visits, and counts.
+- [ ] **P7-07 — Progress and rewards.** Counts with real denominators, completion badges, and stamps, all derived from records. Undo removes rewards; repeating cannot farm them. Add XP and levels only if P5-08 recommends them.
+- [ ] **P7-08 — Verify records.** Visit/undo, discovery, relaunch, corrupt storage, content updates, and no progress changes from browsing.
+
+## Phase 8 — Resume capitals and release validation
+
+- [ ] **P8-01 — Resume Phase 4 with the loop.** Every new capital ships with landmark data, collectibles, and "find it" prompts. Apply playtest-driven pipeline changes to the existing capitals. (Rome, the old second-capital task, is already built.)
+- [ ] **P8-02 — Validate platforms and accessibility.** Available Android/iPhone and Chromium/Safari; safe areas, targets, labels, reduced motion, sheet/gesture separation, tiny countries, date-line and polar behavior.
+- [ ] **P8-03 — Measure the real scenes.** Frame behavior with animation and audio, decoded/GPU/transient memory, cold loading, pack/app disk cost, and five-minute memory trends.
+- [ ] **P8-04 — Verify saved/offline behavior.** Installed native packs in airplane mode, relaunch, write failure/reset, reward undo, and content versions. Browser offline reload needs a separately tested cache strategy.
+- [ ] **P8-05 — Prepare the preview.** Retain attribution, regeneration instructions, coverage limits, a recorded walkthrough, and passing project checks.
+
+## Phase 9 — After the first release (backlog)
+
+Roughly in priority order; each item needs its own plan before work starts.
+
+- **Spot the animal** — find or identify wildlife in its habitat on the continent board.
+- **Map questions** — answered by tapping the map ("Tap the country whose capital is Lisbon"), not multiple choice.
+- **Field guide** — a card per animal with a small map of where it lives, from the sourced anchors; completing a continent's wildlife is a long-term goal.
+- **Postcards** — a framed pixel postcard of a capital scene with the player's stamp, shared through the system share sheet. No social features needed.
+- **Landmark close-ups** — tapping a found landmark shows its 4× study with two facts.
+- **Seasonal events** — e.g. cherry blossom in Tokyo in April, Christmas markets in Vienna in December.
+- **Home-screen widget** showing the daily place; check SDK support first.
+- **Curated cultural packs** — foods, traditions, history, fact-checked per country.
+- **XP and levels** — only if playtesting shows progress feels flat.
+
+**Not planned:** leaderboards, multiplayer, or accounts; live online data such as weather; facts generated by AI at runtime; AR; currencies, energy systems, loot boxes, or shops.
 
 ## Verification record
 
