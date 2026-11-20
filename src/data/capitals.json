@@ -385,5 +385,14 @@
     "latitude": 35.166677,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "vaduz",
+    "name": "Vaduz",
+    "country": "Liechtenstein",
+    "longitude": 9.522423,
+    "latitude": 47.138451,
+    "width": 720,
+    "height": 520
   }
 ]

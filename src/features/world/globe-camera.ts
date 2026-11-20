@@ -56,6 +56,7 @@ export const COVERAGE = [
   { id: 'pristina', country: 'Kosovo', longitude: 21.1622, latitude: 42.6629, bounds: [20.0, 41.8, 21.9, 43.3] },
   { id: 'kyiv', country: 'Ukraine', longitude: 30.5234, latitude: 50.4501, bounds: [22.0, 44.2, 40.3, 52.4] },
   { id: 'nicosia', country: 'Cyprus', longitude: 33.366635, latitude: 35.166677, bounds: [32.15, 34.48, 34.65, 35.78] },
+  { id: 'vaduz', country: 'Liechtenstein', longitude: 9.522423, latitude: 47.138451, bounds: [9.47, 47.04, 9.64, 47.28] },
   // West > east denotes a country crossing the date line.
   { id: 'moscow', country: 'Russia', longitude: 37.6173, latitude: 55.7558, bounds: [19.0, 41.0, -169.0, 82.0] },
 ] as const;

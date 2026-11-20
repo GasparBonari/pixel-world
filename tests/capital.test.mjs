@@ -2224,14 +2224,14 @@ test('Switzerland marks Bern first, six spaced city groups and Chillon within it
   }
 });
 
-test('Bern supports focal capital arrival while eastern Switzerland retains country zoom', () => {
+test('Bern supports focal capital arrival alongside Vaduz coverage in eastern Switzerland', () => {
   const bern = scenes.find((s) => s.id === 'bern');
   assert.equal(bern.name, 'Bern');
   assert.equal(bern.country, 'Switzerland');
   assert.deepEqual([bern.width, bern.height], [720, 520]);
   assert.equal(maxZoomAt(bern.longitude, bern.latitude), CAPITAL_ZOOM.full);
-  assert.equal(maxZoomAt(9.5, 46.85), COUNTRY_ZOOM.max); // Chur, outside Bern's 1.5° arrival reach
-  assert.equal(maxZoomAt(10.45, 46.8), COUNTRY_ZOOM.max); // eastern Graubünden
+  assert.equal(camera.activeCapital({ longitude: 9.5, latitude: 46.85, zoom: 7 }).id, 'vaduz'); // Chur
+  assert.equal(camera.activeCapital({ longitude: 10.45, latitude: 46.8, zoom: 7 }).id, 'vaduz'); // eastern Graubünden
   let current = { longitude: 7.1, latitude: 47.1, zoom: 5 };
   const focal = globePoint(bern.longitude, bern.latitude, current, view);
   for (let step = 0; step < 8; step++)
@@ -2439,4 +2439,26 @@ test('Cyprus marks Nicosia, spaced Paphos and Choirokoitia inside its bounds', (
   const kinds = tier.map(([frame]) => icons.names[frame]).sort();
   assert.deepEqual(kinds, ['boat', 'boat', 'castle', 'choirokoitia', 'church', 'house', 'house',
     'house', 'house', 'olive', 'olive', 'olive', 'olive', 'pine', 'pine', 'pine']);
+});
+
+test('Liechtenstein marks Vaduz and its Alpine pines inside the shared bounds', () => {
+  const region = COVERAGE.find((entry) => entry.id === 'vaduz');
+  const scene = scenes.find((entry) => entry.id === region.id);
+  assert.deepEqual([scene.name, scene.country, scene.longitude, scene.latitude, scene.width, scene.height],
+    ['Vaduz', 'Liechtenstein', region.longitude, region.latitude, 720, 520]);
+  assert.deepEqual(region.bounds, [9.47, 47.04, 9.64, 47.28]);
+  assert.equal(camera.activeCapital({ longitude: 9.5167, latitude: 47.1337, zoom: 7 }).id, 'vaduz');
+
+  const [west, south, east, north] = region.bounds;
+  const tier = icons.icons.filter(([, lon, lat, , , scale]) =>
+    scale === 1 && west <= lon && lon <= east && south <= lat && lat <= north);
+  const group = tier.filter(([, lon, lat]) => lon === 9.5167 && lat === 47.1337);
+  assert.deepEqual(group.map(([frame, , , dx, dy]) => [icons.names[frame], dx, dy]), [
+    ['house', -9, -2], ['house', 10, -1], ['castle', 0, 0],
+  ]);
+  const pines = tier.filter(([frame]) => icons.names[frame] === 'pine');
+  assert.deepEqual(pines.map(([, lon, lat, dx]) => [lon, lat, dx]), [
+    [9.485, 47.165, 0], [9.485, 47.095, 22],
+  ]);
+  assert.equal(tier.length, group.length + pines.length);
 });

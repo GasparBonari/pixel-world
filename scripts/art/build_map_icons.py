@@ -217,6 +217,10 @@ COUNTRY_TIER = [
      "boat_bounds": (32.15, 34.48, 34.65, 34.95),
      # Centre of the excavated Neolithic settlement, above the Maroni valley.
      "landmarks": [("choirokoitia", 33.34398, 34.79712)]},
+    {"adm0": "LIE", "bounds": (9.47, 47.04, 9.64, 47.28), "capital": "Vaduz", "cities": 9,
+     # Restrict the coarse native board cell to its strip inside the Natural Earth outline.
+     "trees": 2, "tree_bounds": (9.48, 47.07, 9.49, 47.17),
+     "decoration_grid": .01, "decoration_km": 4, "boats": 0, "landmarks": []},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -532,6 +536,8 @@ def main():
         if spec["adm0"] == "RUS":
             # Keep forest decoration in the boreal belt, away from Arctic desert/tundra.
             trees = [(lon, lat) for lon, lat in trees if 50 <= lat <= 64 and lon < 140]
+        if "tree_bounds" in spec:
+            trees = [(lon, lat) for lon, lat in trees if in_bounds(lon, lat, spec["tree_bounds"])]
         tree_sites = spread(trees, spec.get("trees", 7 if spec["adm0"] == "PRT" else 12),
                             spec.get("decoration_km", 70), 51, towns, spec.get("decoration_km", 45))
         # Italy spans Alpine forests and Mediterranean islands: distribute its seven trees
@@ -599,7 +605,9 @@ def main():
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             kind = "pine" if lat > 40.5 else "olive" if lat < 38.8 else "oak"
-            building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+            # Separate the foreground pine from Vaduz's castle at the fixed icon scale.
+            dx = 22 if spec["adm0"] == "LIE" and lat < towns[0][1] else 0
+            building(kind, lon, lat, dx, 0, int(h01(lon * 9, lat * 9) * 9))
         if "boat_bounds" in spec:
             bw, bs, be, bn = spec["boat_bounds"]
             boats = [(lon, lat) for lon, lat in boats if bw <= lon <= be and bs <= lat <= bn]

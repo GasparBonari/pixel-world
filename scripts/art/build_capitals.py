@@ -5491,6 +5491,217 @@ def nicosia():
     return scene.img.convert('RGB')
 
 
+def vaduz():
+    import landmarks_liechtenstein as li
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    def distance(x, y, path):
+        nearest = math.inf
+        for (ax, ay), (bx, by) in zip(path, path[1:]):
+            dx, dy = bx-ax, by-ay
+            t = max(0, min(1, ((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy)))
+            nearest = min(nearest, math.hypot(x-ax-t*dx, y-ay-t*dy))
+        return nearest
+
+    def inside(x, y, cx, cy, rx, ry):
+        return ((x-cx)/rx)**2 + ((y-cy)/ry)**2 < 1
+
+    # The compressed river runs south to north along the western floor of the valley.
+    # The local reach follows +i, so the old bridge spans it across j at its scene anchor.
+    river = ((25, -36), (57, 25), (43, 104), (60, 179), (77, 279),
+             (93, 376), (93, 426), (207, 483), (225, 560))
+
+    def river_offset(x, y):
+        for (ax, ay), (bx, by) in zip(river, river[1:]):
+            if ay <= y < by:
+                return x-ax-(bx-ax)*(y-ay)/(by-ay)
+        return x-river[-1][0]
+
+    promenade = ((237, -20), (252, 73), (322, 137), (365, 163), (413, 204),
+                 (415, 249), (452, 292), (444, 343), (400, 396), (406, 448), (445, 485))
+    valley_road = ((198, -15), (218, 112), (235, 203), (261, 273),
+                   (270, 340), (235, 417), (285, 520), (311, 554))
+    castle_path = ((427, 192), (461, 155), (486, 132), (529, 133),
+                   (551, 149), (514, 168), (557, 191))
+    approach = ((76, 502), (110, 490), (217, 436), (237, 427), (257, 427))
+    vineyard = (292, 159, 64, 43)
+    sectors = {}
+    reserve = set()
+    protected = []
+
+    # Assign a terrace to the entire footprint before painting the valley and its slopes.
+    terraces = {}
+    positions = []
+    for _, builder, (w, d), _, (x, y), z in li.SITES:
+        ci, cj = tile(x, y)
+        a, b = ci-w/2, cj-d/2
+        positions.append((builder, a, b, z))
+        for i in range(math.floor(a)-1, math.ceil(a+w)+1):
+            for j in range(math.floor(b)-1, math.ceil(b+d)+1):
+                reserve.add((i, j))
+                terraces[i, j] = z
+
+    (castle_width, castle_depth), (castle_x, castle_y), summit = next(
+        (footprint, anchor, z) for _, builder, footprint, _, anchor, z in li.SITES if builder is li.vaduz_castle
+    )
+    ci, cj = tile(castle_x, castle_y)
+    castle_i, castle_j = ci-castle_width/2, cj-castle_depth/2
+    for i, j in visible_tiles(scene, margin=90):
+        x, y = scene.screen(i+.5, j+.5)
+        offset = river_offset(x, y)
+        # The river is narrower away from the bridge, with shingle along the inside edge.
+        bank_width = 34+18*max(0, min(1, (y-380)/46, (519-y)/36))
+        bluff = 539+33*math.sin(y/62)-18*math.sin(y/29)
+        ridge = max(0, x-bluff)
+        z = min(69, max(0, math.floor(ridge/23)*7))
+        hill_rim = max(castle_i-1-i, i-castle_i-castle_width-1,
+                       castle_j-1-j, j-castle_j-castle_depth-1, 0)
+        if hill_rim < 8:
+            erosion = .46*math.sin(j/2)+.35*math.cos(i/2)
+            drop = 15 if x < 557 else 9
+            z = max(z, summit-max(0, math.ceil((hill_rim+erosion)/1.3))*drop)
+        if inside(x, y, 298, 132, 85, 51):
+            z = max(z, 8 if inside(x, y, 302, 127, 65, 39) else 4)
+        z = terraces.get((i, j), z)
+
+        if abs(offset) < bank_width:
+            shoal = bank_width-abs(offset) < 8+14*math.sin(y/34)
+            k = 'shingle' if shoal and offset < 0 else 'shallows' if abs(offset) > bank_width-13 else 'water'
+        elif distance(x, y, approach) < 7:
+            k = 'path'
+        elif abs(offset) < bank_width+13:
+            k = 'dike' if abs(offset) > bank_width+7 else 'bank'
+        elif z >= 19:
+            k = 'rock' if z >= 28 and x < 570 and 175 < y < 264 and hill_rim <= 2.5 else 'forest'
+            if distance(x, y, castle_path) < 8:
+                k = 'path'
+        elif inside(x, y, *vineyard) and y > 129 and (i, j) not in reserve:
+            k = 'vineyard'
+        elif distance(x, y, promenade) < 10 or inside(x, y, 411, 347, 58, 71):
+            k = 'plaza'
+        elif distance(x, y, valley_road) < 7 or (z < 19 and distance(x, y, castle_path) < 6):
+            k = 'lane'
+        elif inside(x, y, 371, 407, 55, 27) or inside(x, y, 475, 459, 55, 34):
+            k = 'garden'
+        elif offset < 113 or x < 197:
+            k = 'field'
+        elif z >= 10 or x > 526:
+            k = 'orchard'
+        else:
+            k = 'lane' if i % 8 == 0 or j % 8 == 0 else 'lot'
+
+        if (i, j) in reserve and k not in ('water', 'shallows', 'shingle', 'dike', 'bank', 'rock', 'forest'):
+            if z <= 12 and distance(x, y, approach) > 11:
+                k = 'plaza' if 170 < y < 473 else 'path'
+        sectors[i, j] = k, z
+
+    colours = {k: rgb(value) for k, value in {
+        'water': '#5995A0', 'shallows': '#7AA8A4', 'current': '#437B8A', 'ripple': '#C2DAD1',
+        'shingle': '#C3C6B3', 'bank': '#9DA878', 'dike': '#A5A795', 'field': '#91A765',
+        'forest': '#728454', 'rock': '#A3A08B', 'orchard': '#94A36B', 'vineyard': '#909D60',
+        'plaza': '#D9CCB6', 'lane': '#A7A99E', 'path': '#B9B09A', 'lot': '#B6B193',
+        'garden': '#A6AF77',
+    }.items()}
+    valley_fields = [rgb(c) for c in ('#A6B677', '#9AAC6D', '#97A665', '#A4AE73', '#ADAD77', '#A0AA66')]
+    rock_face = rgb('#8E8B76')
+    earth_face = rgb('#879267')
+    for i, j in sorted(sectors, key=sum):
+        kind, z = sectors[i, j]
+        base = colours[kind]
+        if kind == 'field':
+            base = valley_fields[int(h01(i//9, j//12, 581)*len(valley_fields))]
+            if i % 9 == 0 or j % 12 == 0:
+                base = shade(base, -.13)
+        elif kind == 'lot':
+            base = shade(base, .15*(h01(i//4, j//4, 587)-.5))
+        elif z and kind in ('forest', 'rock', 'orchard'):
+            base = shade(base, .10*math.sin(i/3)+.07*math.cos(j/4))
+
+        def ground(x, y):
+            detail = h01(x, y, 578)
+            if kind in ('water', 'shallows'):
+                if h01(x//5, y, 579) < .042:
+                    return colours['ripple']
+                if kind == 'water' and h01(x//9, y//3, 580) < .21:
+                    return colours['current']
+            if kind == 'plaza':
+                if y % 5 == 0 or (x+(y//5 % 2)*4) % 8 == 0:
+                    return shade(base, -.08)
+            if kind in ('path', 'lane', 'dike') and (x+(y%2)*3) % 8 == 0:
+                return shade(base, -.085)
+            if kind == 'vineyard' and (x-2*y) % 16 <= 3:
+                leaf = (x+2*y) % 12
+                return shade(base, -.30 if leaf < 5 else -.10 if leaf < 9 else .16)
+            return shade(base, .13 if detail < .068 else -.10 if detail < .18 else 0)
+
+        tile_x, tile_y = scene.screen(i, j)
+        rock = kind == 'rock' or (z >= 28 and tile_x < 570 and 175 < tile_y < 276)
+        material = rock_face if rock else earth_face
+
+        def slope(x, y, lit):
+            joint = .11 if rock and (y + x//4) % 7 == 0 else 0
+            fleck = .08 if h01(x//2, y, 584) < .16 else 0
+            return shade(material, (.02 if lit else -.20)-joint+fleck)
+
+        iso.ground_tile(scene, i, j, ground, z, slope)
+
+    for builder, a, b, z in positions:
+        builder(scene, a, b, z)
+        study = new_scene()
+        builder(study, a, b, z)
+        study.paint_objects()
+        l, t, r, bottom = study.img.convert('RGB').getbbox()
+        protected.append((l-5, t-4, r+5, bottom+6))
+
+    def clear(x, y, left, right, height, foot=5):
+        return all(x+right < l or x-left > r or y+foot < t or y-height > bottom
+                   for l, t, r, bottom in protected)
+
+    # Detached, low valley houses leave the river and the squares in front of the landmarks open.
+    occupied = set()
+    for i, j in sectors:
+        if i % 8 not in (1, 4) or j % 8 not in (1, 4):
+            continue
+        cells = {(i+a, j+b) for a in range(4) for b in range(4)}
+        if cells & reserve or cells & occupied or not cells <= sectors.keys():
+            continue
+        kind, z = sectors[i+1, j+1]
+        plots = {'lot', 'lane'} if kind == 'lot' else {kind}
+        if any(sectors[cell][0] not in plots or sectors[cell][1] != z for cell in cells):
+            continue
+        seed = int(h01(i, j, 582)*10000)
+        if kind != 'lot' and (kind not in ('field', 'orchard') or seed%11 != 0):
+            continue
+        x, y = scene.screen(i+.4, j+.4, z)
+        if abs(river_offset(x, y+z)) < 91:
+            continue
+        floors = 1 if seed%4 == 1 or kind != 'lot' else 2
+        if clear(x, y, 26, 32, 18+floors*11, 28):
+            li.townhouse(scene, i+.4, j+.4, floors, seed, z)
+            occupied.update(cells)
+
+    pine = [sprites.pine(k) for k in range(3)]
+    broadleaf = [round_tree(k, '#809B57', '#3F562F', .75+(k%2)*.22) for k in range(8)]
+    for (i, j), (kind, z) in sectors.items():
+        if (i, j) in reserve or (i, j) in occupied or kind not in ('bank', 'orchard', 'garden', 'forest', 'rock', 'lot'):
+            continue
+        seed = int(h01(i, j, 583)*10000)
+        frequency = {'bank': 22, 'orchard': 9, 'garden': 6, 'forest': 5, 'rock': 12, 'lot': 23}[kind]
+        if seed % frequency:
+            continue
+        x, y = scene.screen(i+.5, j+.5, z)
+        if clear(x, y, 12, 12, 23):
+            im = pine[seed % len(pine)] if kind in ('forest', 'rock') and seed % 4 != 0 else broadleaf[seed%8]
+            scene.add(i+j+1, lambda s, x=x, y=y, im=im: s.sprite(im, x, y+3))
+
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -5578,6 +5789,8 @@ CAPITALS = [
      "render": moscow},
     {"id": "nicosia", "name": "Nicosia", "country": "Cyprus", "longitude": 33.366635, "latitude": 35.166677,
      "render": nicosia},
+    {"id": "vaduz", "name": "Vaduz", "country": "Liechtenstein", "longitude": 9.522423, "latitude": 47.138451,
+     "render": vaduz},
 ]
 
 
