@@ -207,6 +207,11 @@ COUNTRY_TIER = [
      "boat_bounds": (30.2, 44.2, 40.3, 48.0),
      # Khotyn's citadel itself, on the western/right bank of the Dniester.
      "landmarks": [("khotyn", 26.49833, 48.52194)]},
+    {"adm0": "RUS", "bounds": (19.0, 41.0, -169.0, 82.0), "capital": "Moscow", "cities": 9,
+     "trees": 7, "boats": 2,
+     "boat_bounds": (130.0, 42.0, 180.0, 64.0),
+     # Western summit of Elbrus; east < west preserves Russia across the date line.
+     "landmarks": [("elbrus", 42.4378432, 43.3524103)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -257,6 +262,7 @@ VARIANTS = {
     "soroca": 1,
     "mir-castle": 1,
     "khotyn": 1,
+    "elbrus": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -301,6 +307,11 @@ def spread(candidates, count, spacing_km, seed, taken=(), taken_km=None):
         ):
             chosen.append((lon, lat))
     return chosen
+
+
+def in_bounds(lon, lat, bounds):
+    west, south, east, north = bounds
+    return south <= lat <= north and (lon >= west or lon <= east if west > east else west <= lon <= east)
 
 
 def main():
@@ -456,9 +467,11 @@ def main():
 
     for spec in COUNTRY_TIER:
         w, s_, e, n = spec["bounds"]
+        # Scan a continuous grid across 180°, then wrap only the output coordinate.
+        if w > e:e += 360
         cities = sorted(
-            (p for p in places if p["adm0_a3"] == spec["adm0"] and w <= p["longitude"] <= e
-             and s_ <= p["latitude"] <= n),
+            (p for p in places if p["adm0_a3"] == spec["adm0"]
+             and in_bounds(p["longitude"], p["latitude"], spec["bounds"])),
             # A capital can rank below a nearby metro area (The Hague above Amsterdam).
             # Anchor it first so the 75 km spacing filter cannot discard the capital itself.
             key=lambda p: (p["name"] != spec["capital"], -p["pop_max"]))
@@ -491,7 +504,8 @@ def main():
         for y in range(int((90 - n) / step), int((90 - s_) / step)):
             for x in range(int((w + 180) / step), int((e + 180) / step)):
                 lon, lat = -180+(x+.5)*step, 90-(y+.5)*step
-                if not (w <= lon <= e and s_ <= lat <= n):
+                if lon > 180:lon -= 360
+                if not in_bounds(lon, lat, spec["bounds"]):
                     continue  # grid rounding can reach half a cell outside the bounds
                 if step != GRID:
                     # Tiny islands disappear in the averaged 0.25° land mask. Keep
@@ -509,10 +523,13 @@ def main():
                 elif not is_land(x, y) and any(country_code(x + dx, y + dy) == spec["adm0"]
                                                for dx in (-3, 0, 3) for dy in (-3, 0, 3)):
                     boats.append((lon, lat))
-        # Italy spans Alpine forests and Mediterranean islands: distribute its seven trees
-        # across three latitude bands rather than letting one seeded cluster fill the north.
+        if spec["adm0"] == "RUS":
+            # Keep forest decoration in the boreal belt, away from Arctic desert/tundra.
+            trees = [(lon, lat) for lon, lat in trees if 50 <= lat <= 64 and lon < 140]
         tree_sites = spread(trees, spec.get("trees", 7 if spec["adm0"] == "PRT" else 12),
                             spec.get("decoration_km", 70), 51, towns, spec.get("decoration_km", 45))
+        # Italy spans Alpine forests and Mediterranean islands: distribute its seven trees
+        # across three latitude bands rather than letting one seeded cluster fill the north.
         if spec["adm0"] == "ITA":
             tree_sites = []
             for south, north, count in ((44, 48, 2), (40, 44, 2), (35, 40, 3)):
@@ -520,8 +537,8 @@ def main():
                               and all(great_circle_km(t, other) >= 70 for other in tree_sites)]
                 tree_sites += spread(candidates, count, 70, 51, towns, 45)
         for lon, lat in tree_sites:
-            if spec["adm0"] in ("SWE", "NOR", "FIN", "EST", "LVA", "LTU"):
-                kind = "pine" if lat > 60 or spec["adm0"] in ("EST", "LVA", "LTU") else "oak"
+            if spec["adm0"] in ("SWE", "NOR", "FIN", "EST", "LVA", "LTU", "RUS"):
+                kind = "pine" if lat > 60 or spec["adm0"] in ("EST", "LVA", "LTU", "RUS") else "oak"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if spec["adm0"] == "ITA":

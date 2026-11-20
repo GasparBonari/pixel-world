@@ -367,5 +367,14 @@
     "latitude": 50.4501,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "moscow",
+    "name": "Moscow",
+    "country": "Russia",
+    "longitude": 37.6173,
+    "latitude": 55.7558,
+    "width": 720,
+    "height": 520
   }
 ]

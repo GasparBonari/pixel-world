@@ -118,7 +118,7 @@ test('spinning wraps longitude, limits tilt, and zoom preserves its surface anch
 });
 
 test('country zoom stays on the same globe projection beyond the previous handoff', () => {
-  const camera = { longitude: 37.6173, latitude: 55.7558, zoom: 1.5 }; // Moscow stays beyond covered capitals’ pull-back reach.
+  const camera = { longitude: 139.6917, latitude: 35.6895, zoom: 1.5 }; // Tokyo stays beyond covered capitals’ pull-back reach.
   const pointer = { x: viewport.width / 2 + 20, y: viewport.height / 2 - 25 };
   const anchor = globeLocation(pointer.x, pointer.y, camera, viewport);
   for (const zoom of [2, 2.5, 3, MAX_GLOBE_ZOOM]) {

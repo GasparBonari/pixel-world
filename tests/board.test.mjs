@@ -29,8 +29,8 @@ test('URL params open a constrained camera, and absent params keep the default o
     latitude: 35.9,
     zoom: 2.6,
   });
-  const clamped = cameraFromParams({ lon: '190', lat: '95', zoom: '99' });
-  assert.equal(clamped.longitude, -170);
+  const clamped = cameraFromParams({ lon: '210', lat: '95', zoom: '99' });
+  assert.equal(clamped.longitude, -150);
   assert.equal(clamped.latitude, 80);
   assert.equal(clamped.zoom, MAX_GLOBE_ZOOM);
   assert.deepEqual(cameraFromParams({ zoom: 'abc', lat: ['40'] }), { ...OPENING_CAMERA, latitude: 40 });

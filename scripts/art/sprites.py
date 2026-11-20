@@ -2785,6 +2785,43 @@ def khotyn(seed=0):
     return scene.img
 
 
+def elbrus(seed=0):
+    """Elbrus's broad glaciated twin volcanic summits, west higher, as a small 3D heightfield."""
+    import iso
+    from landmarks_paris import P, poly
+    from landmarks_russia import ROCK, SNOW
+
+    scene = iso.Scene(88, 70, (44, 26))
+    scene.img = Image.new('RGBA', (88, 70), (0, 0, 0, 0))
+    scene.px = scene.img.load()
+    # Ground shadow is deliberately separate from the opaque terrain mesh.
+    from PIL import ImageDraw
+    ImageDraw.Draw(scene.img).ellipse((10, 49, 78, 66), fill=SHADOW)
+    def height(i, j):
+        west = 28/(1+(((i-1.7)**2+(j-3.1)**2)/1.1)**1.6)
+        east = 25/(1+(((i-3.3)**2+(j-1.8)**2)/1.05)**1.6)
+        apron = max(0, 9-1.1*((i-2.5)**2+(j-2.5)**2))
+        return max(west, east, apron)
+    faces = []
+    for a in range(20):
+        for b in range(20):
+            i, j = a/4, b/4
+            verts = [(i, j), (i+.25, j), (i+.25, j+.25), (i, j+.25)]
+            for indices in ((0, 1, 2), (0, 2, 3)):
+                points = [(verts[k][0], verts[k][1], height(*verts[k])) for k in indices]
+                ci, cj = sum(p[0] for p in points)/3, sum(p[1] for p in points)/3
+                z = height(ci, cj)
+                di = height(ci+.05, cj)-height(ci-.05, cj)
+                dj = height(ci, cj+.05)-height(ci, cj-.05)
+                light = (di-dj)/max(.7, math.hypot(di, dj))
+                key = 'hi' if light > .65 else 'lit' if light > -.05 else 'mid' if light > -.65 else 'dark'
+                material = SNOW if z > 5.5+(math.sin(ci*3)+math.cos(cj*4))*1.2 else ROCK
+                faces.append((ci+cj, points, material[key]))
+    for _, points, color in sorted(faces, key=lambda face: face[0]):
+        poly(scene, [P(scene, *point) for point in points], lambda x, y, color=color: color)
+    return scene.img
+
+
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     "church": church, "house": house, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
@@ -2818,6 +2855,7 @@ ICONS = {
     "soroca": soroca,
     "mir-castle": mir_castle,
     "khotyn": khotyn,
+    "elbrus": elbrus,
     **FLORA, **FAUNA,
 }
 

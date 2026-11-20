@@ -5227,6 +5227,110 @@ def kyiv():
     return scene.img.convert('RGB')
 
 
+def moscow():
+    import landmarks_russia as ru
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    # Geography first: the Moskva flows SW→NE past the cathedral, then bends east
+    # below the Kremlin/Zaryadye. Each reach follows one isometric tile axis.
+    course = [(-240, 330), (160, 530), (290, 465), (460, 550), (740, 410), (980, 530)]
+
+    def river_distance(x, y):
+        distance = float('inf')
+        for (ax, ay), (bx, by) in zip(course, course[1:]):
+            dx, dy = bx-ax, by-ay
+            t = max(0, min(1, ((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy)))
+            distance = min(distance, math.hypot(x-ax-t*dx, y-ay-t*dy))
+        return distance
+
+    kinds, elev = {}, {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        distance = river_distance(x, y)
+        # Borovitsky plateau is inside/west of the diagonal eastern Kremlin wall.
+        kremlin = 310 < x < 505 and 270 < y < 460
+        z = 12 if kremlin else 0
+        if distance < 16:kind, z = 'water', 0
+        elif distance < 28:kind, z = 'quay', 0
+        elif 235 < x < 310 and 240 < y < 450:kind = 'garden'  # Alexander Garden
+        elif 510 < x < 710 and 365 < y < 435:kind = 'garden'  # Zaryadye, east of Kremlin
+        elif 295 < x < 680 and 210 < y < 360:kind = 'red_square'
+        elif 325 < x < 535 and 105 < y < 190:kind = 'square'  # Theatre Square
+        elif kremlin:kind = 'square'
+        elif i % 10 == 0 or j % 9 == 0:kind = 'cobble'
+        else:kind = 'lot'
+        kinds[i, j], elev[i, j] = kind, z
+
+    reserved, protected = set(), []
+
+    def reserve(i, j, wi, wj):
+        for a in range(math.floor(i), math.ceil(i+wi)):
+            for b in range(math.floor(j), math.ceil(j+wj)):
+                reserved.add((a, b))
+                if (a, b) in kinds:kinds[a, b] = 'square'
+
+    for name, builder, (wi, wj), _, (x, y), z in ru.SITES:
+        ci, cj = tile(x, y)
+        i, j = ci-wi/2, cj-wj/2
+        reserve(i-1, j-1, wi+2, wj+2)
+        for a in range(math.floor(i)-1, math.ceil(i+wi)+1):
+            for b in range(math.floor(j)-1, math.ceil(j+wj)+1):
+                if (a, b) in kinds:elev[a, b] = z
+        builder(scene, i, j, z=z)
+        study = iso.Scene(WIDTH+200, HEIGHT+200, (scene.ox+100, scene.oy+100))
+        builder(study, i, j, z=z)
+        study.paint_objects()
+        l, t, r, b = (v-100 for v in study.img.convert('RGB').getbbox())
+        assert 0 < l < r < WIDTH and 0 < t < b < HEIGHT, (name, l, t, r, b)
+        protected.append((l-6, t-6, r+6, b+8))
+
+    for i, j in kinds:iso.ground_tile(scene, i, j, lambda x, y: ru.GROUND['cobble'])
+    for i, j in sorted(kinds, key=lambda p: (sum(p), p[0])):
+        kind = kinds[i, j]
+        def color(x, y, kind=kind):
+            if kind == 'water':
+                return ru.GROUND['water_hi'] if h01(x//3, y, 9600) < .045 else ru.GROUND['water_dark' if h01(x//7, y//2, 9601) < .2 else 'water']
+            if kind in ('square', 'quay', 'red_square'):
+                tone = 'red_square' if kind == 'red_square' else 'square'
+                return ru.GROUND['joint'] if y % 5 == 0 or (x+4*(y//5 % 2)) % 12 == 0 else ru.GROUND[tone]
+            if kind == 'garden':return ru.GROUND['garden_hi' if h01(x, y, 9602) < .13 else 'garden']
+            if kind == 'cobble':return ru.GROUND['cobble_joint' if (x+2*(y % 2)) % 5 == 0 else 'cobble']
+            return ru.GROUND['pave' if h01(x, y, 9603) > .08 else 'joint']
+        iso.ground_tile(scene, i, j, color, elev[i, j], iso.stone_wall(ru.ROCK['lit']))
+
+    for li in range(-12, 112, 3):
+        for lj in range(-12, 112, 3):
+            cells = [(a, b) for a in range(li, li+3) for b in range(lj, lj+3)]
+            if not all(kinds.get(c) == 'lot' and c not in reserved for c in cells):continue
+            z = elev[li, lj]
+            if any(elev[c] != z for c in cells):continue
+            seed = int(h01(li, lj, 9604)*10000)
+            floors = 2+seed % 2
+            x, y = scene.screen(li+1.35, lj+1.5, z)
+            if any(x+34 > l and x-34 < r and y+20 > t and y-floors*12-30 < b for l, t, r, b in protected):continue
+            ru.townhouse(scene, li, lj, floors=floors, seed=seed, z=z)
+            reserved.update(cells)
+
+    trees = [round_tree(k, '#789658', '#344A31') for k in range(4)]
+    for (i, j), kind in kinds.items():
+        if kind not in ('garden', 'quay') or (i, j) in reserved:continue
+        if h01(i, j, 9605) > (.14 if kind == 'garden' else .025):continue
+        x, y = scene.screen(i+.5, j+.5, elev[i, j])
+        if any(x+13 > l and x-13 < r and y+7 > t and y-24 < b for l, t, r, b in protected):continue
+        im = trees[(i+j) % 4]
+        scene.add(i+j+1.5, lambda s, x=x, y=y, im=im: s.sprite(im, x, y+3))
+    for x, y in ((70, 485), (580, 490)):
+        im = rowboat(int(y))
+        ci, cj = tile(x, y)
+        scene.add(ci+cj, lambda s, x=x, y=y, im=im: s.sprite(im, x, y))
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -5310,6 +5414,8 @@ CAPITALS = [
      "render": pristina},
     {"id": "kyiv", "name": "Kyiv", "country": "Ukraine", "longitude": 30.5234, "latitude": 50.4501,
      "render": kyiv},
+    {"id": "moscow", "name": "Moscow", "country": "Russia", "longitude": 37.6173, "latitude": 55.7558,
+     "render": moscow},
 ]
 
 

@@ -55,7 +55,14 @@ export const COVERAGE = [
   { id: 'minsk', country: 'Belarus', longitude: 27.5667, latitude: 53.9, bounds: [23.1, 51.2, 32.8, 56.2] },
   { id: 'pristina', country: 'Kosovo', longitude: 21.1622, latitude: 42.6629, bounds: [20.0, 41.8, 21.9, 43.3] },
   { id: 'kyiv', country: 'Ukraine', longitude: 30.5234, latitude: 50.4501, bounds: [22.0, 44.2, 40.3, 52.4] },
+  // West > east denotes a country crossing the date line.
+  { id: 'moscow', country: 'Russia', longitude: 37.6173, latitude: 55.7558, bounds: [19.0, 41.0, -169.0, 82.0] },
 ] as const;
+
+export function longitudeInBounds(longitude: number, west: number, east: number) {
+  'worklet';
+  return west > east ? longitude >= west || longitude <= east : longitude >= west && longitude <= east;
+}
 
 /** Keep the visited capital while panning across overlapping capital areas. Zooming out releases it. */
 export function activeCapital(camera: GlobeCamera) {
@@ -82,7 +89,7 @@ export function maxZoomAt(longitude: number, latitude: number) {
   let max = MAX_GLOBE_ZOOM;
   for (const region of COVERAGE) {
     const [west, south, east, north] = region.bounds;
-    if (longitude >= west && longitude <= east && latitude >= south && latitude <= north)
+    if (longitudeInBounds(longitude, west, east) && latitude >= south && latitude <= north)
       max = Math.max(max, COUNTRY_ZOOM.max);
     if (
       Math.abs(longitude - region.longitude) <= CAPITAL_REACH &&
@@ -118,9 +125,15 @@ export function constrainGlobe(camera: GlobeCamera, coverage = true): GlobeCamer
       const east = capital ? region.longitude + CAPITAL_REACH : region.bounds[2];
       const south = capital ? region.latitude - CAPITAL_REACH : region.bounds[1];
       const north = capital ? region.latitude + CAPITAL_REACH : region.bounds[3];
-      const lon = Math.max(west, Math.min(east, longitude));
+      let lon = longitude;
+      if (!longitudeInBounds(longitude, west, east)) {
+        const westDistance = Math.abs(((west - longitude + 540) % 360) - 180);
+        const eastDistance = Math.abs(((east - longitude + 540) % 360) - 180);
+        lon = westDistance <= eastDistance ? west : east;
+      }
       const lat = Math.max(south, Math.min(north, latitude));
-      const distance = (lon - longitude) ** 2 + (lat - latitude) ** 2;
+      const longitudeDistance = ((lon - longitude + 540) % 360) - 180;
+      const distance = longitudeDistance ** 2 + (lat - latitude) ** 2;
       if (distance <= bestDistance) {
         best = [lon, lat];
         bestDistance = distance;
