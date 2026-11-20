@@ -11,7 +11,7 @@ Preview: .venv/bin/python scripts/art/sprites.py  ->  docs/art/phase3/sprites.pn
 import math
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 
 def hex_rgb(value):
@@ -2795,7 +2795,6 @@ def elbrus(seed=0):
     scene.img = Image.new('RGBA', (88, 70), (0, 0, 0, 0))
     scene.px = scene.img.load()
     # Ground shadow is deliberately separate from the opaque terrain mesh.
-    from PIL import ImageDraw
     ImageDraw.Draw(scene.img).ellipse((10, 49, 78, 66), fill=SHADOW)
     def height(i, j):
         west = 28/(1+(((i-1.7)**2+(j-3.1)**2)/1.1)**1.6)
@@ -2819,6 +2818,68 @@ def elbrus(seed=0):
                 faces.append((ci+cj, points, material[key]))
     for _, points, color in sorted(faces, key=lambda face: face[0]):
         poly(scene, [P(scene, *point) for point in points], lambda x, y, color=color: color)
+    return scene.img
+
+
+def choirokoitia(seed=0):
+    """Neolithic stone rings and the excavated hillside terraces at Choirokoitia."""
+    import iso
+    from landmarks_cyprus import EARTH, STONE
+    from landmarks_iberia import stone_courses
+    from landmarks_paris import P, poly, seg
+    from landmarks_slovenia import slab
+
+    scene = iso.Scene(38, 29, (18, 10))
+    scene.img = Image.new('RGBA', (scene.w, scene.h), (0, 0, 0, 0))
+    scene.px = scene.img.load()
+    ImageDraw.Draw(scene.img).ellipse((3, 18, 35, 26), fill=SHADOW)
+    courses = stone_courses(STONE, 3, 6)
+
+    def ruin(i, j, radius, base):
+        i, j, radius, base = i/2, j/2, radius/2, base/2
+        # Walls have both inner and outer faces around an open floor.
+        count = 24
+        def point(k, r, h):
+            t = k*math.tau/count
+            return P(scene, i+r*math.cos(t), j+r*math.sin(t), base+h)
+
+        def crown(k):
+            return 2.2 + .6*h01(k//2, i, j)
+
+        poly(scene, [point(k, radius, .2) for k in range(count)],
+             lambda x, y: STONE['deep'] if h01(x, y, 33) > .16 else STONE['line'])
+        faces = []
+        for k in range(count):
+            # Leave a small doorway in the visible side.
+            if k in (4, 5):
+                continue
+            t = (k+.5)*math.tau/count
+            faces.append((math.cos(t)+math.sin(t), k))
+        for depth, k in sorted(faces):
+            h, nh = crown(k), crown(k+1)
+            outside = depth > 0
+            r = radius if outside else radius-.13
+            poly(scene, [point(k, r, 0), point(k+1, r, 0), point(k+1, r, nh), point(k, r, h)],
+                 lambda x, y: STONE['line'] if (x+2*y) % 7 == 0 else STONE['lit' if outside else 'dark'])
+            poly(scene, [point(k, radius, h), point(k+1, radius, nh),
+                         point(k+1, radius-.13, nh), point(k, radius-.13, h)],
+                 lambda x, y: STONE['hi'] if (x+y) % 4 else STONE['mid'])
+            seg(scene, point(k, radius, h), point(k+1, radius, nh), STONE['hi'])
+
+    rear = [(0, 0), (3.2, .18), (3.15, 2.1), (.25, 2.45)]
+    front = [(.25, 2.25), (3.5, 1.95), (4.08, 3.36), (3.9, 3.8), (.45, 4.13)]
+    def terrace(footprint, elevation, tone):
+        plot = [(i/2, j/2) for i, j in footprint]
+        slab(scene, plot, 0, elevation, STONE, courses)
+        poly(scene, [P(scene, *p, elevation) for p in plot],
+             lambda x, y: EARTH[tone if h01(x, y) > .25 else 'mid'])
+
+    terrace(rear, 5, 'hi')
+    ruin(.91, 1.36, .72, 10)
+    ruin(2.33, 1.12, .81, 10)
+    terrace(front, 2, 'lit')
+    ruin(3.14, 2.73, .73, 4)
+    ruin(1.51, 3.25, .83, 4)
     return scene.img
 
 
@@ -2856,6 +2917,7 @@ ICONS = {
     "mir-castle": mir_castle,
     "khotyn": khotyn,
     "elbrus": elbrus,
+    "choirokoitia": choirokoitia,
     **FLORA, **FAUNA,
 }
 

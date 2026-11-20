@@ -5331,6 +5331,166 @@ def moscow():
     return scene.img.convert('RGB')
 
 
+def nicosia():
+    import landmarks_cyprus as cy
+    from landmarks_slovenia import slab
+    from landmarks_iberia import stone_courses, tones
+
+    scene = new_scene()
+
+    def tile(x, y):
+        return tile_of((x-WIDTH/2)/8, (y-scene.oy)/4)
+
+    def distance(x, y, points):
+        nearest = math.inf
+        for (ax, ay), (bx, by) in zip(points, points[1:]):
+            dx, dy = bx-ax, by-ay
+            t = max(0, min(1, ((x-ax)*dx+(y-ay)*dy)/(dx*dx+dy*dy)))
+            nearest = min(nearest, math.hypot(x-ax-t*dx, y-ay-t*dy))
+        return nearest
+
+    # The eleven wedge-shaped bastions interrupt the ring of low curtains. The gate openings
+    # and the Ledra Street crossing at the south are filled by their respective landmarks.
+    bastions = [(150, 150), (218, 107), (320, 85), (432, 85), (535, 104), (617, 154),
+                (648, 234), (606, 329), (476, 388), (320, 406), (187, 369)]
+    wall = []
+    for k, (x, y) in enumerate(bastions):
+        ax, ay = bastions[k-1]
+        bx, by = bastions[(k+1) % len(bastions)]
+        dx, dy = bx-ax, by-ay
+        length = math.hypot(dx, dy)
+        ux, uy = dx/length, dy/length
+        wall.extend(((x-ux*19, y-uy*19), (x+uy*19, y-ux*19), (x+ux*19, y+uy*19)))
+    wall.append(wall[0])
+    # The diverted Pedieos stays outside the western walls. Its shallow course turns north
+    # on the west edge; the planted, dry moat is a separate ring around the fortifications.
+    river = [(-38, 554), (58, 506), (-46, 454), (26, 418), (-70, 370), (38, 316),
+             (-10, 292), (36, 269), (-70, 216), (70, 146), (-55, 83)]
+    ledra = [(274, 455), (290, 429), (297, 368), (314, 272), (324, 204), (343, 158)]
+    east_lane = [(327, 191), (409, 231), (490, 227), (559, 251), (634, 284)]
+    reserve = set()
+    protected = []
+    kinds = {}
+    for i, j in visible_tiles(scene):
+        x, y = scene.screen(i+.5, j+.5)
+        bank = distance(x, y, river)
+        moat = distance(x, y, wall)
+        inner = sum((ay > y) != (by > y) and x < ax+(bx-ax)*(y-ay)/(by-ay)
+                    for (ax, ay), (bx, by) in zip(wall, wall[1:])) % 2
+        if bank < 6:
+            kind = 'river'
+        elif bank < 17:
+            kind = 'riverbank'
+        elif moat < 24 and not inner:
+            kind = 'moat' if moat < 17 else 'gravel'
+        elif moat < 10:
+            kind = 'gravel'
+        elif distance(x, y, ledra) < 9 or distance(x, y, east_lane) < 8:
+            kind = 'pave'
+        elif (x-85)**2/63**2+(y-354)**2/31**2 < 1 or (x-540)**2/64**2+(y-394)**2/22**2 < 1:
+            kind = 'garden'
+        elif i % 8 == 0 or j % 8 == 0:
+            kind = 'cobble'
+        else:
+            kind = 'old_lot' if inner else 'lot'
+        kinds[i, j] = kind
+
+    for _, builder, (w, d), _, (x, y) in cy.SITES:
+        ci, cj = tile(x, y)
+        a, b = ci-w/2, cj-d/2
+        builder(scene, a, b)
+        study = new_scene()
+        builder(study, a, b)
+        study.paint_objects()
+        l, t, r, bottom = study.img.convert('RGB').getbbox()
+        protected.append((l-6, t-5, r+6, bottom+6))
+        for i in range(math.floor(a)-1, math.ceil(a+w)+1):
+            for j in range(math.floor(b)-1, math.ceil(b+d)+1):
+                reserve.add((i, j))
+                if kinds.get((i, j)) not in ('moat', 'riverbank', 'river', None):
+                    kinds[i, j] = 'square'
+
+    ground = {k: rgb(value) for k, value in {
+        'river': '#648B87', 'river_light': '#ADC2AE', 'river_dark': '#50726F',
+        'moat': '#ADAE79', 'riverbank': '#8E9C6C', 'garden': '#9AA86D',
+        'gravel': '#C4B292', 'square': '#D8C8AA', 'lot': '#C4B596', 'old_lot': '#CDB697',
+        'pave': '#DECDB5', 'cobble': '#B6AC9A',
+    }.items()}
+
+    for i, j in sorted(kinds, key=sum):
+        kind = kinds[i, j]
+
+        def color(x, y, kind=kind):
+            fleck = h01(x, y, 2972)
+            if kind == 'river':
+                if h01(x//4, y, 293) < .1:
+                    return ground['river_light']
+                return ground['river_dark' if h01(x//7, y//2, 294) < .3 else 'river']
+            c = ground[kind]
+            if kind in ('moat', 'riverbank', 'garden'):
+                return shade(c, .11 if fleck < .1 else -.08 if fleck < .2 else 0)
+            if kind in ('square', 'pave'):
+                return shade(c, -.085) if y % 5 == 0 or (x+(y//5 % 2)*3) % 9 == 0 else c
+            if kind == 'cobble':
+                return shade(c, -.11) if (x+y%2*2) % 5 == 0 else c
+            return shade(c, .06 if fleck < .055 else -.08 if fleck < .14 else 0)
+
+        iso.ground_tile(scene, i, j, color)
+
+    wall_stone = tones('#E8D1A8', '#CDB68E', '#AF9B77', '#AC9470', '#866E52', '#9A8566', '#685640')
+    courses = stone_courses(wall_stone, 4, 12)
+    for (ax, ay), (bx, by) in zip(wall, wall[1:]):
+        length = math.hypot(bx-ax, by-ay)
+        nx, ny = (by-ay)/length*4, (ax-bx)/length*4
+        # Each short section can be left open at gateways and the bridge-square.
+        segments = max(1, math.ceil(length/14))
+        for k in range(segments):
+            a, b = k/segments, (k+1)/segments
+            x, y = ax+(bx-ax)*a, ay+(by-ay)*a
+            u, v = ax+(bx-ax)*b, ay+(by-ay)*b
+            quad = [tile(x, y), tile(u, v), tile(u+nx, v+ny), tile(x+nx, y+ny)]
+            if any(max(x, u)+8 > l and min(x, u)-8 < r and max(y, v)+1 > t and min(y, v)-14 < bottom
+                   for l, t, r, bottom in protected):
+                continue
+            scene.add(max(a+b for a, b in quad),
+                      lambda s, quad=quad: slab(s, quad, 0, 14, wall_stone, courses))
+
+    def clear(x, y, half, above, below):
+        return all(x+half < l or x-half > r or y+below < t or y-above > bottom
+                   for l, t, r, bottom in protected)
+
+    for i, j in kinds:
+        if i % 8 not in (1, 4) or j % 8 not in (1, 4):
+            continue
+        cells = {(i+a, j+b) for a in range(4) for b in range(4)}
+        if cells & reserve or any(kinds.get(cell) not in ('lot', 'old_lot') for cell in cells):
+            continue
+        a, b = i+(.6 if i % 8 == 4 else 0), j+(.6 if j % 8 == 4 else 0)
+        x, y = scene.screen(a+1.6, b+1.7)
+        seed = int(h01(i, j, 2970)*10000)
+        floors = 1 if seed % 7 == 0 else 2
+        if all(y+17 < t or x+30 < l or x-30 > r or y-11*floors-20 > bottom
+               or y+14 < bottom-12 for l, t, r, bottom in protected):
+            cy.townhouse(scene, a, b, floors, seed)
+
+    palms = [sprites.palm(n) for n in range(2)]
+    trees = [round_tree(n, '#829D53', '#3C5733') for n in range(4)]
+    for (i, j), kind in kinds.items():
+        if (i, j) in reserve or kind not in ('moat', 'garden', 'riverbank', 'gravel'):
+            continue
+        seed = int(h01(i, j, 2971)*10000)
+        if seed % 14:
+            continue
+        x, y = scene.screen(i+.5, j+.5)
+        if not clear(x, y, 15, 22, 5):
+            continue
+        im = palms[seed % len(palms)] if kind in ('moat', 'gravel') and seed % 3 else trees[seed % len(trees)]
+        scene.add(i+j+1.5, lambda s, x=x, y=y, im=im: s.sprite(im, x, y+3))
+
+    scene.paint_objects()
+    return scene.img.convert('RGB')
+
+
 CAPITALS = [
     {"id": "lisbon", "name": "Lisbon", "country": "Portugal", "longitude": -9.1365, "latitude": 38.7100,
      "render": lisbon},
@@ -5416,6 +5576,8 @@ CAPITALS = [
      "render": kyiv},
     {"id": "moscow", "name": "Moscow", "country": "Russia", "longitude": 37.6173, "latitude": 55.7558,
      "render": moscow},
+    {"id": "nicosia", "name": "Nicosia", "country": "Cyprus", "longitude": 33.366635, "latitude": 35.166677,
+     "render": nicosia},
 ]
 
 

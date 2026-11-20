@@ -376,5 +376,14 @@
     "latitude": 55.7558,
     "width": 720,
     "height": 520
+  },
+  {
+    "id": "nicosia",
+    "name": "Nicosia",
+    "country": "Cyprus",
+    "longitude": 33.366635,
+    "latitude": 35.166677,
+    "width": 720,
+    "height": 520
   }
 ]

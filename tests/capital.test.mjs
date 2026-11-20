@@ -2418,3 +2418,25 @@ test('Bucharest supports focal capital arrival while distant Romanian cities ret
   const after = globePoint(scene.longitude, scene.latitude, current, view);
   assert.ok(Math.hypot(after.x - focal.x, after.y - focal.y) < 1);
 });
+
+test('Cyprus marks Nicosia, spaced Paphos and Choirokoitia inside its bounds', () => {
+  const region = COVERAGE.find((entry) => entry.id === 'nicosia');
+  const scene = scenes.find((entry) => entry.id === region.id);
+  assert.deepEqual([scene.name, scene.country, scene.longitude, scene.latitude, scene.width, scene.height],
+    ['Nicosia', 'Cyprus', region.longitude, region.latitude, 720, 520]);
+  assert.deepEqual(region.bounds, [32.15, 34.48, 34.65, 35.78]);
+  assert.equal(maxZoomAt(scene.longitude, scene.latitude), CAPITAL_ZOOM.full);
+
+  const [west, south, east, north] = region.bounds;
+  const tier = icons.icons.filter(([, lon, lat, , , scale]) =>
+    scale === 1 && west <= lon && lon <= east && south <= lat && lat <= north);
+  const at = (lon, lat) => tier.filter((icon) => icon[1] === lon && icon[2] === lat)
+    .map(([frame]) => icons.names[frame]).sort();
+  assert.deepEqual(at(33.3666, 35.1667), ['castle', 'house', 'house']);
+  // Paphos is the only other Natural Earth CYP city at least 75 km from Nicosia.
+  assert.deepEqual(at(32.4225, 34.7559), ['church', 'house', 'house']);
+  assert.deepEqual(at(33.344, 34.7971), ['choirokoitia']);
+  const kinds = tier.map(([frame]) => icons.names[frame]).sort();
+  assert.deepEqual(kinds, ['boat', 'boat', 'castle', 'choirokoitia', 'church', 'house', 'house',
+    'house', 'house', 'olive', 'olive', 'olive', 'olive', 'pine', 'pine', 'pine']);
+});

@@ -212,6 +212,11 @@ COUNTRY_TIER = [
      "boat_bounds": (130.0, 42.0, 180.0, 64.0),
      # Western summit of Elbrus; east < west preserves Russia across the date line.
      "landmarks": [("elbrus", 42.4378432, 43.3524103)]},
+    {"adm0": "CYP", "bounds": (32.15, 34.48, 34.65, 35.78), "capital": "Nicosia", "cities": 9,
+     "trees": 7, "boats": 2, "decoration_grid": 0.05, "decoration_km": 23,
+     "boat_bounds": (32.15, 34.48, 34.65, 34.95),
+     # Centre of the excavated Neolithic settlement, above the Maroni valley.
+     "landmarks": [("choirokoitia", 33.34398, 34.79712)]},
 ]
 SHEET = ROOT / "assets" / "world" / "map-icons.png"
 DATA = ROOT / "src" / "data" / "map-icons.json"
@@ -263,6 +268,7 @@ VARIANTS = {
     "mir-castle": 1,
     "khotyn": 1,
     "elbrus": 1,
+    "choirokoitia": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -562,6 +568,10 @@ def main():
             if spec["adm0"] == "HRV":
                 # Olives on the Dalmatian coast and islands, pines in Istria, Gorski kotar and Lika, oaks inland.
                 kind = "olive" if lat < 44.3 else "pine" if lon < 15.8 and lat < 45.5 else "oak"
+                building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
+                continue
+            if spec["adm0"] == "CYP":
+                kind = "pine" if lat > 34.91 and lon < 33.18 else "olive"
                 building(kind, lon, lat, 0, 0, int(h01(lon * 9, lat * 9) * 9))
                 continue
             if spec["adm0"] == "MNE":
