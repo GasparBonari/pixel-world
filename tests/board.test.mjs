@@ -184,6 +184,13 @@ function solidBoxes() {
   });
 }
 const boxes = solidBoxes();
+// An animated icon is placed by the union of its pose frames (build_map_icons.py), so test the same.
+for (const [still, [, poses]] of Object.entries(icons.animations)) {
+  const union = poses.map((frame) => boxes[frame]).filter((box) => box[2] > box[0]);
+  if (union.length)
+    boxes[still] = [Math.min(...union.map((b) => b[0])), Math.min(...union.map((b) => b[1])),
+      Math.max(...union.map((b) => b[2])), Math.max(...union.map((b) => b[3]))];
+}
 const country = icons.icons.filter((i) => i[5] === 1);
 /** Screen rectangle (points) of an icon's opaque pixels, as MapIcons draws it. */
 function screenBox(icon, camera) {
@@ -295,4 +302,34 @@ test('each capital, church and house is drawn in its country’s building family
   // Mosques stand only in Turkey, Albania, Bosnia and Kosovo.
   for (const icon of country.filter((i) => icons.names[i[0]] === 'mosque'))
     assert.ok(icon[1] > 15.7 && icon[2] < 45.3, `mosque at ${icon[1]},${icon[2]}`);
+});
+
+test('the atlas fits every phone GPU and holds a pose frame for each animated sprite', () => {
+  const sheet = pngSize('../assets/world/map-icons.png');
+  assert.ok(sheet.width <= 2048 && sheet.height <= 2048, `${sheet.width}x${sheet.height}`);
+  const motions = Object.fromEntries(
+    Object.entries(icons.animations).map(([still, [motion, poses]]) => [icons.names[still], { motion, poses, still: +still }])
+  );
+  for (const animal of Object.keys(NATIVE)) {
+    assert.equal(motions[animal]?.motion, 'animal', animal);
+    assert.equal(motions[animal].poses.length, 3, `${animal}: still, blink, weight shift`);
+  }
+  for (const plant of ['oak', 'pine', 'olive', 'palm', 'acacia']) assert.equal(motions[plant]?.motion, 'sway', plant);
+  assert.equal(motions.windmill.motion, 'turn');
+  assert.equal(new Set(motions.windmill.poses).size, 3, 'three distinct sail positions');
+  assert.equal(motions.volcano.motion, 'smoke');
+  assert.equal(motions.bird.motion, 'flap');
+  for (const { poses, still } of Object.values(motions)) {
+    assert.equal(poses[0], still, 'pose 0 is the still frame');
+    for (const frame of poses) {
+      assert.deepEqual(icons.frames[frame].slice(2), icons.frames[still].slice(2), 'every pose keeps the frame size');
+      assert.ok(frame === still || icons.names[frame] === `${icons.names[still]}@${poses.indexOf(frame)}`);
+    }
+  }
+  // Every animal with a visible eye blinks: its blink frame differs from the still one. The orca's
+  // white patch is not an eye, so it has nothing to close.
+  for (const animal of Object.keys(NATIVE).filter((name) => name !== 'orca'))
+    assert.notEqual(motions[animal].poses[1], motions[animal].still, animal);
+  // Pose frames are never placed as icons themselves.
+  for (const [frame] of icons.icons) assert.ok(!icons.names[frame].includes('@'));
 });

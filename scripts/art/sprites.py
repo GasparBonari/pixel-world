@@ -41,6 +41,12 @@ C = {k: hex_rgb(v) for k, v in {
 SHADOW = (0, 0, 0, 70)
 LIGHT = (-0.55, -0.6, 0.58)  # upper-left, towards the viewer
 BAYER = [[0, 2], [3, 1]]
+# Idle poses for the living world (ART_CONTRACT.md §9). Sprite functions read POSE while they draw;
+# 0 is the still frame every icon has always had. Animals: BLINK closes the eye, STEP shifts the
+# weight (far hooves lifted a pixel). The windmill's poses turn its sails, the volcano's lift its
+# ash, a bird's flap its wings. build_map_icons.py renders each pose into the atlas.
+POSE = 0
+BLINK, STEP = 1, 2
 
 
 class Sprite:
@@ -671,6 +677,8 @@ def blob(s, cx, cy, rx, ry, palette, pattern=None, dither=True, clip=None):
 def limb(s, x, y0, y1, palette, far=False, hoof=None, width=1):
     """A straight leg; far legs are darker. hoof colours the bottom pixel."""
     tones, outline = palette
+    if far and POSE == STEP:  # weight on the near legs: far hooves lift a pixel
+        y1 -= 1
     for y in range(y0, y1 + 1):
         for dx in range(width):
             color = tones[0] if far else (tones[2] if dx == 0 and width > 1 else tones[1])
@@ -692,8 +700,42 @@ INK = hex_rgb("#1E1A1A")
 EYE_SHINE = hex_rgb("#FFFFFF")
 
 
-def eye(s, x, y, outline):
-    s.put(x, y, INK, outline)
+def eye(s, x, y, outline, color=INK):
+    if POSE == BLINK:  # closed: the head's own colour shows through
+        return
+    s.put(x, y, color, outline)
+
+
+def swayed(img, lean=1):
+    """The same plant leaning in a gust: its upper part shifts a pixel east; trunk and shadow stay."""
+    solid = img.getchannel("A").point(lambda v: 255 if v > 128 else 0).getbbox()
+    cut = solid[1] + (solid[3] - solid[1]) * 0.55
+    out = Image.new("RGBA", img.size)
+    for y in range(img.height):
+        out.paste(img.crop((0, y, img.width, y + 1)), (lean if y < cut else 0, y))
+    return out
+
+
+def bird(seed=0):
+    """A gull seen from below, for flocks crossing the board: wings up (pose 0) or down (pose 1)."""
+    s = Sprite(9, 5)
+    white, outline = hex_rgb("#F6F8F4"), hex_rgb("#3A4250")
+    rows = ("#.....#", ".##.##.", "...#...") if POSE == 0 else (".......", ".#####.", "#..#..#")
+    for y, row in enumerate(rows):
+        for x, cell in enumerate(row):
+            if cell == "#":
+                s.put(x + 1, y + 1, white, outline)
+    return s.image()
+
+
+def bird_shadow(seed=0):
+    """A bird's shadow on the ground, drawn well below it so it reads as flying high."""
+    s = Sprite(5, 2)
+    for x in range(5):
+        s.shadow.add((x, 0))
+    for x in range(1, 4):
+        s.shadow.add((x, 1))
+    return s.image()
 
 
 def deer(seed=0):
@@ -800,7 +842,7 @@ def panda(seed=0):
     limb(s, 17, 10, 14, black, width=2)
     blob(s, 5.0, 6.0, 3.6, 3.1, white)
     dots(s, [(3, 5), (4, 6), (6, 5), (7, 6)], black[0][1], white[1])
-    s.put(3, 6, EYE_SHINE, white[1])
+    eye(s, 3, 6, white[1], EYE_SHINE)  # shine in the black patch
     dots(s, [(2, 2), (3, 2), (7, 2), (8, 2)], black[0][1], white[1])
     s.put(1, 7, INK, white[1])
     return s.image()
@@ -1188,8 +1230,12 @@ def volcano(seed=0):
         s.put(x, 7, glow if x in (10, 11) else lava, rock[1])
     for y, x in ((8, 10), (9, 10), (10, 9), (11, 9), (12, 9), (9, 12), (10, 12), (11, 13)):
         s.put(x, y, lava, rock[1])
-    blob(s, 9.0, 3.5, 3.0, 2.0, ash, dither=False)
-    blob(s, 12.5, 2.2, 2.6, 1.8, ash, dither=False)
+    # Ash: a new puff rises from the crater while the older one drifts up and east (POSE 0-2).
+    puffs = (((9.0, 3.5, 3.0, 2.0), (12.5, 2.2, 2.6, 1.8)),
+             ((10.2, 5.0, 2.0, 1.5), (11.0, 2.6, 3.2, 2.0)),
+             ((9.6, 4.2, 2.6, 1.8), (13.0, 1.8, 2.4, 1.6)))[POSE % 3]
+    for cx, cy, rx, ry in puffs:
+        blob(s, cx, cy, rx, ry, ash, dither=False)
     return s.image()
 
 
@@ -1363,7 +1409,8 @@ def orangutan(seed=0):
         s.put(x, y, hair[0][0], hair[1])
     blob(s, 9.0, 4.5, 3.2, 3.0, hair)
     blob(s, 8.6, 5.2, 2.2, 1.9, face)
-    dots(s, [(8, 4), (10, 4)], INK, face[1])
+    eye(s, 8, 4, face[1])
+    eye(s, 10, 4, face[1])
     for x in range(6, 13):
         s.put(x, 17, hair[0][0], hair[1])
     return s.image()
@@ -1457,7 +1504,7 @@ def toucan(seed=0):
         s.put(x, y, bill, hex_rgb("#7A3A10"))
     s.put(1, 5, bill_tip, hex_rgb("#7A3A10"))
     s.put(9, 4, hex_rgb("#4EA0E8"), plumage[1])
-    s.put(9, 5, INK, plumage[1])
+    eye(s, 9, 5, plumage[1])
     return s.image()
 
 
@@ -1475,7 +1522,8 @@ def koala(seed=0):
     blob(s, 4.5, 3.6, 1.6, 1.6, fur, lambda x, y, nx, ny, t: ear if nx < 0.2 else None)
     blob(s, 10.5, 3.6, 1.6, 1.6, fur, lambda x, y, nx, ny, t: ear if nx > -0.2 else None)
     dots(s, [(7, 5), (7, 6), (8, 6)], INK, fur[1])
-    dots(s, [(6, 4), (9, 4)], INK, fur[1])
+    eye(s, 6, 4, fur[1])
+    eye(s, 9, 4, fur[1])
     dots(s, [(9, 9), (10, 9)], fur[0][0], fur[1])  # arm hugging the trunk
     return s.image()
 
@@ -1528,26 +1576,29 @@ def orca(seed=0):
 
 
 def windmill(seed=0):
-    """La Mancha windmill: whitewashed round tower, dark conical cap, four lattice sails."""
-    s = Sprite(23, 26)
+    """La Mancha windmill: whitewashed round tower, dark conical cap, four lattice sails. The sails
+    stand as an X; each POSE turns them 30 degrees, and three poses make a full quarter turn."""
+    s = Sprite(23, 29)
     white = ([hex_rgb("#C9CCC6"), hex_rgb("#EDEDE6"), hex_rgb("#F8F8F2"), hex_rgb("#FFFFFF")], hex_rgb("#4E4A44"))
     cap, wood = ramp("#3E3A38"), ramp("#8A6240")
-    ground_shadow(s, 11.5, 24.4, 5)
-    for y in range(10, 25):
+    ground_shadow(s, 11.5, 27.4, 5)
+    for y in range(13, 28):
         for x in range(8, 16):
             tone = 2 if x < 10 else 0 if x > 13 else 1
             s.put(x, y, white[0][tone], white[1])
-    dots(s, [(11, 22), (12, 22), (11, 23), (12, 23), (11, 24), (12, 24)], hex_rgb("#4A3426"), white[1])
-    dots(s, [(10, 15), (13, 17)], hex_rgb("#34405A"), white[1])
-    for y in range(6, 10):
-        half = (y - 5) * 1.2
+    dots(s, [(11, 25), (12, 25), (11, 26), (12, 26), (11, 27), (12, 27)], hex_rgb("#4A3426"), white[1])
+    dots(s, [(10, 18), (13, 20)], hex_rgb("#34405A"), white[1])
+    for y in range(9, 13):
+        half = (y - 8) * 1.2
         for x in range(int(11.5 - half), int(11.5 + half) + 1):
             s.put(x, y, cap[0][1 if x < 12 else 0], cap[1])
-    hub = (11, 8)
-    for ex, ey in ((1, 0), (22, 1), (3, 17), (21, 16)):  # the X of sails
+    hub = (11, 11)
+    for k in range(4):  # four sails, 90 degrees apart
+        angle = math.radians(45 + 90 * k + 30 * (POSE % 3))
+        ex, ey = hub[0] + 10.5 * math.cos(angle), hub[1] - 10.5 * math.sin(angle)
         line(s, hub[0], hub[1], ex, ey, wood[0][1], wood[1])
-        for k in (0.45, 0.7, 0.95):
-            x, y = hub[0] + (ex - hub[0]) * k, hub[1] + (ey - hub[1]) * k
+        for t in (0.45, 0.7, 0.95):  # lattice
+            x, y = hub[0] + (ex - hub[0]) * t, hub[1] + (ey - hub[1]) * t
             s.put(x, y - 1, wood[0][2], wood[1])
             s.put(x + 1, y, wood[0][2], wood[1])
     s.put(hub[0], hub[1], INK, cap[1])
@@ -3161,7 +3212,9 @@ def choirokoitia(seed=0):
 ICONS = {
     "tree": tree, "pine": pine, "mountain": mountain, "hill": hill, "castle": castle,
     # Town buildings by family: the seed selects the family (FAMILIES) and, for houses, the material.
-    "capital": capital_town, "church": town_church, "house": town_house, "mosque": mosque, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
+    "capital": capital_town, "church": town_church, "house": town_house, "mosque": mosque,
+    # Flocks crossing the board (Birds.tsx); not placed as map icons.
+    "bird": bird, "bird-shadow": bird_shadow, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
     "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge, "rock-of-cashel": rock_of_cashel,
     "leaning-tower-pisa": leaning_tower_pisa, "kronborg": kronborg, "gripsholm": gripsholm, "borgund": borgund,
     "olavinlinna": olavinlinna,

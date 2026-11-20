@@ -249,6 +249,7 @@ VARIANTS = {
     "capital": len(sprites.FAMILIES), "church": len(sprites.FAMILIES), "mosque": 1,
     "house": 2 * len(sprites.FAMILIES),
     "boat": 1, "windmill": 1, "mont-saint-michel": 1, "vineyard": 1,
+    "bird": 1, "bird-shadow": 1,  # flocks (Birds.tsx), not placed as icons
     **{animal: 1 for animal in sprites.FAUNA},
     "neuschwanstein": 1,
     "kinderdijk": 1,
@@ -350,6 +351,49 @@ NEAR_DEGREES = 2.5  # pairs farther apart than this are already clear at APPEAR_
 SOLID_ALPHA = 128  # ground shadows (27% black) and transparent margins may overlap
 
 
+# Living-world animation (ART_CONTRACT.md §9): kinds with extra pose frames, as (motion, poses).
+# The motion names the schedule MapIcons and Birds follow (motion.ts); pose 0 is the still frame.
+SWAYING = ("oak", "pine", "olive", "acacia", "baobab", "palm", "bamboo", "eucalyptus", "fern", "grass")
+ANIMATED = {
+    **{animal: ("animal", 3) for animal in sprites.FAUNA},  # still, blink, weight shift
+    **{plant: ("sway", 2) for plant in SWAYING},  # still, leaning in a gust
+    "windmill": ("turn", 3),  # sails 0, 30 and 60 degrees round
+    "volcano": ("smoke", 3),
+    "bird": ("flap", 2),
+}
+ATLAS_WIDTH = 2048  # every phone GPU accepts textures this wide
+
+
+def pose_images(kind, seed, base):
+    """The extra frames of an animated sprite, in pose order after the still one."""
+    motion, count = ANIMATED[kind]
+    if motion == "sway":
+        return [sprites.swayed(base)]
+    images = []
+    for pose in range(1, count):
+        sprites.POSE = pose
+        try:
+            images.append(sprites.ICONS[kind](seed))
+        finally:
+            sprites.POSE = 0
+    return images
+
+
+def pack(images):
+    """Shelf-pack images left to right in rows at most ATLAS_WIDTH wide, 1 px apart."""
+    rects, x, y, row = [], 0, 0, 0
+    for img in images:
+        if x and x + img.width > ATLAS_WIDTH:
+            x, y, row = 0, y + row + 1, 0
+        rects.append([x, y, img.width, img.height])
+        x += img.width + 1
+        row = max(row, img.height)
+    sheet = Image.new("RGBA", (max(r[0] + r[2] for r in rects), y + row))
+    for img, (rx, ry, _, _) in zip(images, rects):
+        sheet.alpha_composite(img, (rx, ry))
+    return sheet, rects
+
+
 def solid_boxes(sheet, frames):
     """Each frame's opaque pixels as (left, top, right, bottom) around its drawing anchor.
 
@@ -358,7 +402,9 @@ def solid_boxes(sheet, frames):
     boxes = []
     for x, y, w, h in frames:
         alpha = sheet.crop((x, y, x + w, y + h)).getchannel("A")
-        left, top, right, bottom = alpha.point(lambda v: 255 if v > SOLID_ALPHA else 0).getbbox()
+        # A frame that is all shadow (a bird's, never placed) has no solid pixels: an empty box.
+        left, top, right, bottom = alpha.point(lambda v: 255 if v > SOLID_ALPHA else 0).getbbox() or (
+            w / 2, h - 1, w / 2, h - 1)
         boxes.append((left - w / 2, top - h + 1, right - w / 2, bottom - h + 1))
     return boxes
 
@@ -789,19 +835,38 @@ def main():
 
 
     images = [sprites.ICONS[kind](seed) for kind, seed in FRAMES]
-    sheet = Image.new("RGBA", (sum(img.width + 1 for img in images), max(img.height for img in images)))
-    frames, x = [], 0
-    for img in images:
-        sheet.alpha_composite(img, (x, 0))
-        frames.append([x, 0, img.width, img.height])
-        x += img.width + 1
-    icons, dropped = assign_appearance(icons, solid_boxes(sheet, frames))
+    names = [kind for kind, _ in FRAMES]
+    # Pose frames follow the still ones, named kind@pose. A pose that draws the same pixels as the
+    # still frame (a penguin has no far legs to shift) reuses it instead of taking atlas space.
+    animations = {}
+    for index, (kind, seed) in enumerate(FRAMES):
+        if kind not in ANIMATED:
+            continue
+        poses = [index]
+        for pose, img in enumerate(pose_images(kind, seed, images[index]), start=1):
+            assert img.size == images[index].size, f"{kind} pose {pose} changes the frame size"
+            if img.tobytes() == images[index].tobytes():
+                poses.append(index)
+                continue
+            poses.append(len(images))
+            images.append(img)
+            names.append(f"{kind}@{pose}")
+        animations[str(index)] = [ANIMATED[kind][0], poses]
+    sheet, frames = pack(images)
+    # Place each icon by the union of its frames, so no pose can touch a neighbour.
+    boxes = solid_boxes(sheet, frames)
+    for key, (_, poses) in animations.items():
+        union = [boxes[p] for p in poses]
+        boxes[int(key)] = (min(b[0] for b in union), min(b[1] for b in union),
+                           max(b[2] for b in union), max(b[3] for b in union))
+    icons, dropped = assign_appearance(icons, boxes)
     icons.sort(key=lambda i: (-i[2] + i[4] * 0.01, i[1]))
     sheet.save(SHEET, optimize=True)
-    # "omitted": country icons left out because they would only fit beyond APPEAR_LAST. The app
-    # ignores them; tests use them to check the builder's site choices separately from placement.
+    # "animations": still frame -> [motion, frame per pose]. "omitted": country icons left out
+    # because they would only fit beyond APPEAR_LAST; the app ignores them, tests use them to check
+    # the builder's site choices separately from placement.
     DATA.write_text(json.dumps(
-        {"names": [kind for kind, _ in FRAMES], "frames": frames, "icons": icons,
+        {"names": names, "frames": frames, "icons": icons, "animations": animations,
          "omitted": [icon[:6] for icon in dropped]},
         separators=(",", ":"),
     ) + "\n")

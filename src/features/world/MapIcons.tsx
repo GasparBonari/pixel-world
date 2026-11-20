@@ -3,17 +3,17 @@ import {
   FilterMode,
   Group,
   MipmapMode,
-  Skia,
+  useRectBuffer,
   useRSXformBuffer,
   type SkImage,
 } from '@shopify/react-native-skia';
-import { useMemo } from 'react';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 
 import iconData from '@/data/map-icons.json';
 import { COUNTRY_ZOOM, globePoint, type GlobeCamera, type GlobeViewport } from './globe-camera';
 import { BOARD_ZOOM_END, BOARD_ZOOM_START } from './globe-shader';
 import { iconOpacity } from './map-icons';
+import { bobAt, phaseAt, poseAt, type Motion } from './motion';
 
 type Frame = [number, number, number, number];
 /**
@@ -24,10 +24,25 @@ type Frame = [number, number, number, number];
  */
 type Icon = [number, number, number, number, number, number, number?];
 type Fade = { start: number; end: number };
-type Band = { icons: Icon[]; fadeIn: Fade; fadeOut?: Fade };
+/**
+ * Icons drawn together. Per icon: its frame for each pose (one entry when still), the motion that
+ * picks the pose (motion.ts), a phase so neighbours don't move in step, and whether it bobs (boats).
+ */
+type Band = {
+  icons: Icon[];
+  fadeIn: Fade;
+  fadeOut?: Fade;
+  poses: number[][];
+  motions: (Motion | '')[];
+  phases: number[];
+  bobs: boolean[];
+};
 
 const frames = iconData.frames as Frame[];
 const allIcons = iconData.icons as Icon[];
+/** Still frame -> [motion, frame for each pose] (build_map_icons.py: ANIMATED). */
+const animations = iconData.animations as unknown as Record<string, [Motion, number[]]>;
+const BOAT = iconData.names.indexOf('boat');
 const SAMPLING = { filter: FilterMode.Nearest, mipmap: MipmapMode.None } as const;
 
 /** Zoom steps between country-icon appearances (APPEAR_STEP in build_map_icons.py). */
@@ -42,15 +57,27 @@ const countryFade = (full: number): Fade => {
   return { start: full - 2 * span, end: full };
 };
 
+function band(icons: Icon[], fadeIn: Fade, fadeOut?: Fade): Band {
+  return {
+    icons,
+    fadeIn,
+    fadeOut,
+    poses: icons.map(([frame]) => animations[frame]?.[1] ?? [frame]),
+    motions: icons.map(([frame]) => animations[frame]?.[0] ?? ''),
+    phases: icons.map(([, longitude, latitude]) => phaseAt(longitude, latitude)),
+    bobs: icons.map(([frame]) => frame === BOAT),
+  };
+}
+
 /** Icons drawn together because they fade in (and out) at the same zooms. */
 function bandsOf(tier: 0 | 1): Band[] {
   const icons = allIcons.filter((icon) => icon[5] === tier);
   if (tier === 0) {
     const board = { start: BOARD_ZOOM_START, end: BOARD_ZOOM_END };
     return [
-      { icons: icons.filter((icon) => icon[6] !== 1), fadeIn: board },
-      { icons: icons.filter((icon) => icon[6] === 1), fadeIn: board, fadeOut: countryFade(COUNTRY_ZOOM.full) },
-    ].filter((band) => band.icons.length > 0);
+      band(icons.filter((icon) => icon[6] !== 1), board),
+      band(icons.filter((icon) => icon[6] === 1), board, countryFade(COUNTRY_ZOOM.full)),
+    ].filter((b) => b.icons.length > 0);
   }
   const byZoom = new Map<number, Icon[]>();
   for (const icon of icons) {
@@ -59,7 +86,7 @@ function bandsOf(tier: 0 | 1): Band[] {
   }
   return [...byZoom.entries()]
     .sort(([a], [b]) => a - b)
-    .map(([full, band]) => ({ icons: band, fadeIn: countryFade(full) }));
+    .map(([full, group]) => band(group, countryFade(full)));
 }
 const BANDS = [bandsOf(0), bandsOf(1)] as const;
 
@@ -74,23 +101,26 @@ export function MapIcons({
   viewport,
   scale,
   tier,
+  time,
 }: {
   image: SkImage;
   camera: SharedValue<GlobeCamera>;
   viewport: GlobeViewport;
   scale: number;
   tier: 0 | 1;
+  time: SharedValue<number>;
 }) {
   return (
     <>
-      {BANDS[tier].map((band) => (
+      {BANDS[tier].map((b) => (
         <IconBand
-          key={`${band.fadeIn.end}-${band.fadeOut ? 'out' : 'in'}`}
+          key={`${b.fadeIn.end}-${b.fadeOut ? 'out' : 'in'}`}
           image={image}
           camera={camera}
           viewport={viewport}
           scale={scale}
-          band={band}
+          band={b}
+          time={time}
         />
       ))}
     </>
@@ -100,7 +130,8 @@ export function MapIcons({
 /**
  * Icon pixels are two-thirds of a terrain pixel. Each frame projects every icon onto the sphere;
  * icons on the far side or fully faded are parked off-screen. Icons are sorted north to south, so
- * each band draws back to front.
+ * each band draws back to front. Animated icons switch atlas frames as the clock ticks; a band with
+ * none never reads the clock, so it redraws only when the camera moves.
  */
 function IconBand({
   image,
@@ -108,22 +139,33 @@ function IconBand({
   viewport,
   scale,
   band,
+  time,
 }: {
   image: SkImage;
   camera: SharedValue<GlobeCamera>;
   viewport: GlobeViewport;
   scale: number;
   band: Band;
+  time: SharedValue<number>;
 }) {
-  const { icons } = band;
+  const { icons, poses, motions, phases, bobs } = band;
   const { start, end } = band.fadeIn;
   const fadesOut = band.fadeOut !== undefined;
   const outStart = band.fadeOut?.start ?? 0;
   const hiddenFrom = band.fadeOut?.end ?? Infinity;
-  const sprites = useMemo(
-    () => icons.map(([frame]) => Skia.XYWHRect(...(frames[frame] as Frame))),
-    [icons]
-  );
+  // Only bands that move capture the clock (a worklet subscribes to the shared values it captures).
+  const poseClock = motions.some((motion) => motion !== '') ? time : null;
+  const bobClock = bobs.some(Boolean) ? time : null;
+  const sprites = useRectBuffer(icons.length, (rect, index) => {
+    'worklet';
+    const options = poses[index];
+    const pose =
+      poseClock && options.length > 1
+        ? poseAt(motions[index] as Motion, poseClock.get(), phases[index], icons[index][1])
+        : 0;
+    const [x, y, width, height] = frames[options[pose] ?? options[0]];
+    rect.setXYWH(x, y, width, height);
+  });
   const transforms = useRSXformBuffer(icons.length, (value, index) => {
     'worklet';
     const current = camera.get();
@@ -134,11 +176,12 @@ function IconBand({
       value.set(0, 0, -9999, -9999);
       return;
     }
+    const bob = bobClock && bobs[index] ? bobAt(bobClock.get(), phases[index]) : 0;
     value.set(
       scale,
       0,
       Math.round(point.x + (dx - width / 2) * scale),
-      Math.round(point.y + (dy - height + 1) * scale)
+      Math.round(point.y + (dy + bob - height + 1) * scale)
     );
   });
   const opacity = useDerivedValue(() => {

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   useFrameCallback,
   useReducedMotion,
@@ -7,23 +7,23 @@ import {
 } from 'react-native-reanimated';
 
 import { constrainGlobe, type GlobeCamera } from './globe-camera';
-import { animationStep, animationTime, spinSpeed } from './motion';
+import { OPENING_INPUT, animationStep, animationTime, spinSpeed } from './motion';
 
 /**
  * The living world's clock (motion.ts). `time` advances in whole animation frames, so shaders and
  * sprites that read it redraw only when it ticks. While the player leaves the planet alone, the
- * clock also turns it. `touch` marks player input, which stops the spin until they are idle again.
- * With the system's reduce-motion setting on, the clock never starts: time stays 0 and the scene
- * is still.
+ * clock also turns it, starting as soon as the scene is `visible`. `touch` marks player input, which
+ * stops the spin until they are idle again. With the system's reduce-motion setting on, the clock
+ * never starts: time stays 0 and the scene is still.
  */
-export function useWorldClock(camera: SharedValue<GlobeCamera>) {
+export function useWorldClock(camera: SharedValue<GlobeCamera>, visible: boolean) {
   const reduceMotion = useReducedMotion();
   const time = useSharedValue(0);
-  const lastInput = useSharedValue(0);
+  const lastInput = useSharedValue(OPENING_INPUT);
   // The frame callback re-registers whenever the scene re-renders (the spin itself refreshes the
   // country labels), which restarts its own timeSinceFirstFrame. Keep our own origin instead.
   const origin = useSharedValue(-1);
-  useFrameCallback((frame) => {
+  const clock = useFrameCallback((frame) => {
     'worklet';
     if (origin.get() < 0) origin.set(frame.timestamp);
     const now = animationTime(frame.timestamp - origin.get());
@@ -37,7 +37,11 @@ export function useWorldClock(camera: SharedValue<GlobeCamera>) {
         constrainGlobe({ ...current, longitude: current.longitude - speed * animationStep(previous, now) })
       );
     }
-  }, !reduceMotion);
+  }, false);
+  // Start once the planet is on screen, so a slow load doesn't turn it away from its opening view.
+  useEffect(() => {
+    clock.setActive(visible && !reduceMotion);
+  }, [clock, visible, reduceMotion]);
   const touch = useCallback(() => {
     'worklet';
     lastInput.set(time.get());

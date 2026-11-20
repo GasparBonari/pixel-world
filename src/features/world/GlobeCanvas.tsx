@@ -21,6 +21,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { CAPITAL_IMAGES } from '@/data/capital-images';
 import capitals from '@/data/capitals.json';
+import { Birds } from './Birds';
 import { CountryLabels } from './CountryLabels';
 import {
   globeRadius,
@@ -97,7 +98,7 @@ function GlobeScene({
     };
   }, []);
   const camera = useSharedValue(openingCamera);
-  const { time, touch } = useWorldClock(camera);
+  const { time, touch } = useWorldClock(camera, images !== null);
   // Icon pixels are two-thirds of a terrain pixel (3 points on a phone -> 2 points).
   const iconScale = (Math.max(1.25, Math.min(viewport.width, viewport.height) / CELLS_ACROSS) * 2) / 3;
   const [snapshot, setSnapshot] = useState(openingCamera);
@@ -200,8 +201,9 @@ function GlobeScene({
               <ImageShader image={images.board} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
             </Shader>
           </Fill>
-          <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={0} />
-          <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={1} />
+          <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={0} time={time} />
+          <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={1} time={time} />
+          <Birds image={images.icons} camera={camera} viewport={viewport} scale={iconScale} time={time} />
           {capitals.map((scene) => (
             <CapitalLayer
               key={scene.id}

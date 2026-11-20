@@ -114,7 +114,17 @@ float3 boardColor(float2 point, float cell, float3 here, float lon, float lat, f
     if (landAt(up2) > 0.5) return CLIFF;
     if (landLeft + landRight + landDown > 0.5) return EDGE_LIGHT;
     float cells = boardSmooth.eval(here.xy*boardSize).g*255.0*3.0/kmPerCell;
-    if (cells >= 6.0 && hash(worldCell) < 0.004) return SPARKLE;
+    // Glints twinkle, each lit for 40% of its own 3-second cycle; the same number shows at once as
+    // the fixed set a still scene keeps.
+    float glint = hash(worldCell);
+    if (cells >= 6.0 && (time > 0.0 ? glint < 0.01 && fract(time*0.33+hash(worldCell+3.0)) < 0.4 : glint < 0.004))
+      return SPARKLE;
+    // Surf: broken lines of foam roll in from 3.5 cells out to the shore every 3 seconds, out of
+    // step along the coast.
+    if (time > 0.0 && cells <= 3.5) {
+      float swell = 3.5*(1.0-fract(time/3.0+surfaceNoise(here.xy,float2(90,60),float2(5.0))*2.0));
+      if (abs(cells-swell) < 0.5 && hash(worldCell+9.0) < 0.6) return mix(COAST_BAND,EDGE_LIGHT,0.7);
+    }
     if (cells <= 3.0) return COAST_BAND;
     if (cells <= 6.0) return SEA_BAND;
     if (cells <= 11.0) return NIGHT_BAND;
