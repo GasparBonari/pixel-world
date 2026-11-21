@@ -40,10 +40,11 @@ import { MapSurface } from './MapSurface';
 import { useWorldClock } from './use-world-clock';
 
 const effect = Skia.RuntimeEffect.Make(globeShader);
-// Globe (32 MiB decoded), board (8 MiB) and icon sheet, each decoded once per app session.
+// Globe (32 MiB decoded), board (8 MiB), depth (2 MiB) and icon sheet, each decoded once per app session.
 const TEXTURES = {
   globe: require('@/assets/world/globe.png'),
   board: require('@/assets/world/board.png'),
+  depth: require('@/assets/world/depth.png'),
   icons: require('@/assets/world/map-icons.png'),
   ...CAPITAL_IMAGES,
 };
@@ -179,6 +180,7 @@ function GlobeScene({
       time: time.get(),
       textureSize: [4096, 2048],
       boardSize: [2048, 1024],
+      seabedSize: [1024, 512],
     };
   });
 
@@ -199,6 +201,8 @@ function GlobeScene({
               <ImageShader image={images.board} tx="repeat" ty="clamp" fit="none" sampling={NEAREST} />
               {/* The same board image, filtered: smooth distance-to-coast for the sea bands. */}
               <ImageShader image={images.board} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
+              {/* Ocean depth, filtered so depth contours blend. */}
+              <ImageShader image={images.depth} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
             </Shader>
           </Fill>
           <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={0} time={time} />

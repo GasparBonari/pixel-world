@@ -20,7 +20,12 @@ SOURCES = {
     'countries-50m': f'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/{REVISION}/geojson/ne_50m_admin_0_countries.geojson',
     'lakes-10m': f'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/{REVISION}/geojson/ne_10m_lakes.geojson',
     'regions-10m': f'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/{REVISION}/geojson/ne_10m_geography_regions_polys.geojson',
+    # Ocean depth contours: each layer is the sea deeper than its depth in metres.
+    **{f'bathymetry-{depth}': f'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/{REVISION}/geojson/ne_10m_bathymetry_{layer}.geojson'
+       for depth, layer in ((200, 'K_200'), (1000, 'J_1000'), (2000, 'I_2000'), (4000, 'G_4000'))},
 }
+# Depth levels in the depth texture: 0 shelf (< 200 m), then deeper than 200, 1000, 2000 and 4000 m.
+DEPTHS = (200, 1000, 2000, 4000)
 
 
 def fetch(item):
@@ -167,6 +172,41 @@ def generate_board(sources):
             'countryCount': len(country_features), 'rangeCount': len(regions)}
 
 
+def generate_depth(sources):
+    """Ocean depth for the sea's colours (ART_CONTRACT.md section 2), equirectangular 1024x512, one
+    grey channel: 0 on the continental shelf (and on land and lakes), then 64, 128, 191 and 255 for
+    water deeper than 200, 1000, 2000 and 4000 m. The shader samples it smoothly, so contours blend.
+
+    Each Natural Earth layer outlines the sea deeper than its depth. Its holes (islands, seamounts,
+    shallower banks) belong to the shallower levels, so each level is drawn as its own mask and
+    every pixel keeps the deepest level that covers it.
+    """
+    width, height = 1024, 512
+
+    def point(position):
+        return ((position[0]+180)/360*width, (90-position[1])/180*height)
+
+    depth = Image.new('L', (width, height))
+    for level, metres in enumerate(DEPTHS, start=1):
+        mask = Image.new('L', (width, height))
+        draw = ImageDraw.Draw(mask)
+        for feature in json.loads(sources[f'bathymetry-{metres}'])['features']:
+            geometry = feature['geometry']
+            polygons = [geometry['coordinates']] if geometry['type'] == 'Polygon' else geometry['coordinates']
+            for polygon in polygons:
+                draw.polygon([point(p) for p in polygon[0]], fill=255)
+                for hole in polygon[1:]:
+                    draw.polygon([point(p) for p in hole], fill=0)
+        depth.paste(round(level * 255 / len(DEPTHS)), mask=mask)
+    texture = OUTPUT/'depth.png'
+    encoded = BytesIO()
+    depth.save(encoded, format='PNG', optimize=True)
+    write_atomic(texture, encoded.getvalue())
+    return {'width': width, 'height': height, 'bytes': texture.stat().st_size,
+            'decodedBytes': width*height*4, 'projection': 'equirectangular',
+            'channels': {'grey': '0 shelf/land, then 64/128/191/255 deeper than ' + '/'.join(f'{d} m' for d in DEPTHS)}}
+
+
 def main():
     with ThreadPoolExecutor(max_workers=4) as pool:
         sources = dict(pool.map(fetch, SOURCES.items()))
@@ -184,6 +224,7 @@ def main():
         'sources': {name: {'url': url, 'sha256': checksums[name]} for name, url in SOURCES.items()},
         'globe': generate_globe(sources),
         'board': generate_board(sources),
+        'depth': generate_depth(sources),
     }
     write_atomic(OUTPUT/'manifest.json', (json.dumps(manifest, indent=2)+'\n').encode())
     write_atomic(OUTPUT/'LICENSE.txt', (

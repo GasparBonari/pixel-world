@@ -15,6 +15,22 @@
     "regions-10m": {
       "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_geography_regions_polys.geojson",
       "sha256": "b7b26e50ea917d3696aec87f932def2bf5f890f5770e441d59c162c6f4c92a77"
+    },
+    "bathymetry-200": {
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_bathymetry_K_200.geojson",
+      "sha256": "5c6c182da8608153ea2dce22dfb32c987e5390e0bd4a122266143ba181a7b636"
+    },
+    "bathymetry-1000": {
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_bathymetry_J_1000.geojson",
+      "sha256": "fa30219901dd4de34b9f5b20f41bc7c055f9fc9d58cf157ad2679c95239cd366"
+    },
+    "bathymetry-2000": {
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_bathymetry_I_2000.geojson",
+      "sha256": "cdedc746ce06e1a051cb8905e8f07855225ccbd3560ce3a66607651fc6953ce2"
+    },
+    "bathymetry-4000": {
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_bathymetry_G_4000.geojson",
+      "sha256": "ad876e6b6b686494a0e89f0096880a6755aee77af3d738794bbbc92216afcf3d"
     }
   },
   "globe": {
@@ -49,5 +65,15 @@
     },
     "countryCount": 242,
     "rangeCount": 129
+  },
+  "depth": {
+    "width": 1024,
+    "height": 512,
+    "bytes": 50631,
+    "decodedBytes": 2097152,
+    "projection": "equirectangular",
+    "channels": {
+      "grey": "0 shelf/land, then 64/128/191/255 deeper than 200 m/1000 m/2000 m/4000 m"
+    }
   }
 }

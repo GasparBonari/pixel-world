@@ -54,20 +54,32 @@ Regenerate the mockups with `.venv/bin/python scripts/art/phase3_mockups.py` (se
 
 ## 2. Sea and coasts (all scales)
 
-The sea is a **night sea**, so the map stays continuous with the starry space scene the globe sits in. Water colour depends on distance from land, measured in **art pixels, not kilometres**, so the coast ring looks the same at every zoom.
+The sea is a **night sea**, so the map stays continuous with the starry space scene the globe sits in. Its colour comes from two things: a **coastal ring** measured from land in **art pixels, not kilometres**, so it looks the same at every zoom, and beyond the ring the **real depth of the sea** (20 November 2026).
 
-| Distance (art px) | Token | Colour |
+**Coastal ring** (distance from land in art pixels):
+
+| Distance | Cold seas | Temperate shelf | Tropical shelf |
+| --- | --- | --- | --- |
+| 1 | `edge_light` `#A8DDEB` (pale outline around land) | same | same |
+| 2–3 | `coast_band` `#2E6DAF` | `coast_teal` `#2A86A8` | `coast_tropic` `#2FB0B8` |
+| 4–6 | `sea_band` `#25579A` | `sea_teal` `#236E99` | `sea_tropic` `#23919F` |
+
+The teal and turquoise apply only where the coast is shallow (on the continental shelf): tropical within about 23° of the equator, fading to temperate by 47°, plain blue beyond. A steep coast keeps the plain blues even in the tropics: south of Java the seabed drops away and the ring stays blue, while the Java Sea and the Bahamas Banks turn turquoise.
+
+**Beyond the ring, real depth** from Natural Earth's bathymetry (`assets/world/depth.png`: five levels, built by `scripts/geography/prepare_assets.py` from the pinned 200, 1000, 2000 and 4000 m layers):
+
+| Depth | Token | Colour |
 | --- | --- | --- |
-| 1 | `edge_light` | `#A8DDEB` (pale outline around land) |
-| 2–3 | `coast_band` | `#2E6DAF` |
-| 4–6 | `sea_band` | `#25579A` |
-| 7–11 | `night_band` | `#1D4272` |
-| 12+ | `night` | `#16325A` |
-| 17+, in broad patches | `night_deep` | `#112A4E` |
+| Continental shelf, under 200 m | `shelf` (`shelf_tropic` in the tropics) | `#22508A` (`#1E6A8F`) |
+| Slope, 200–1000 m, and up to 9 art pixels from a steep coast | `night_band` | `#1D4272` |
+| 1000–4000 m | `night` | `#16325A` |
+| Over 4000 m | `night_deep` | `#112A4E` |
 
-- **Loose, dithered band edges** (20 November 2026). The distances above are a guide, not exact rings: each edge wanders up to about a pixel either way along the coast (world-anchored noise), and a world-anchored checkerboard dithers it, so neighbouring tones blend instead of stepping. Far from shore, broad patches of `night_deep` (also dithered) give the open sea some depth; they are illustrative, not bathymetry.
-- **Wave crests.** Beyond the bands (distance 12+), a fifth of the blocks of 9×6 wave cells hold one small crest in `wave` (`#234F8B`): two pixels on top, one either side below. A wave cell scales longitude by latitude, so its pixels are never narrower than a screen pixel and the crest never breaks up. Crests roll a pixel east and back, and now and then their top glints (§9).
+So the shallow North Sea, Adriatic, Baltic and Sunda Shelf read lighter, and the Atlantic, Ionian and Norwegian basins dark. From space the globe shows the same shelves a step lighter (turquoise over tropical banks) and the abyss a step darker.
 
+- **Loose, dithered edges.** The ring's edges and the depth contours wander a little along the coast (world-anchored noise), and a world-anchored checkerboard dithers them, so neighbouring tones blend instead of stepping.
+- **Wave crests.** Beyond 11 art pixels from land, a fifth of the blocks of 9×6 wave cells hold one small crest: two pixels on top, one either side below, in `wave` (`#234F8B`), or `sea_band` over shelf water so it still shows. A wave cell scales longitude by latitude, so its pixels are never narrower than a screen pixel and the crest never breaks up. Crests roll a pixel east and back, and now and then their top glints (§9).
+- **Random patterns** (glints, crests, specks) use an arithmetic hash with no `sin()`. A sine-based hash loses precision on large inputs by a different amount on each GPU; at country zoom it drew dense vertical streaks on real GPUs.
 - **Raised land.** Land pixels on a top or left coast use `land_hi` (`#B9DD63`). Under every south-facing coast, the two water pixels below become a cliff face: `cliff_top` (`#5F8A2C`), then `cliff` (`#41662A`).
 - **Sparkles.** In open water (distance 6 or more), a single `sparkle` dot on about 0.2% of pixels; with motion on they twinkle (§9). The mockups' 5×5 sparkles are not in the app; the wave crests' glints take their place.
 - **Clouds.** Two puffy clouds per screen over open water: white with a flat `cloud_shade` base and no outline.

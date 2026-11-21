@@ -143,12 +143,13 @@ const ICON_POINTS = (Math.max(1.25, Math.min(PHONE.width, PHONE.height) / 130) *
 const COUNTRY_FULL = 5.0; // COUNTRY_ZOOM.full: the first country icons are fully visible
 const STRUCTURES = new Set(['church', 'mosque', 'house', 'oak', 'pine', 'olive', 'boat']);
 
-/** Each frame's opaque pixels (alpha > 128) around the drawing anchor, from the RGBA sprite sheet. */
-function solidBoxes() {
-  const bytes = readFileSync(new URL('../assets/world/map-icons.png', import.meta.url));
+/** An 8-bit, non-interlaced PNG (grey or RGBA) as { width, height, channels, pixels }. */
+function decodePng(path) {
+  const bytes = readFileSync(new URL(path, import.meta.url));
   const width = bytes.readUInt32BE(16);
   const height = bytes.readUInt32BE(20);
-  assert.deepEqual([bytes[24], bytes[25], bytes[28]], [8, 6, 0], '8-bit RGBA, not interlaced');
+  const channels = { 0: 1, 6: 4 }[bytes[25]];
+  assert.ok(bytes[24] === 8 && channels && bytes[28] === 0, `${path}: 8-bit grey or RGBA, not interlaced`);
   const chunks = [];
   for (let at = 8; at < bytes.length; ) {
     const length = bytes.readUInt32BE(at);
@@ -156,15 +157,15 @@ function solidBoxes() {
     at += length + 12;
   }
   const raw = inflateSync(Buffer.concat(chunks));
-  const stride = width * 4;
+  const stride = width * channels;
   const pixels = Buffer.alloc(stride * height);
   for (let y = 0; y < height; y++) {
     const filter = raw[y * (stride + 1)];
     for (let x = 0; x < stride; x++) {
       const value = raw[y * (stride + 1) + 1 + x];
-      const left = x >= 4 ? pixels[y * stride + x - 4] : 0;
+      const left = x >= channels ? pixels[y * stride + x - channels] : 0;
       const up = y > 0 ? pixels[(y - 1) * stride + x] : 0;
-      const corner = x >= 4 && y > 0 ? pixels[(y - 1) * stride + x - 4] : 0;
+      const corner = x >= channels && y > 0 ? pixels[(y - 1) * stride + x - channels] : 0;
       const p = left + up - corner; // PNG filters: none, sub, up, average, Paeth
       const predictor = [0, left, up, (left + up) >> 1,
         Math.abs(p - left) <= Math.abs(p - up) && Math.abs(p - left) <= Math.abs(p - corner) ? left
@@ -172,6 +173,13 @@ function solidBoxes() {
       pixels[y * stride + x] = (value + predictor) & 255;
     }
   }
+  return { width, height, channels, pixels };
+}
+
+/** Each frame's opaque pixels (alpha > 128) around the drawing anchor, from the RGBA sprite sheet. */
+function solidBoxes() {
+  const { width, channels, pixels } = decodePng('../assets/world/map-icons.png');
+  assert.equal(channels, 4);
   return icons.frames.map(([fx, fy, w, h]) => {
     let [left, top, right, bottom] = [w, h, 0, 0];
     for (let y = 0; y < h; y++)
@@ -341,4 +349,22 @@ test('the shaders’ random function uses no sine, so every GPU draws the same p
   const shader = readFileSync(new URL('../src/features/world/globe-shader.ts', import.meta.url), 'utf8');
   const body = shader.slice(shader.indexOf('float hash(float2 p)'), shader.indexOf('float noise(float2 p)'));
   assert.ok(body.includes('fract') && !/\bsin\s*\(/.test(body), body);
+});
+
+test('the sea depth texture holds real Natural Earth depth levels', () => {
+  const depth = decodePng('../assets/world/depth.png');
+  assert.deepEqual([depth.width, depth.height, depth.channels], [1024, 512, 1]);
+  assert.deepEqual([...new Set(depth.pixels)].sort((a, b) => a - b), [0, 64, 128, 191, 255]);
+  const level = (lon, lat) =>
+    Math.round(depth.pixels[Math.floor((90 - lat) / 180 * depth.height) * depth.width + Math.floor((lon + 180) / 360 * depth.width)] / (255 / 4));
+  // Shelves (under 200 m): the North Sea, the northern Adriatic, the Baltic, the Sunda Shelf, the Bahamas Banks.
+  for (const [lon, lat] of [[3, 56], [13.2, 44.8], [19, 57], [107, 2], [-78, 24]]) assert.equal(level(lon, lat), 0, `${lon},${lat}`);
+  // Deep basins: the Ionian and Black Seas beyond 2000 m, the open Atlantic beyond 4000 m.
+  assert.ok(level(19, 36) >= 3 && level(34, 43) >= 3);
+  assert.equal(level(-40, 40), 4);
+  // Islands in deep water are holes in the deep layers: they keep shallower water round them
+  // instead of reading as open ocean (Madeira, the Azores, Mauritius).
+  for (const [lon, lat] of [[-16.95, 32.75], [-28.0, 38.6], [57.55, -20.2]]) assert.ok(level(lon, lat) < 3, `${lon},${lat}`);
+  const manifest = JSON.parse(readFileSync(new URL('../assets/world/manifest.json', import.meta.url), 'utf8'));
+  for (const metres of [200, 1000, 2000, 4000]) assert.match(manifest.sources[`bathymetry-${metres}`].sha256, /^[0-9a-f]{64}$/);
 });

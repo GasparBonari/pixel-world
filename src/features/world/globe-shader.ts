@@ -12,6 +12,8 @@ export const globeShader = `
 uniform shader geography;
 uniform shader board;
 uniform shader boardSmooth;
+// Ocean depth (assets/world/depth.png), filtered: 0 shelf, then deeper than 200/1000/2000/4000 m.
+uniform shader seabed;
 uniform float2 viewport;
 uniform float2 angles;
 uniform float radius;
@@ -20,6 +22,7 @@ uniform float zoom;
 uniform float time;
 uniform float2 textureSize;
 uniform float2 boardSize;
+uniform float2 seabedSize;
 
 const float3 EDGE_LIGHT = float3(0.659,0.867,0.922);
 const float3 COAST_BAND = float3(0.180,0.427,0.686);
@@ -28,6 +31,14 @@ const float3 NIGHT_BAND = float3(0.114,0.259,0.447);
 const float3 NIGHT = float3(0.086,0.196,0.353);
 const float3 NIGHT_DEEP = float3(0.067,0.161,0.302);
 const float3 WAVE = float3(0.137,0.310,0.545);
+// Shallow coasts by climate (ART_CONTRACT.md section 2): teal in temperate seas, turquoise in the
+// tropics, for the coastal ring's inner (coast) and outer (sea) band and for open shelf water.
+const float3 COAST_TEAL = float3(0.165,0.525,0.659);
+const float3 COAST_TROPIC = float3(0.184,0.690,0.722);
+const float3 SEA_TEAL = float3(0.137,0.431,0.600);
+const float3 SEA_TROPIC = float3(0.137,0.569,0.624);
+const float3 SHELF = float3(0.133,0.314,0.541);
+const float3 SHELF_TROPIC = float3(0.118,0.416,0.561);
 const float3 SPARKLE = float3(0.624,0.765,0.910);
 const float3 LAND_HI = float3(0.725,0.867,0.388);
 const float3 CLIFF_TOP = float3(0.373,0.541,0.173);
@@ -135,28 +146,37 @@ float3 boardColor(float2 point, float cell, float3 here, float lon, float lat, f
       float swell = 3.5*(1.0-fract(time/3.0+surfaceNoise(here.xy,float2(90,60),float2(5.0))*2.0));
       if (abs(cells-swell) < 0.5 && hash(worldCell+9.0) < 0.6) return mix(COAST_BAND,EDGE_LIGHT,0.7);
     }
-    // The bands follow the shore loosely: each edge wanders up to about a pixel either way along the
-    // coast, and a world-anchored checkerboard dithers it so neighbouring tones blend.
+    // The coastal ring follows the shore loosely: each edge wanders up to about a pixel either way
+    // along the coast, and a world-anchored checkerboard dithers it so neighbouring tones blend.
     float checker = mod(worldCell.x+worldCell.y,2.0)-0.5;
-    float depth = cells+(surfaceNoise(here.xy,float2(260,170),float2(11.0))-0.5)*2.4+checker*0.7;
-    if (depth <= 3.0) return COAST_BAND;
-    if (depth <= 6.0) return SEA_BAND;
+    float ring = cells+(surfaceNoise(here.xy,float2(260,170),float2(11.0))-0.5)*2.4+checker*0.7;
+    // Real depth: 0 on the continental shelf up to 4 beyond 4000 m, contours wandering and
+    // dithered the same way. Shallow water is tinted by climate: turquoise in the tropics, teal in
+    // temperate seas, the plain blues towards the poles.
+    float sea = seabed.eval(here.xy*seabedSize).r*4.0+(surfaceNoise(here.xy,float2(520,340),float2(7.0))-0.5)*0.5+checker*0.3;
+    bool shelf = sea < 0.5;
+    float warmth = 1.0-smoothstep(23.0,47.0,abs(lat))+checker*0.12;
+    bool tropic = shelf && warmth > 0.62;
+    bool temperate = shelf && !tropic && warmth > 0.25;
+    if (ring <= 3.0) return tropic ? COAST_TROPIC : temperate ? COAST_TEAL : COAST_BAND;
+    if (ring <= 6.0) return tropic ? SEA_TROPIC : temperate ? SEA_TEAL : SEA_BAND;
     // Wave crests over open water: in a fifth of the blocks of 9x6 wave cells, a small crest (two
     // pixels on top, one either side below) that rolls a pixel east and back; now and then its top
     // glints. Wave cells scale longitude by latitude, so a cell is never narrower than a screen pixel.
     float2 waveCell = floor(float2(lon*cos(radians(lat)),lat)*perDegree);
     float2 block = floor(waveCell/float2(9.0,6.0));
-    if (depth > 11.0 && hash(block+31.0) < 0.2) {
+    if (ring > 11.0 && hash(block+31.0) < 0.2) {
       float roll = time > 0.0 ? mod(floor(time*1.2+hash(block+5.0)*2.0),2.0) : 0.0;
       float2 crest = waveCell-block*float2(9.0,6.0)-float2(1.0+floor(hash(block+13.0)*4.0)+roll,1.0+floor(hash(block+17.0)*3.0));
       bool top = crest.y == 1.0 && (crest.x == 1.0 || crest.x == 2.0);
       if (top || (crest.y == 0.0 && (crest.x == 0.0 || crest.x == 3.0)))
-        return top && time > 0.0 && fract(time*0.5+hash(block+7.0)) < 0.12 ? SPARKLE : WAVE;
+        return top && time > 0.0 && fract(time*0.5+hash(block+7.0)) < 0.12 ? SPARKLE : shelf ? SEA_BAND : WAVE;
     }
-    if (depth <= 11.0) return NIGHT_BAND;
-    // Far from shore, broad patches of deeper water a shade darker.
-    if (depth > 16.0 && surfaceNoise(here.xy,float2(36,24),float2(2.0))+checker*0.05 > 0.56) return NIGHT_DEEP;
-    return NIGHT;
+    // Beyond the ring: shelf water stays light, the continental slope (200-1000 m) and a step out
+    // from steep coasts are mid-blue, the deep sea is night blue, and beyond 4000 m darker still.
+    if (shelf) return tropic ? SHELF_TROPIC : SHELF;
+    if (ring <= 9.0 || sea < 1.5) return NIGHT_BAND;
+    return sea < 3.5 ? NIGHT : NIGHT_DEEP;
   }
 
   float id = countryAt(here);
@@ -226,6 +246,12 @@ half4 main(float2 position) {
 
   float oceanTone = floor((terrain*0.7+grain*0.3)*5.0)/5.0;
   float3 ocean = mix(float3(0.09,0.27,0.60),float3(0.16,0.45,0.75),oceanTone);
+  // Real depth from space: shelves a step lighter (turquoise over tropical banks), the abyss a
+  // step darker.
+  float seaDepth = seabed.eval(uv*seabedSize).r*4.0;
+  float warmSea = 1.0-smoothstep(23.0,40.0,abs(degrees));
+  if (seaDepth < 0.5) ocean = mix(ocean,mix(float3(0.20,0.53,0.80),float3(0.22,0.70,0.78),floor(warmSea*2.0)/2.0),0.55);
+  else if (seaDepth > 3.5) ocean *= 0.86;
   // Wave highlights drift slowly east (one noise cell, about 4 degrees, every 30 s).
   float wave = step(0.85,surfaceNoise(uv-float2(time/2700.0,0),float2(85,420),float2(0)));
   ocean = mix(ocean,float3(0.32,0.63,0.84),wave*0.32);

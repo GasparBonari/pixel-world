@@ -161,7 +161,7 @@ python3 -m venv .venv
 PATH="$PWD/.venv/bin:$PATH" npm run assets:prepare
 ```
 
-The script verifies four pinned Natural Earth source hashes and rebuilds the globe and board textures, display labels, manifest, and license. Then rebuild the map icons (sheet and placements) with `.venv/bin/python scripts/art/build_map_icons.py`. Downloads stay in the ignored `.cache/geography/` directory and are excluded from the app. Completed outputs replace files atomically so Metro can remain running. Removed catalog/atlas/sprite images are not downloaded or recreated.
+The script verifies eight pinned Natural Earth source hashes (land, countries, lakes, regions and four bathymetry depths) and rebuilds the globe, board and sea-depth textures, display labels, manifest, and license. Then rebuild the map icons (sheet and placements) with `.venv/bin/python scripts/art/build_map_icons.py`. Downloads stay in the ignored `.cache/geography/` directory and are excluded from the app. Completed outputs replace files atomically so Metro can remain running. Removed catalog/atlas/sprite images are not downloaded or recreated.
 
 | Disk content | Current size |
 | --- | --- |
