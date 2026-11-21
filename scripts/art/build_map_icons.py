@@ -250,6 +250,7 @@ VARIANTS = {
     "house": 2 * len(sprites.FAMILIES),
     "boat": 1, "windmill": 1, "mont-saint-michel": 1, "vineyard": 1,
     "bird": 1, "bird-shadow": 1,  # flocks (Birds.tsx), not placed as icons
+    "glint": 1, "cloud-shadow": 1,  # capital-scene overlays (CapitalMotion.tsx), not placed as icons
     **{animal: 1 for animal in sprites.FAUNA},
     "neuschwanstein": 1,
     "kinderdijk": 1,
@@ -360,6 +361,9 @@ ANIMATED = {
     "windmill": ("turn", 3),  # sails 0, 30 and 60 degrees round
     "volcano": ("smoke", 3),
     "bird": ("flap", 2),
+    "glint": ("ripple", 2),
+    "capital": ("flutter", 3),  # corner-tower pennants
+    "house": ("chimney", 4),  # still (no smoke), then a rising wisp; houses without a chimney reuse the still frame
 }
 ATLAS_WIDTH = 2048  # every phone GPU accepts textures this wide
 

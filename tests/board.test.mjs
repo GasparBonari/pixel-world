@@ -368,3 +368,25 @@ test('the sea depth texture holds real Natural Earth depth levels', () => {
   const manifest = JSON.parse(readFileSync(new URL('../assets/world/manifest.json', import.meta.url), 'utf8'));
   for (const metres of [200, 1000, 2000, 4000]) assert.match(manifest.sources[`bathymetry-${metres}`].sha256, /^[0-9a-f]{64}$/);
 });
+
+test('capital pennants have three shapes; only houses with chimneys smoke, and smoke is never solid', () => {
+  const byKind = (kind) => Object.entries(icons.animations).filter(([still]) => icons.names[still] === kind);
+  const capitals = byKind('capital');
+  assert.equal(capitals.length, 6, 'one per building family');
+  for (const [, [motion, poses]] of capitals) {
+    assert.equal(motion, 'flutter');
+    assert.equal(new Set(poses).size, 3);
+  }
+  // Houses: frames are ordered by family (central, mediterranean, atlantic, nordic, orthodox,
+  // ottoman), two materials each. Steep-roofed families have chimneys.
+  const houses = byKind('house');
+  assert.equal(houses.length, 12);
+  houses.forEach(([still, [motion, poses]], index) => {
+    const family = ['central', 'mediterranean', 'atlantic', 'nordic', 'orthodox', 'ottoman'][Math.floor(index / 2)];
+    assert.equal(motion, 'chimney');
+    const smokes = new Set(poses).size === 4;
+    assert.equal(smokes, ['central', 'atlantic', 'nordic'].includes(family), `${family} house ${still}`);
+    // Smoke is translucent: every pose keeps the still frame's solid box, so placement ignores it.
+    for (const frame of poses) assert.deepEqual(boxes[frame], boxes[+still], `${family} pose ${frame}`);
+  });
+});

@@ -24,6 +24,7 @@ import capitals from '@/data/capitals.json';
 import { Birds } from './Birds';
 import { CountryLabels } from './CountryLabels';
 import {
+  activeCapital,
   globeRadius,
   OPENING_CAMERA,
   rotateGlobe,
@@ -170,6 +171,8 @@ function GlobeScene({
     },
   });
   const gesture = useSimultaneousGestures(pan, pinch);
+  // Only the capital being visited runs its scene animation (snapshot follows the camera in steps).
+  const visiting = activeCapital(snapshot)?.id;
   const uniforms = useDerivedValue(() => {
     const c = camera.get();
     return {
@@ -216,6 +219,9 @@ function GlobeScene({
               camera={camera}
               viewport={viewport}
               iconScale={iconScale}
+              icons={images.icons}
+              time={time}
+              animated={visiting === scene.id}
             />
           ))}
         </Canvas>

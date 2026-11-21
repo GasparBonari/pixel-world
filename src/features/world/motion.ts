@@ -54,7 +54,7 @@ export function spinSpeed(zoom: number, idle: number) {
 }
 
 /** Kinds of icon motion; build_map_icons.py stores one per animated sprite with its pose frames. */
-export type Motion = 'animal' | 'sway' | 'turn' | 'smoke' | 'flap';
+export type Motion = 'animal' | 'sway' | 'turn' | 'smoke' | 'flap' | 'flutter' | 'chimney';
 
 /** A stable per-icon number in [0, 1) from its site, so neighbours don't move in step. */
 export function phaseAt(longitude: number, latitude: number) {
@@ -70,6 +70,8 @@ export function phaseAt(longitude: number, latitude: number) {
  * - turn: windmill sails, 30 degrees every third of a second.
  * - smoke: volcano ash, a new puff every 2 s.
  * - flap: bird wings, four beats a second.
+ * - flutter: capital pennants, a new shape every third of a second.
+ * - chimney: smoke rising, poses 1-3 in turn; the still frame (0) has none.
  */
 export function poseAt(motion: Motion, time: number, phase: number, longitude: number) {
   'worklet';
@@ -86,6 +88,8 @@ export function poseAt(motion: Motion, time: number, phase: number, longitude: n
   }
   if (motion === 'turn') return Math.floor(time * 3) % 3;
   if (motion === 'smoke') return Math.floor(time * 1.5) % 3;
+  if (motion === 'flutter') return Math.floor(time * 3 + phase * 3) % 3;
+  if (motion === 'chimney') return 1 + (Math.floor(time * 2.5 + phase * 3) % 3);
   return Math.floor(time * 4 + phase * 2) % 2;
 }
 

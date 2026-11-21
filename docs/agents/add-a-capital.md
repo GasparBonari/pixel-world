@@ -158,8 +158,9 @@ Use this every time you place something "at one end":
    .venv/bin/python scripts/art/check_capital.py <id>
    ```
    It must print `OK`: no `REVERSED` pairs, rank correlation 1.00 on both axes, `hidden=0` and `clipped=0` for every landmark, and no overlaps. Then look at `assets/world/capitals/<id>.png` against your fact sheets, especially water, hills, banks and districts. The checker can't see those. Iterate until both pass.
-4. **Add the country tier,** then run `.venv/bin/python scripts/art/build_map_icons.py`. Check that every country-tier icon lies inside the country's bounds; the tests enforce this. The build prints how many country icons appear at each zoom step and which were left out. Your landmark must not be among them, and `tests/board.test.mjs` checks that nothing overlaps.
-5. **Add `COVERAGE`,** then check in the browser:
+4. **Find the scene's water** for its animation: run `.venv/bin/python scripts/art/capital_motion.py --preview /tmp/water` and open `/tmp/water/<id>.png`. Water is marked magenta and glint spots yellow. If the magenta covers roofs or glass, or misses the river, add a point on the real water to `WATER_AT` in that script and run it again. A scene without water gets no glints.
+5. **Add the country tier,** then run `.venv/bin/python scripts/art/build_map_icons.py`. Check that every country-tier icon lies inside the country's bounds; the tests enforce this. The build prints how many country icons appear at each zoom step and which were left out. Your landmark must not be among them, and `tests/board.test.mjs` checks that nothing overlaps.
+6. **Add `COVERAGE`,** then check in the browser:
    - start `npm run web`;
    - open `http://localhost:8081/?lon=<lon>&lat=<lat>&zoom=5` for the country and `...&zoom=7` for the capital;
    - also zoom in with the scroll wheel from the country view into the capital, and drag to pan. Panning must stop at the scene's edges.

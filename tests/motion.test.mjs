@@ -102,3 +102,12 @@ test('on opening, the planet eases into its spin at once instead of waiting', ()
   // After a real touch it still waits.
   assert.equal(spinSpeed(0, 1), 0);
 });
+
+test('capital pennants flutter and chimneys smoke only while the clock runs', () => {
+  assert.deepEqual([0, 1, 2, 3].map((i) => poseAt('flutter', 0.01 + i / 3, 0, 0)), [0, 1, 2, 0]);
+  const smoke = Array.from({ length: 30 }, (_, i) => poseAt('chimney', (i + 1) / 12, 0.4, 0));
+  assert.ok(smoke.every((pose) => pose >= 1 && pose <= 3), 'always a wisp while animating');
+  assert.equal(new Set(smoke).size, 3);
+  assert.equal(poseAt('flutter', 0, 0.4, 0), 0);
+  assert.equal(poseAt('chimney', 0, 0.4, 0), 0, 'reduce motion: no smoke');
+});

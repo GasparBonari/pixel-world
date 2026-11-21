@@ -48,7 +48,7 @@ The reference’s quest lists, avatar, XP, badges, statistics, and parchment car
 | 2 | Earth and universe | An attractive, responsive opening planet | Core implemented; visual refinement and platform validation active |
 | 3 | Continent/country visuals and continuous zoom | Richer geography appears while zooming into the same world | Implemented for Europe |
 | 4 | Detailed capital visuals | Recognizable capital scenes, one per country | 44 European capitals built; paused until the Phase 5 playtest |
-| 4b | Living world | The world moves on its own: space and planet first, then board, country tier and capitals | Space, planet and board done; country tier next |
+| 4b | Living world | The world moves on its own: space and planet first, then board, country tier and capitals | Space, planet, board, country tier and capital water/gulls/cloud shadows done; capital smoke, flags and people need P5-01 |
 | 5 | Gameplay slice | "Find it" loop, collectibles, discovery states, and saved progress on three capitals; playtest gate | Next |
 | 6 | UI kit and game feel | Pixel UI components, scene animation, sound, real day/night, accessibility | Planned |
 | 7 | World progress, Quests and Passport | Three tabs, clouds over undiscovered countries, daily place, travel track, stamps, My World | Planned |
@@ -1347,8 +1347,8 @@ Started 20 November 2026, before the gameplay slice: animation of the map itself
 
 - [x] **L-01 — Space and planet.** Idle spin after 3 seconds without input, drifting clouds and wave highlights, twinkling and flashing stars, a shooting star every 11 seconds, a floating satellite with a panel glint and blinking beacon. Verified in Chrome (390×844): the spin starts after 3 seconds, stops on a drag and resumes; reduce motion shows zero changed pixels over 9 seconds. Not yet measured on a physical phone: an idle screen now redraws the full-screen shader 12 times a second.
 - [x] **L-02 — Continent board.** Animals blink and shift their weight (2 extra frames each, own rhythm; 28 of 29 species, the orca has no eye), trees sway as gusts sweep east, windmill sails turn, volcano ash puffs, boats bob, sea glints twinkle and surf rolls in to the coasts, and 48 flocks of gulls with shadows fly great circles round the planet. Boats bob in place rather than drifting, so they can never sail onto land. The atlas is now packed into rows at most 2048 pixels wide (it was one 3922-pixel row, wider than some phone GPUs accept). Verified in Chrome: each effect seen moving, and reduce motion shows zero changed pixels on the board and at country zoom.
-- [ ] **L-03 — Country tier.** Waving pennants on the capital markers, chimney smoke from houses, the selected pin bouncing.
-- [ ] **L-04 — Capital scenes.** Water shimmer, chimney smoke, flags, boats, birds and a few two-frame people at the anchors exported by P5-01.
+- [ ] **L-03 — Country tier.** Done: capital pennants flutter and chimneys smoke (Central, Atlantic and Nordic houses; translucent, so placement is unchanged). Left: the selected pin bouncing, once places can be selected (Phase 5).
+- [ ] **L-04 — Capital scenes.** Done: water glints (water found by colour in each finished scene by `scripts/art/capital_motion.py`, 39 of 44 scenes have water), gulls and drifting cloud shadows, only for the capital being visited. Left: chimney smoke, flags and a few two-frame people at the anchors exported by P5-01.
 - [ ] **L-05 — Measure on devices.** Frame time and battery on a mid-range Android phone and an iPhone, idle and while zooming; lower the idle rate or pause off-screen effects if needed.
 
 ## Phase 5 — Gameplay slice on three capitals

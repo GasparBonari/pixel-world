@@ -363,6 +363,7 @@ STONE = dict(wall_hi=hex_rgb("#FFF8E8"), wall=hex_rgb("#EADFC6"), wall_sh=hex_rg
              wall_dk=hex_rgb("#9C8C70"), wall_ol=hex_rgb("#4A3D30"))
 GILT = dict(dome_hi=hex_rgb("#FFEA9E"), dome=hex_rgb("#F2C14E"), dome_sh=hex_rgb("#BF8A2E"),
             dome_ol=hex_rgb("#6A4614"))
+SMOKE = (242, 242, 236, 128)  # chimney smoke: below the solid-alpha threshold used for placement
 STAR_GOLD = (hex_rgb("#FFE07A"), hex_rgb("#F2C14E"), hex_rgb("#7A4E16"))  # light, gold, outline
 
 
@@ -454,10 +455,22 @@ def town_house(seed=0, family=None):
             s.put(x, 8, P["glass"], W["wall_ol"])
             s.put(x, 9, P["window"], W["wall_ol"])
         _arch_door(s, 6, 6, 10, 12, W)
-    if form["roof_top"] <= 1:  # chimney on steep roofs
+    chimney = form["roof_top"] <= 1  # steep roofs have one (and colder climates light a fire)
+    if chimney:
         s.put(8, form["roof_top"] + 1, P["roof_ol"], P["roof_ol"])
         s.put(8, form["roof_top"] + 2, W["wall_dk"], W["wall_ol"])
-    return s.image()
+    # Four empty rows on top leave room for smoke; the house keeps its place above the anchor.
+    img = Image.new("RGBA", (13, 18))
+    img.paste(s.image(), (0, 4))
+    if chimney and POSE:
+        # A wisp rising and drifting east (POSE 1-3). Translucent, so it is never solid for placement.
+        top = form["roof_top"] + 4
+        wisp = {1: ((8, -1), (8, -2), (9, -2)),
+                2: ((8, -2), (9, -2), (9, -3), (10, -4)),
+                3: ((9, -3), (10, -3), (10, -4), (11, -4))}[POSE]
+        for dx, dy in wisp:
+            img.putpixel((dx, top + dy), SMOKE)
+    return img
 
 
 def town_church(seed=0, family=None):
@@ -591,7 +604,9 @@ def capital_town(seed=0, family=None):
         mid = (x0 + x1) // 2
         s.put(mid, 8, C["bark_ol"], C["bark_ol"])
         s.put(mid, 7, C["bark_ol"], C["bark_ol"])
-        s.put(mid + 1, 7, C["flag"], C["roof_ol"])
+        # The pennant flutters (POSE 0-2): out straight, a longer flick, dipping at the tip.
+        for dx, dy in {0: ((1, 0),), 1: ((1, 0), (2, 0)), 2: ((1, 0), (2, 1))}[POSE % 3]:
+            s.put(mid + dx, 7 + dy, C["flag"], C["roof_ol"])
     return s.image()
 
 
@@ -726,6 +741,28 @@ def bird(seed=0):
             if cell == "#":
                 s.put(x + 1, y + 1, white, outline)
     return s.image()
+
+
+def glint(seed=0):
+    """Sunlight on capital-scene water (CapitalMotion.tsx): a bright 3-pixel dash (pose 0) that
+    breaks into two (pose 1)."""
+    img = Image.new("RGBA", (3, 1))
+    for x in ((0, 1, 2) if POSE == 0 else (0, 2)):
+        img.putpixel((x, 0), (236, 248, 252, 255))
+    return img
+
+
+def cloud_shadow(seed=0):
+    """A cloud's shadow drifting over a capital scene: four overlapping ellipses of faint,
+    translucent night blue with hard pixel edges, so the city shows through."""
+    width, height = 120, 50
+    img = Image.new("RGBA", (width, height))
+    blobs = ((30, 29, 28, 17), (62, 20, 34, 18), (92, 30, 26, 16), (58, 36, 30, 12))
+    for y in range(height):
+        for x in range(width):
+            if any(((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1 for cx, cy, rx, ry in blobs):
+                img.putpixel((x, y), (16, 22, 40, 52))
+    return img
 
 
 def bird_shadow(seed=0):
@@ -3214,7 +3251,9 @@ ICONS = {
     # Town buildings by family: the seed selects the family (FAMILIES) and, for houses, the material.
     "capital": capital_town, "church": town_church, "house": town_house, "mosque": mosque,
     # Flocks crossing the board (Birds.tsx); not placed as map icons.
-    "bird": bird, "bird-shadow": bird_shadow, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
+    "bird": bird, "bird-shadow": bird_shadow,
+    # Capital-scene overlays (CapitalMotion.tsx); not placed as map icons.
+    "glint": glint, "cloud-shadow": cloud_shadow, "boat": sailboat, "pin": pin, "neuschwanstein": neuschwanstein,
     "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge, "rock-of-cashel": rock_of_cashel,
     "leaning-tower-pisa": leaning_tower_pisa, "kronborg": kronborg, "gripsholm": gripsholm, "borgund": borgund,
     "olavinlinna": olavinlinna,
