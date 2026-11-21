@@ -25,8 +25,15 @@ sys.path.insert(0, HERE)
 os.chdir(HERE)
 import iso  # noqa: E402
 import build_capitals as bc  # noqa: E402
+from capital_sites import SITES as KNOWN  # noqa: E402
 
 MIN_METRES = 120
+# Drawing functions that are part of a larger landmark, not landmarks of their own:
+# Dublin Castle draws its round Record Tower with landmarks_ireland.round_tower.
+PARTS = {('landmarks_ireland', 'round_tower')}
+# Landmarks that really stand in front of one another: Leif Erikson's statue faces Hallgrímskirkja
+# from the square right before its door.
+TOGETHER = {('reykjavik', frozenset({'hallgrimskirkja', 'leif'}))}
 # Repeated fillers that are not landmarks (and are not in SITES).
 FILLER = {'tram_28', 'tram', 'belgian_flag', 'winged_figure', 'dome', 'cathedral_roof', 'stone_bridge',
           'funicular', 'stall', 'gazebo', 'arcade', 'townhouse'}
@@ -91,7 +98,7 @@ def main():
     seen, marks = set(), []
     for modname, name, args, kw in list(calls):
         key = (name, repr(args), repr(sorted(kw.items())))
-        if key in seen or count[name] > 3 or name in FILLER:
+        if key in seen or count[name] > 3 or name in FILLER or (modname, name) in PARTS:
             continue
         seen.add(key)
         depth[0] = 1
@@ -117,6 +124,8 @@ def main():
         hidden = sum(1 for p in inside if same_px[p] != (0, 0, 0) and final[p] != same_px[p])
         left, right, bottom = box[0] - 200, box[2] - 200, box[3] - 200
         site = site_of.get((modname, name))
+        if not site and name in KNOWN.get(cap_id, {}):  # capitals built before SITES tables
+            site = (name, KNOWN[cap_id][name][:2])
         marks.append({'name': site[0] if site else name, 'real': site[1] if site else None,
                       'base': ((left + right) / 2, bottom), 'pixels': pixels, 'hidden': hidden,
                       'clipped': len(pixels) - len(inside)})
@@ -126,7 +135,7 @@ def main():
     for a in range(len(marks)):
         for c in range(a + 1, len(marks)):
             overlap = len(marks[a]['pixels'] & marks[c]['pixels'])
-            if overlap:
+            if overlap and (cap_id, frozenset({marks[a]['name'], marks[c]['name']})) not in TOGETHER:
                 failures += 1
                 print(f"  OVERLAP {marks[a]['name']} / {marks[c]['name']}: {overlap} px")
     for m in marks:

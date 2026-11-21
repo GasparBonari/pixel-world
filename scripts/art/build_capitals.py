@@ -170,8 +170,10 @@ def lisbon():
     # The Tagus lies beyond a shoreline along the i axis (lower left); Alfama climbs to the castle
     # (upper right); the Baixa grid runs north from Praça do Comércio on the waterfront.
     shore = lambda i: 62 + 2 * math.sin(i / 9)
-    hill = (52, 18)
-    tram_path = [(46, 36), (50, 37), (53, 34), (54, 30), (54, 27), (53, 25)]
+    # Real order (DEVELOPMENT_PLAN.md, capital_sites.py): the Sé stands north-east of the Praça,
+    # below and just east of the castle hill; Belém Tower is 7 km west and 2 km south, on the river.
+    hill = (51, 19)
+    tram_path = [(49, 39), (51, 38), (53, 35), (54, 31), (54, 28), (53, 26)]
 
     def near_tram(i, j):
         return any(math.hypot(i - (a[0] + (b[0] - a[0]) * t), j - (a[1] + (b[1] - a[1]) * t)) < 1.0
@@ -188,6 +190,8 @@ def lisbon():
             kind = "calcada"  # Praça do Comércio, open to the river
         elif hill_r < 9.5:
             kind = "grass"
+        elif hill_r < 12.5 and i + j > hill[0] + hill[1] and abs(i - j - (hill[0] - hill[1])) < 12:
+            kind = "garden"  # the open slope below the castle walls, so no house hides them
         elif 35 <= i <= 43 and 19 <= j <= 23:
             kind = "calcada"  # Rossio, at the top of the Baixa
         elif near_tram(i, j) or (38 <= i <= 39 and 24 <= j < 47) or (j in (27, 32, 37, 42) and 26 <= i <= 48) \
@@ -210,17 +214,17 @@ def lisbon():
                     kinds[(a, b)] = ground
 
     lb.castelo_sao_jorge(scene, hill[0] - 5, hill[1] - 4, 14)
-    lb.se_lisboa(scene, 50, 40)
-    reserve(49, 39, 7, 11)
+    lb.se_lisboa(scene, 41, 26)
+    reserve(40, 25, 10, 15)  # the Sé and Largo da Sé in front of it
     lb.arco_rua_augusta(scene, 35.5, 46.5)
     reserve(35, 46, 8, 3)
     for k in range(3):  # yellow Pombaline arcades: west side facing the square, north beside the arch
         lb.lisbon_house(scene, 30.5, 49 + k * 3.5, 2.5, 3.5, 3, rgb("#F2C14E"), k, arcade=True)
-    for a0 in (30.5, 43.0):
+    for a0 in (30.5, 44.5):  # either side of the arch, never over it
         lb.lisbon_house(scene, a0, 46, 4.5 if a0 > 40 else 5, 2.5, 3, rgb("#F2C14E"), 7, arcade=True)
     reserve(30, 45, 19, 15)
     lb.torre_belem(scene, 27, shore(27) + 3)
-    for (a, b, along) in ((47, 35.5, False), (57.2, 30, True)):
+    for (a, b, along) in ((50, 38.5, False), (57.2, 31, True)):
         lb.tram_28(scene, a, b, along_j=along)
 
     paint_ground(scene, kinds, elev, TAGUS, lb.CASTLE["dark"])
@@ -251,11 +255,12 @@ def lisbon():
     for (i, j), kind in kinds.items():
         x, y = scene.screen(i + 0.5, j + 0.5, elev[(i, j)])
         pick = None
-        if kind == "grass" and elev[(i, j)] and h01(i, j, 21) < 0.16:
+        on_castle = hill[0] - 7 <= i <= hill[0] + 11 and hill[1] - 6 <= j <= hill[1] + 12
+        if kind == "grass" and elev[(i, j)] and h01(i, j, 21) < 0.16 and not on_castle:
             pick = pines[(i + j) % 2]
         elif kind == "quay" and i % 4 == 0:
             pick = green[i % 3]
-        elif kind == "calcada" and (i in (33, 45)) and j % 3 == 0:
+        elif kind == "calcada" and (i in (33, 45)) and j % 3 == 0 and j > 52:  # clear of the arch
             pick = jacaranda[j % 3]
         elif kind in ("lot", "garden") and (i, j) not in reserved and h01(i, j, 22) < 0.4:
             pick = (jacaranda if h01(i, j, 23) < 0.45 else green)[(i * 7 + j) % 3]
@@ -1106,11 +1111,12 @@ def london():
     landmark(lon.trafalgar, 145, 230, 8, 8, front=1, ground="quay")
     landmark(lon.tower_of_london, 600, 210, 8.5, 7, front=3)
     landmark(lon.buckingham_palace, 105, 340, 13, 6.5, front=3)
-    landmark(lon.london_eye, 445, 330, 8, 8, front=1)
+    landmark(lon.london_eye, 445, 343, 8, 8, front=1)
     landmark(lon.parliament, 415, 465, 5, 15, front=3)
     landmark(lon.westminster_abbey, 250, 400, 9, 5.5, front=2)
-    # Tower Bridge crosses the east reach squarely along j, on its real SE side of the Tower.
-    landmark(lon.tower_bridge, 635, 320, 2.8, 15, front=1)
+    # Tower Bridge crosses the east reach squarely along j, on its real SE side of the Tower and
+    # north of the London Eye (by 250 m), so it sits up the reach rather than level with the Eye.
+    landmark(lon.tower_bridge, 622, 313, 2.8, 15, front=1)
 
     # Westminster Bridge: a stone span across the western i-axis reach, north of Parliament.
     bi, bj = at(430, 380)
@@ -2022,7 +2028,7 @@ def bern():
     landmark(ch.zytglogge, 265, 295, 4.4, 3.3)
     landmark(ch.minster, 425, 335, 5.7, 9)
     landmark(ch.federal_palace, 170, 365, 12, 5.3)
-    landmark(ch.historical_museum, 395, 468, 10, 5.5)
+    landmark(ch.historical_museum, 418, 480, 10, 5.5)  # south side of Helvetiaplatz, clear of the bridge
     # Bundesplatz, Münsterplatz and the Münsterplattform stay open.
     for x, y, wi, wj in ((170, 305, 7, 5), (425, 370, 8, 3), (265, 315, 5, 3)):
         ci, cj = at(x, y)
@@ -2032,8 +2038,9 @@ def bern():
     lp.stone_bridge(scene, 49, 10, 10, width=1.8, deck=10)
     reserve(48.5, 9.5, 2.8, 11)
     # Kirchenfeld's iron bridge crosses the southern reach along +i.
-    ch.kirchenfeld_bridge(scene, 54, 62)
-    reserve(53.5, 61.5, 11, 2.8)
+    # Lands on Helvetiaplatz west of the museum, leaving the square open between them.
+    ch.kirchenfeld_bridge(scene, 54, 66)
+    reserve(53.5, 65.5, 11, 2.8)
     paint_ground(scene, {c: 'pave' if k == 'promenade' else k for c, k in kinds.items()},
                  {}, ch.WATER, ch.SAND['dark'])
 
@@ -2370,7 +2377,7 @@ def prague():
 
     # North-up geographic order, with distances compressed independently on each axis.
     landmark(cz.prague_castle, 115, 135, 13, 8)
-    landmark(cz.st_nicholas, 225, 220, 7.5, 5.2)
+    landmark(cz.st_nicholas, 246, 236, 7.5, 5.2)  # below the castle, clear of its walls
     landmark(cz.charles_bridge, 360, 365, 2.3, 14)
     landmark(cz.old_town_hall, 555, 345, 6.5, 3.6)
     landmark(cz.tyn_church, 595, 245, 6.8, 4.6)
