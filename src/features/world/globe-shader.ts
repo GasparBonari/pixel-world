@@ -1,6 +1,6 @@
 import { spaceShader } from './space-shader';
 
-/** Zoom range over which the daytime globe becomes the night-sea game board (ART_CONTRACT.md). */
+/** Zoom range over which the globe becomes the night-sea game board (ART_CONTRACT.md). */
 export const BOARD_ZOOM_START = 1.5;
 export const BOARD_ZOOM_END = 2.5;
 /** Terrain pixel size in points: 3 on a 390-point-wide phone. */
@@ -14,12 +14,14 @@ uniform shader board;
 uniform shader boardSmooth;
 // Ocean depth (assets/world/depth.png), filtered: 0 shelf, then deeper than 200/1000/2000/4000 m.
 uniform shader seabed;
+uniform shader cityLights;
 uniform float2 viewport;
 uniform float2 angles;
 uniform float radius;
 uniform float zoom;
 // Seconds in whole animation frames (motion.ts); 0 keeps the scene still (reduce motion).
 uniform float time;
+uniform float3 sun;
 uniform float2 textureSize;
 uniform float2 boardSize;
 uniform float2 seabedSize;
@@ -208,18 +210,41 @@ float3 boardColor(float2 point, float cell, float3 here, float lon, float lat, f
   return c;
 }
 
+// Brief curtains in both polar regions. Integer longitude harmonics meet at the date line.
+float3 polarAurora(float3 color, float longitude, float latitude, float night, float planet) {
+  if (time <= 0.0 || abs(latitude) < 58.0 || abs(latitude) > 80.0 || night == 0.0) return color;
+  float age = mod(time+(latitude < 0.0 ? 13.0 : 0.0),28.0);
+  if (age < 1.0 || age > 9.0) return color;
+  float envelope = smoothstep(1.0,3.0,age)*(1.0-smoothstep(6.0,9.0,age));
+  float angle = radians(longitude);
+  float folds = sin(angle*9.0-age*1.4);
+  float base = 64.0+3.2*sin(angle*4.0+age*0.55)+1.5*folds;
+  float height = abs(latitude)-base;
+  float curtain = step(0.0,height)*(1.0-smoothstep(1.0,6.5+folds*2.0,height));
+  float streaks = 0.65+0.35*sin(angle*29.0+folds*2.0);
+  float brightness = floor(curtain*streaks*envelope*night*5.0+0.5)/5.0;
+  float3 glow = height < 2.0 ? float3(0.35,0.94,0.65) : float3(0.21,0.63,0.69);
+  return mix(color,glow,brightness*planet*0.78);
+}
+
 half4 main(float2 position) {
   float cell = max(1.25,min(viewport.x,viewport.y)/${CELLS_ACROSS.toFixed(1)});
   float2 point = (floor(position/cell)+0.5)*cell;
   float2 p = (point-viewport*0.5)/radius;
   p.y = -p.y;
   float d = dot(p,p);
+  float planet = 1.0-smoothstep(0.6,${BOARD_ZOOM_START.toFixed(2)},zoom);
   if (d > 1.0) {
     float3 space = universe(position,viewport);
     float glow = floor(pow(1.0-smoothstep(1.0,1.20,d),2.0)*6.0)/6.0;
-    space = mix(space,float3(0.09,0.32,0.66),glow*0.48);
+    float atmosphere = 1.0;
+    if (planet > 0.0 && d < 1.20) {
+      float limbLight = smoothstep(-0.30,0.10,dot(p/sqrt(d),sun.xy));
+      atmosphere = mix(1.0,0.35+limbLight*0.65,planet);
+    }
+    space = mix(space,float3(0.09,0.32,0.66),glow*0.48*atmosphere);
     float rim = 1.0-smoothstep(1.0,1.035,d);
-    return half4(mix(space,float3(0.38,0.77,0.97),rim*0.85),1);
+    return half4(mix(space,float3(0.38,0.77,0.97),rim*0.85*atmosphere),1);
   }
 
   float3 here = surface(point);
@@ -282,7 +307,7 @@ half4 main(float2 position) {
   float3 cloudColor = clouds > 0.76 ? float3(0.98,1.0,0.96) : float3(0.79,0.89,0.93);
   color = mix(color,cloudColor,cover);
 
-  // Zooming in: the daytime sea darkens into the night sea and the land becomes the game board.
+  // Zooming in: the sea darkens into the night sea and the land becomes the game board.
   float boardMix = smoothstep(${BOARD_ZOOM_START.toFixed(2)},${BOARD_ZOOM_END.toFixed(2)},zoom);
   if (boardMix > 0.001)
     color = mix(color,boardColor(point,cell,here,lonDegrees,degrees,terrain,desert),boardMix);
@@ -291,6 +316,22 @@ half4 main(float2 position) {
   float shade = clamp(floor((0.45+light*0.55)*8.0)/8.0,0.35,1.0);
   color = mix(float3(0.08,0.13,0.26),color,mix(shade,1.0,boardMix));
   if (z < 0.16) color = mix(color,float3(0.38,0.74,0.94),0.58*(1.0-boardMix));
+
+  if (planet > 0.0) {
+    float sunlight = dot(float3(p,z),sun);
+    float night = 1.0-smoothstep(-0.32,0.10,sunlight);
+    night = floor(night*5.0+0.5)/5.0;
+    float dusk = step(-0.16,sunlight)*(1.0-step(0.08,sunlight));
+    color = mix(color,color*float3(1.0,0.76,0.69),dusk*planet*0.48);
+    float3 nightColor = color*float3(0.27,0.39,0.59)+float3(0.018,0.024,0.046);
+    color = mix(color,nightColor,night*planet);
+    if (night > 0.0 && isLand > 0.0 && data.b < 0.5) {
+      float lights = cityLights.eval(uv*float2(512,256)).r;
+      float glow = floor(lights*5.0+0.5)/5.0;
+      color = mix(color,float3(1.0,0.77,0.40),glow*night*planet*(1.0-cover*0.86));
+    }
+    color = polarAurora(color,lonDegrees,degrees,night,planet);
+  }
   return half4(color,1);
 }
 `;

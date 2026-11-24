@@ -3,14 +3,29 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import ts from 'typescript';
 
-const source = readFileSync(new URL('../src/features/world/motion.ts', import.meta.url), 'utf8');
-const { outputText } = ts.transpileModule(source, {
-  compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 },
-});
-const MOTION = await import(
-  `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`
-);
+function loadLogic(filename) {
+  const source = readFileSync(new URL(`../src/features/world/${filename}.ts`, import.meta.url), 'utf8');
+  const { outputText } = ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.ES2022, target: ts.ScriptTarget.ES2022 },
+  });
+  return import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
+}
+
+const MOTION = await loadLogic('motion');
 const { ANIMATION_FPS, SPIN, animationTime, animationStep, spinSpeed, poseAt, bobAt, phaseAt } = MOTION;
+
+test('sunlight follows geographic longitude across a full simulated day and at the date line', () => {
+  const { sunDirection } = MOTION;
+  function near(actual, expected) {
+    actual.forEach((value, i) => assert.ok(Math.abs(value - expected[i]) < 1e-12));
+  }
+  // At the subsolar point the sun is overhead. At its antipode it is directly behind the globe.
+  near(sunDirection(-72, -12, 0), [0, 0, 1]);
+  near(sunDirection(108, 12, 0), [0, 0, -1]);
+  near(sunDirection(-162, -12, 90), [0, 0, 1]);
+  near(sunDirection(-72, -12, 360), [0, 0, 1]);
+  near(sunDirection(-180, 25, 60), sunDirection(180, 25, 60));
+});
 
 test('the clock ticks in whole animation frames', () => {
   assert.equal(ANIMATION_FPS, 12);
@@ -110,4 +125,49 @@ test('capital pennants flutter and chimneys smoke only while the clock runs', ()
   assert.equal(new Set(smoke).size, 3);
   assert.equal(poseAt('flutter', 0, 0.4, 0), 0);
   assert.equal(poseAt('chimney', 0, 0.4, 0), 0, 'reduce motion: no smoke');
+});
+
+test('continent effects play ordered frames and return to their still poses under reduced motion', () => {
+  const sample = (motion, times) => times.map((time) => poseAt(motion, time, 0, 0));
+  assert.deepEqual(sample('herd', [0, 0.1, 0.5, 0.9, 1.3, 2, 7.1, 7.5, 7.9, 8.3, 9]),
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0]);
+  assert.deepEqual(sample('surface', [0, 0.1, 0.6, 1.1, 1.6, 2.1, 3]), [0, 1, 2, 3, 4, 5, 6]);
+  assert.deepEqual(sample('flurry', [0, 0.1, 0.5, 0.9, 1.3, 2]), [0, 1, 2, 3, 4, 0]);
+  assert.equal(poseAt('herd', 0, 0.3, 10), 0);
+  assert.equal(poseAt('surface', 0, 0.3, 10), 0);
+  assert.equal(poseAt('flurry', 0, 0.3, 10), 0);
+  assert.notEqual(poseAt('surface', 1.1, 0, 0), poseAt('surface', 1.1, 0.25, 0));
+});
+
+test('country landmarks cycle through waterfall and lighthouse poses', () => {
+  assert.deepEqual([0, 0.1, 0.3, 0.5, 0.7].map((time) => poseAt('waterfall', time, 0, 0)),
+    [0, 1, 2, 3, 1]);
+  assert.deepEqual([0, 0.1, 0.35, 0.6, 0.85, 1.1, 1.35, 2].map((time) => poseAt('lighthouse', time, 0, 0)),
+    [0, 1, 2, 3, 4, 5, 6, 0]);
+});
+
+test('every country ferry pauses, reverses heading, and retraces its route', async () => {
+  const { FERRY_ROUTES, ferryAt, ferryFacesEast, ferryRoutePoint } = await loadLogic('country-ferry');
+  assert.deepEqual(FERRY_ROUTES.map((route) => route.id), [
+    'valletta-mgarr', 'portsmouth-caen', 'bari-durres', 'hirtshals-kristiansand',
+  ]);
+  for (const { points, crossingSeconds } of FERRY_ROUTES) {
+    const leg = crossingSeconds + 2;
+    const still = { progress: 0, returning: false, underway: false };
+    assert.deepEqual(ferryAt(0, crossingSeconds), still);
+    assert.deepEqual(ferryAt(leg + 1, crossingSeconds), { progress: 1, returning: true, underway: false });
+    assert.deepEqual(ferryAt(2 * leg, crossingSeconds), still);
+    const outbound = ferryAt(2 + crossingSeconds / 2, crossingSeconds);
+    const inbound = ferryAt(leg + 2 + crossingSeconds / 2, crossingSeconds);
+    assert.deepEqual(outbound, { progress: 0.5, returning: false, underway: true });
+    assert.deepEqual(inbound, { progress: 0.5, returning: true, underway: true });
+    assert.equal(ferryFacesEast(points, outbound.returning), points.at(-1)[0] > points[0][0]);
+    assert.notEqual(ferryFacesEast(points, outbound.returning), ferryFacesEast(points, inbound.returning));
+    assert.equal(points[0][2], 0);
+    assert.equal(points.at(-1)[2], 1);
+    for (const [i, [longitude, latitude, progress]] of points.entries()) {
+      if (i > 0) assert.ok(progress > points[i - 1][2]);
+      assert.deepEqual(ferryRoutePoint(points, progress), { longitude, latitude });
+    }
+  }
 });

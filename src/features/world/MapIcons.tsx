@@ -34,6 +34,7 @@ type Band = {
   fadeOut?: Fade;
   poses: number[][];
   motions: (Motion | '')[];
+  continentOnly: boolean[];
   phases: number[];
   bobs: boolean[];
 };
@@ -58,12 +59,14 @@ const countryFade = (full: number): Fade => {
 };
 
 function band(icons: Icon[], fadeIn: Fade, fadeOut?: Fade): Band {
+  const motions = icons.map(([frame]) => animations[frame]?.[0] ?? '');
   return {
     icons,
     fadeIn,
     fadeOut,
     poses: icons.map(([frame]) => animations[frame]?.[1] ?? [frame]),
-    motions: icons.map(([frame]) => animations[frame]?.[0] ?? ''),
+    motions,
+    continentOnly: motions.map((motion) => motion === 'herd' || motion === 'surface' || motion === 'flurry'),
     phases: icons.map(([, longitude, latitude]) => phaseAt(longitude, latitude)),
     bobs: icons.map(([frame]) => frame === BOAT),
   };
@@ -148,7 +151,7 @@ function IconBand({
   band: Band;
   time: SharedValue<number>;
 }) {
-  const { icons, poses, motions, phases, bobs } = band;
+  const { icons, poses, motions, continentOnly, phases, bobs } = band;
   const { start, end } = band.fadeIn;
   const fadesOut = band.fadeOut !== undefined;
   const outStart = band.fadeOut?.start ?? 0;
@@ -156,11 +159,15 @@ function IconBand({
   // Only bands that move capture the clock (a worklet subscribes to the shared values it captures).
   const poseClock = motions.some((motion) => motion !== '') ? time : null;
   const bobClock = bobs.some(Boolean) ? time : null;
+  const continentCamera = continentOnly.some(Boolean) ? camera : null;
+  const atContinentZoom = useDerivedValue(() =>
+    continentCamera ? continentCamera.get().zoom < COUNTRY_ZOOM.in : false
+  );
   const sprites = useRectBuffer(icons.length, (rect, index) => {
     'worklet';
     const options = poses[index];
     const pose =
-      poseClock && options.length > 1
+      poseClock && options.length > 1 && (!continentOnly[index] || atContinentZoom.get())
         ? poseAt(motions[index] as Motion, poseClock.get(), phases[index], icons[index][1])
         : 0;
     const [x, y, width, height] = frames[options[pose] ?? options[0]];

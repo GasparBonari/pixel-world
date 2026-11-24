@@ -22,6 +22,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 import { CAPITAL_IMAGES } from '@/data/capital-images';
 import capitals from '@/data/capitals.json';
 import { Birds } from './Birds';
+import { CountryFerry } from './CountryFerry';
 import { CountryLabels } from './CountryLabels';
 import {
   activeCapital,
@@ -38,6 +39,7 @@ import { clampToCapitals } from './capitals';
 import { MapIcons } from './MapIcons';
 import { MapStatus } from './MapStatus';
 import { MapSurface } from './MapSurface';
+import { sunDirection } from './motion';
 import { useWorldClock } from './use-world-clock';
 
 const effect = Skia.RuntimeEffect.Make(globeShader);
@@ -46,6 +48,7 @@ const TEXTURES = {
   globe: require('@/assets/world/globe.png'),
   board: require('@/assets/world/board.png'),
   depth: require('@/assets/world/depth.png'),
+  lights: require('@/assets/world/city-lights.png'),
   icons: require('@/assets/world/map-icons.png'),
   ...CAPITAL_IMAGES,
 };
@@ -175,12 +178,14 @@ function GlobeScene({
   const visiting = activeCapital(snapshot)?.id;
   const uniforms = useDerivedValue(() => {
     const c = camera.get();
+    const sceneTime = time.get();
     return {
       viewport: [viewport.width, viewport.height],
       angles: [(c.longitude * Math.PI) / 180, (c.latitude * Math.PI) / 180],
       radius: globeRadius(viewport) * 2 ** c.zoom,
       zoom: c.zoom,
-      time: time.get(),
+      time: sceneTime,
+      sun: sunDirection(c.longitude, c.latitude, sceneTime),
       textureSize: [4096, 2048],
       boardSize: [2048, 1024],
       seabedSize: [1024, 512],
@@ -206,9 +211,11 @@ function GlobeScene({
               <ImageShader image={images.board} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
               {/* Ocean depth, filtered so depth contours blend. */}
               <ImageShader image={images.depth} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
+              <ImageShader image={images.lights} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
             </Shader>
           </Fill>
           <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={0} time={time} />
+          <CountryFerry image={images.icons} camera={camera} viewport={viewport} scale={iconScale} time={time} />
           <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={1} time={time} />
           <Birds image={images.icons} camera={camera} viewport={viewport} scale={iconScale} time={time} />
           {capitals.map((scene) => (

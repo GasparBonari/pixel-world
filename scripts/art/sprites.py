@@ -47,6 +47,7 @@ BAYER = [[0, 2], [3, 1]]
 # ash, a bird's flap its wings. build_map_icons.py renders each pose into the atlas.
 POSE = 0
 BLINK, STEP = 1, 2
+STRIDE_A, STRIDE_B = 3, 4
 
 
 class Sprite:
@@ -639,6 +640,47 @@ def sailboat(seed=0):
     return s.image()
 
 
+def ferry(seed=0):
+    """Passenger ferry with a raked bow, lit bridge, promenade deck and aft funnel."""
+    s = Sprite(24, 14)
+    outline = hex_rgb("#14283D")
+    navy, blue, keel = (hex_rgb(c) for c in ("#254868", "#497B97", "#1B354D"))
+    stripe = hex_rgb("#D7804A")
+    white, shade = hex_rgb("#F4F3DC"), hex_rgb("#AECAD0")
+    glass, reflection = hex_rgb("#29485E"), hex_rgb("#78ADC1")
+
+    for y, x0, x1, color in (
+        (7, 3, 21, white), (8, 2, 22, shade), (9, 1, 22, stripe),
+        (10, 2, 22, blue), (11, 3, 21, navy), (12, 5, 20, keel),
+    ):
+        for x in range(x0, x1 + 1):
+            s.put(x, y, color, outline)
+    for y, x0, x1 in ((3, 8, 15), (4, 7, 16), (5, 6, 18), (6, 5, 20)):
+        for x in range(x0, x1 + 1):
+            s.put(x, y, white if x < 14 else shade, outline)
+    for x in range(8, 15):
+        if x not in (10, 13):
+            s.put(x, 4, reflection if x in (8, 11) else glass, outline)
+    for x in (6, 8, 10, 12, 14, 16, 18, 20):
+        s.put(x, 7, glass, outline)
+    line(s, 16, 3, 18, 3, stripe, outline)
+    line(s, 17, 2, 18, 2, navy, outline)
+    s.put(11, 1, shade, outline)
+    s.put(12, 1, white, outline)
+    img = s.image()
+    return img.transpose(Image.Transpose.FLIP_LEFT_RIGHT) if seed else img
+
+
+def ferry_wake(seed=0):
+    """A small patch of broken foam, layered at recent positions along the water route."""
+    image = Image.new("RGBA", (9, 4))
+    draw = ImageDraw.Draw(image)
+    draw.line((1, 1, 3, 1), fill=(*C["foam"], 166))
+    draw.line((5, 1, 7, 1), fill=(*C["foam"], 166))
+    draw.point(((0, 2), (8, 2), (4, 0), (4, 3)), fill=(*C["foam"], 93))
+    return image
+
+
 def pin(seed=0):
     """Map pin: glossy red head with a white centre, pointed tip, small shadow."""
     s = Sprite(13, 17)
@@ -694,10 +736,17 @@ def limb(s, x, y0, y1, palette, far=False, hoof=None, width=1):
     tones, outline = palette
     if far and POSE == STEP:  # weight on the near legs: far hooves lift a pixel
         y1 -= 1
+    swing = 0
+    if POSE in (STRIDE_A, STRIDE_B):
+        # Diagonal pairs of legs swing together, alternating between the two frames.
+        swing = 2 if far == (x < s.w / 2) else -2
+        if POSE == STRIDE_B:
+            swing = -swing
     for y in range(y0, y1 + 1):
+        offset = round(swing * (y - y0) / max(1, y1 - y0)) if swing else 0
         for dx in range(width):
             color = tones[0] if far else (tones[2] if dx == 0 and width > 1 else tones[1])
-            s.put(x + dx, y, hoof if hoof and y == y1 else color, outline)
+            s.put(x + dx + offset, y, hoof if hoof and y == y1 else color, outline)
 
 
 def dots(s, points, color, outline):
@@ -1590,6 +1639,13 @@ def orca(seed=0):
     s = Sprite(26, 14)
     body = ramp("#22252C", "#0C0E12")
     white = hex_rgb("#F4F6F8")
+    if POSE in (1, 5, 6):  # the leading ripple, the wake, and the quiet water between dives
+        if POSE != 6:
+            span = 4 if POSE == 1 else 9
+            for x in range(13 - span, 14 + span):
+                if h01(seed, x, POSE) > 0.25:
+                    s.put(x, 11 + int(abs(x - 13) > span // 2), C["foam"], None)
+        return s.image()
     for y in range(2, 11):
         for x in range(1, 25):
             arch = 10 - math.sin((x - 1) / 23 * math.pi) * 6.5
@@ -1608,7 +1664,65 @@ def orca(seed=0):
             s.put(x, 11, C["foam"], C["foam"])
         if h01(seed, x, 2) < 0.3:
             s.put(x, 12, C["foam"], C["foam"])
-    return s.image()
+    image = s.image()
+    if POSE == 3:
+        spout = Sprite(26, 14)
+        dots(spout, ((7, 4), (7, 3), (6, 2), (8, 2), (5, 1), (9, 1)), C["foam"], None)
+        image.alpha_composite(spout.image())
+    elif POSE in (2, 4):
+        # Clip the submerged body at the waterline as it rises and sinks.
+        sink = 4 if POSE == 2 else 6
+        low = Image.new("RGBA", image.size)
+        low.alpha_composite(image.crop((0, 0, 26, 11 - sink)), (0, sink))
+        low.alpha_composite(image.crop((0, 11, 26, 14)), (0, 11))
+        image = low
+    return image
+
+
+def herd(kind, pose):
+    """Two staggered animals take four whole-pixel steps each way inside one fixed frame."""
+    global POSE
+    previous = POSE
+    active = pose not in (0, 5)
+    returning = pose >= 6
+    step = pose - 5 if returning else min(pose, 4)
+    animals = []
+    try:
+        for member in range(2):
+            POSE = (STRIDE_A, STRIDE_B)[(pose + member) % 2] if active else 0
+            animal = FAUNA[kind]()
+            scale = (0.82, 0.60)[member]
+            animals.append(animal.resize(
+                (round(animal.width * scale), round(animal.height * scale)), Image.Resampling.NEAREST,
+            ))
+    finally:
+        POSE = previous
+
+    leader, follower = (
+        [animal.transpose(Image.Transpose.FLIP_LEFT_RIGHT) for animal in animals] if returning else animals
+    )
+    width = leader.width + follower.width + 8
+    height = leader.height + 6
+    image = Image.new("RGBA", (width, height))
+    offset = step if returning else 4 - step
+    image.alpha_composite(follower, (offset + leader.width + 1, height - follower.height - 5))
+    image.alpha_composite(leader, (offset, height - leader.height))
+    return image
+
+
+def mountain_flurry(base, seed, pose):
+    """A few short streaks curl east over the upper face of a snowy peak."""
+    image = base.copy()
+    snow = Image.new("RGBA", base.size)
+    draw = ImageDraw.Draw(snow)
+    streaks = ((2, 4, 2), (6, 7, 1), (9, 3, 2), (13, 6, 3), (17, 4, 1))
+    for i, (x, y, length) in enumerate(streaks):
+        x = (x + 3 * (pose - 1)) % base.width
+        y += (seed + i + pose) % 3 - 1
+        tint = (215, 238, 245, 220) if (i + pose) % 2 else (169, 209, 221, 160)
+        draw.line((x, y, x + length - 1, y), fill=tint)
+    image.alpha_composite(snow)
+    return image
 
 
 
@@ -2105,17 +2219,58 @@ def gullfoss(seed=0):
     poly(scene, list(corners(scene, -1.8, -1.3, 3.3, 1.5, 20)),
          lambda x, y: WATER[2] if (int(x)+int(y)) % 5 == 0 else WATER[0])
     # Falling sheets have light rims, darker troughs and broken foam at their feet.
+    def falling_water(u, v, lit):
+        if POSE and (int(v) + int(u) * 2 + POSE * 2) % 8 < 2:
+            return WHITE["hi"] if lit else WATER[2]
+        return WATER[2] if int(u) % 4 or int(v) < 2 else WATER[0]
+
     for a, b, wi, wj, base, height in ((-1.8, .18, 3.3, .13, 10, 10), (.6, .5, .14, 1.2, 0, 10)):
-        block(scene, a, b, wi, wj, height, WHITE,
-              lambda u, v, lit: WATER[2] if int(u) % 4 or int(v) < 2 else WATER[0], z=base)
+        block(scene, a, b, wi, wj, height, WHITE, falling_water, z=base)
     poly(scene, list(corners(scene, -1.8, .3, 2.5, 1.2, 10)),
-         lambda x, y: WATER[2] if h01(x, y, 289) < .32 else WATER[0])
+         lambda x, y: WATER[2] if h01(x - POSE, y - POSE, 289) < .32 else WATER[0])
     # The outflow vanishes into a deep slot below the transverse second fall.
     poly(scene, list(corners(scene, .7, .65, 1.1, 1.3, 1)), lambda x, y: WATER[1])
     block(scene, 1.8, .2, .35, 1.7, 12, BASALT)
     for a, b, z in ((-.8, .4, 10), (.3, 1, 10), (.8, 1.5, 2), (1.4, 1.7, 2)):
         seg(scene, P(scene, a, b, z), P(scene, a+.45, b, z+1), WHITE['hi'], 2)
     return scene.img
+
+
+def lindesnes(seed=0):
+    """Lindesnes: a white cast-iron tower and red lantern on a dark rocky headland."""
+    s = Sprite(51, 36)
+    stone = ramp("#777D81", "#35454E")
+    ground_shadow(s, 25, 33.7, 12, 1.6)
+    blob(s, 25, 30, 11, 4, stone,
+         lambda x, y, nx, ny, tone: stone[0][max(0, tone - 1)] if h01(x, y) < 0.25 else None)
+    # Low attached station building and the tapered tower.
+    for y in range(23, 30):
+        for x in range(14, 23):
+            s.put(x, y, C["wall"] if y != 23 else C["roof_sh"], C["wall_ol"])
+    for y in range(12, 31):
+        half_width = 3 + (y - 12) // 7
+        for dx in range(-half_width, half_width + 1):
+            s.put(26 + dx, y, C["wall_hi"] if dx < -1 else C["wall"] if dx < 2 else C["wall_sh"], C["wall_ol"])
+    line(s, 21, 13, 31, 13, stone[0][1], stone[1])
+    line(s, 22, 12, 30, 12, C["roof_sh"], C["roof_ol"])
+    for y, half_width in ((5, 0), (6, 2), (7, 3), (8, 3), (9, 3), (10, 3), (11, 3)):
+        for dx in range(-half_width, half_width + 1):
+            glass = 8 <= y <= 10 and abs(dx) < 3 and dx != 0
+            color = C["gold" if POSE else "glass"] if glass else C["roof" if dx < 1 else "roof_sh"]
+            s.put(26 + dx, y, color, C["roof_ol"])
+    dots(s, ((16, 26), (19, 26), (25, 19), (25, 25), (25, 29)), C["window"], C["wall_ol"])
+
+    beam_margin = 15
+    image = Image.new("RGBA", (s.w + beam_margin * 2, s.h))
+    if POSE:
+        # A short seaward sweep with two stepped bands of light, behind the tower.
+        lamp = (26 + beam_margin, 9)
+        x, y = ((1, 25), (7, 30), (21, 31), (61, 31), (74, 30), (79, 25))[POSE - 1]
+        beam = ImageDraw.Draw(image)
+        beam.polygon((lamp, (x, y - 3), (x, y + 4)), fill=(252, 228, 140, 68))
+        beam.polygon((lamp, (x, y - 1), (x, y + 1)), fill=(255, 242, 177, 125))
+    image.alpha_composite(s.image(), (beam_margin, 0))
+    return image
 
 
 def chillon(seed=0):
@@ -3257,7 +3412,7 @@ ICONS = {
     "kinderdijk": kinderdijk, "gravensteen": gravensteen, "stonehenge": stonehenge, "rock-of-cashel": rock_of_cashel,
     "leaning-tower-pisa": leaning_tower_pisa, "kronborg": kronborg, "gripsholm": gripsholm, "borgund": borgund,
     "olavinlinna": olavinlinna,
-    "gullfoss": gullfoss,
+    "gullfoss": gullfoss, "lindesnes": lindesnes, "ferry": ferry, "ferry-wake": ferry_wake,
     "chillon": chillon,
     "melk-abbey": melk_abbey,
     "gozo-citadel": gozo_citadel,

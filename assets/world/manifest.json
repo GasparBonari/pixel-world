@@ -16,6 +16,10 @@
       "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_geography_regions_polys.geojson",
       "sha256": "b7b26e50ea917d3696aec87f932def2bf5f890f5770e441d59c162c6f4c92a77"
     },
+    "places-10m": {
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_populated_places_simple.geojson",
+      "sha256": "fd3fa867a320cbd5c5b6bb5bc550afeec2939fb2cef688e508007282a55ac42f"
+    },
     "bathymetry-200": {
       "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_bathymetry_K_200.geojson",
       "sha256": "5c6c182da8608153ea2dce22dfb32c987e5390e0bd4a122266143ba181a7b636"
@@ -75,5 +79,16 @@
     "channels": {
       "grey": "0 shelf/land, then 64/128/191/255 deeper than 200 m/1000 m/2000 m/4000 m"
     }
+  },
+  "cityLights": {
+    "width": 512,
+    "height": 256,
+    "bytes": 13259,
+    "decodedBytes": 524288,
+    "projection": "equirectangular",
+    "channels": {
+      "grey": "illustrative light intensity from populated places and population"
+    },
+    "placeCount": 1007
   }
 }

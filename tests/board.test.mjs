@@ -87,7 +87,7 @@ const NATIVE = {
   toucan: 'South America', koala: 'Oceania', emu: 'Oceania', orca: 'Antarctica',
 };
 const inside = ([, lon, lat], [w, s, e, n]) => lon >= w && lon <= e && lat >= s && lat <= n;
-const kindOf = ([frame]) => icons.names[frame];
+const kindOf = ([frame]) => icons.names[frame].replace(/-herd$/, '');
 
 test('animals appear only on their native continent, and every continent has its own animals', () => {
   for (const icon of icons.icons) {
@@ -319,6 +319,7 @@ test('the atlas fits every phone GPU and holds a pose frame for each animated sp
     Object.entries(icons.animations).map(([still, [motion, poses]]) => [icons.names[still], { motion, poses, still: +still }])
   );
   for (const animal of Object.keys(NATIVE)) {
+    if (animal === 'orca') continue;
     assert.equal(motions[animal]?.motion, 'animal', animal);
     assert.equal(motions[animal].poses.length, 3, `${animal}: still, blink, weight shift`);
   }
@@ -338,6 +339,22 @@ test('the atlas fits every phone GPU and holds a pose frame for each animated sp
   // white patch is not an eye, so it has nothing to close.
   for (const animal of Object.keys(NATIVE).filter((name) => name !== 'orca'))
     assert.notEqual(motions[animal].poses[1], motions[animal].still, animal);
+  assert.equal(motions.orca.motion, 'surface');
+  assert.equal(new Set(motions.orca.poses).size, 7, 'from the leading ripple to quiet water');
+  assert.equal(motions.mountain.motion, 'flurry');
+  assert.equal(new Set(motions.mountain.poses).size, 5, 'four snow frames plus the clear peak');
+  assert.equal(new Set(motions.lindesnes.poses).size, 7, 'six beam positions plus the unlit tower');
+  assert.equal(new Set(motions.gullfoss.poses).size, 4, 'three flowing poses plus still water');
+  const firstFerry = icons.names.indexOf('ferry');
+  assert.equal(icons.names[firstFerry + 1], 'ferry');
+  assert.deepEqual(icons.frames[firstFerry + 1].slice(2), icons.frames[firstFerry].slice(2));
+  const herds = icons.icons.filter(([frame]) => icons.names[frame].endsWith('-herd'));
+  assert.equal(herds.length, 5);
+  for (const [frame, , , , , tier] of herds) {
+    assert.equal(tier, 0);
+    assert.equal(motions[icons.names[frame]].motion, 'herd');
+    assert.equal(new Set(motions[icons.names[frame]].poses).size, 10);
+  }
   // Pose frames are never placed as icons themselves.
   for (const [frame] of icons.icons) assert.ok(!icons.names[frame].includes('@'));
 });
@@ -367,6 +384,20 @@ test('the sea depth texture holds real Natural Earth depth levels', () => {
   for (const [lon, lat] of [[-16.95, 32.75], [-28.0, 38.6], [57.55, -20.2]]) assert.ok(level(lon, lat) < 3, `${lon},${lat}`);
   const manifest = JSON.parse(readFileSync(new URL('../assets/world/manifest.json', import.meta.url), 'utf8'));
   for (const metres of [200, 1000, 2000, 4000]) assert.match(manifest.sources[`bathymetry-${metres}`].sha256, /^[0-9a-f]{64}$/);
+});
+
+test('Earth night lights are anchored to major cities in a small geographic texture', () => {
+  const lights = decodePng('../assets/world/city-lights.png');
+  assert.deepEqual([lights.width, lights.height, lights.channels], [512, 256, 1]);
+  const glowAt = (lon, lat) => {
+    const x = Math.floor((lon + 180) / 360 * lights.width);
+    const y = Math.floor((90 - lat) / 180 * lights.height);
+    return lights.pixels[y * lights.width + x];
+  };
+  for (const [lon, lat] of [[-74, 40.7], [2.35, 48.85], [139.7, 35.7]]) {
+    assert.ok(glowAt(lon, lat) > 200, `${lon},${lat}`);
+  }
+  assert.equal(glowAt(-140, 0), 0, 'open Pacific');
 });
 
 test('capital pennants have three shapes; only houses with chimneys smoke, and smoke is never solid', () => {

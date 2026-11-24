@@ -28,6 +28,25 @@ export const SPIN = {
  */
 export const OPENING_INPUT = -SPIN.idleSeconds;
 
+const EARTH_DAY_SECONDS = 360;
+
+/** Illustrative sunlight in camera space, with dusk visible from the opening camera. */
+export function sunDirection(longitude: number, latitude: number, time: number) {
+  'worklet';
+  const radians = Math.PI / 180;
+  const sunLongitude = -72 - ((time % EARTH_DAY_SECONDS) / EARTH_DAY_SECONDS) * 360;
+  const declination = -12 * radians;
+  const relativeLongitude = (sunLongitude - longitude) * radians;
+  const tilt = latitude * radians;
+  const north = Math.sin(declination);
+  const forward = Math.cos(declination) * Math.cos(relativeLongitude);
+  return [
+    Math.cos(declination) * Math.sin(relativeLongitude),
+    north * Math.cos(tilt) - forward * Math.sin(tilt),
+    forward * Math.cos(tilt) + north * Math.sin(tilt),
+  ];
+}
+
 /** The clock's time for a frame: whole animation frames since the scene started. */
 export function animationTime(milliseconds: number) {
   'worklet';
@@ -54,7 +73,8 @@ export function spinSpeed(zoom: number, idle: number) {
 }
 
 /** Kinds of icon motion; build_map_icons.py stores one per animated sprite with its pose frames. */
-export type Motion = 'animal' | 'sway' | 'turn' | 'smoke' | 'flap' | 'flutter' | 'chimney';
+export type Motion = 'animal' | 'sway' | 'turn' | 'smoke' | 'flap' | 'flutter' | 'chimney'
+  | 'herd' | 'surface' | 'flurry' | 'waterfall' | 'lighthouse';
 
 /** A stable per-icon number in [0, 1) from its site, so neighbours don't move in step. */
 export function phaseAt(longitude: number, latitude: number) {
@@ -72,6 +92,11 @@ export function phaseAt(longitude: number, latitude: number) {
  * - flap: bird wings, four beats a second.
  * - flutter: capital pennants, a new shape every third of a second.
  * - chimney: smoke rising, poses 1-3 in turn; the still frame (0) has none.
+ * - herd: four steps out and four back in a 14-second cycle, resting between walks.
+ * - surface: a leading ripple, a rise and a blow, then a dive and a fading wake.
+ * - flurry: four frames of blowing snow, separated by quiet stretches.
+ * - waterfall: cycling sheets and foam in three moving frames.
+ * - lighthouse: a brief stepped sweep out to sea.
  */
 export function poseAt(motion: Motion, time: number, phase: number, longitude: number) {
   'worklet';
@@ -90,6 +115,26 @@ export function poseAt(motion: Motion, time: number, phase: number, longitude: n
   if (motion === 'smoke') return Math.floor(time * 1.5) % 3;
   if (motion === 'flutter') return Math.floor(time * 3 + phase * 3) % 3;
   if (motion === 'chimney') return 1 + (Math.floor(time * 2.5 + phase * 3) % 3);
+  if (motion === 'herd') {
+    const age = (time + phase * 14) % 14;
+    if (age < 1.6) return 1 + Math.floor(age * 2.5);
+    if (age < 7) return 5;
+    return age < 8.6 ? 6 + Math.floor((age - 7) * 2.5) : 0;
+  }
+  if (motion === 'surface') {
+    const age = (time + phase * 16) % 16;
+    if (age < 2.5) return 1 + Math.floor(age * 2);
+    return 6;
+  }
+  if (motion === 'flurry') {
+    const age = (time + phase * 11) % 11;
+    return age < 1.6 ? 1 + Math.floor(age * 2.5) : 0;
+  }
+  if (motion === 'waterfall') return 1 + Math.floor(time * 5) % 3;
+  if (motion === 'lighthouse') {
+    const age = (time + phase * 10) % 10;
+    return age < 1.5 ? 1 + Math.floor(age * 4) : 0;
+  }
   return Math.floor(time * 4 + phase * 2) % 2;
 }
 

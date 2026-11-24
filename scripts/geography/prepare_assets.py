@@ -1,4 +1,4 @@
-"""Rebuild the globe texture, board texture, and display labels from pinned Natural Earth inputs."""
+"""Rebuild world textures and display labels from pinned Natural Earth inputs."""
 
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
@@ -20,6 +20,7 @@ SOURCES = {
     'countries-50m': f'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/{REVISION}/geojson/ne_50m_admin_0_countries.geojson',
     'lakes-10m': f'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/{REVISION}/geojson/ne_10m_lakes.geojson',
     'regions-10m': f'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/{REVISION}/geojson/ne_10m_geography_regions_polys.geojson',
+    'places-10m': f'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/{REVISION}/geojson/ne_10m_populated_places_simple.geojson',
     # Ocean depth contours: each layer is the sea deeper than its depth in metres.
     **{f'bathymetry-{depth}': f'https://raw.githubusercontent.com/nvkelso/natural-earth-vector/{REVISION}/geojson/ne_10m_bathymetry_{layer}.geojson'
        for depth, layer in ((200, 'K_200'), (1000, 'J_1000'), (2000, 'I_2000'), (4000, 'G_4000'))},
@@ -207,6 +208,38 @@ def generate_depth(sources):
             'channels': {'grey': '0 shelf/land, then 64/128/191/255 deeper than ' + '/'.join(f'{d} m' for d in DEPTHS)}}
 
 
+def generate_city_lights(sources):
+    """Illustrative night lights at major Natural Earth populated places."""
+    width, height = 512, 256
+    lights = Image.new('L', (width, height))
+    pixels = lights.load()
+    cities = [f for f in json.loads(sources['places-10m'])['features']
+              if f['properties']['pop_max'] >= 500_000]
+    for city in cities:
+        longitude, latitude = city['geometry']['coordinates']
+        center_x = (longitude + 180) / 360 * width
+        center_y = (90 - latitude) / 180 * height
+        size = min(1, math.log10(city['properties']['pop_max'] / 500_000) / 1.6)
+        radius = 1.65 + size * 2.25
+        latitude_scale = max(0.35, math.cos(math.radians(latitude)))
+        radius_x = radius / latitude_scale
+        peak = 125 + 130 * size
+        for y in range(max(0, math.floor(center_y - radius)), min(height, math.ceil(center_y + radius))):
+            for x in range(math.floor(center_x - radius_x), math.ceil(center_x + radius_x)):
+                distance = math.hypot((x + 0.5 - center_x) / radius_x, (y + 0.5 - center_y) / radius)
+                glow = round(peak * min(1, max(0, (1 - distance) * 1.55)))
+                pixels[x % width, y] = max(pixels[x % width, y], glow)
+
+    texture = OUTPUT/'city-lights.png'
+    encoded = BytesIO()
+    lights.save(encoded, format='PNG', optimize=True)
+    write_atomic(texture, encoded.getvalue())
+    return {'width': width, 'height': height, 'bytes': texture.stat().st_size,
+            'decodedBytes': width*height*4, 'projection': 'equirectangular',
+            'channels': {'grey': 'illustrative light intensity from populated places and population'},
+            'placeCount': len(cities)}
+
+
 def main():
     with ThreadPoolExecutor(max_workers=4) as pool:
         sources = dict(pool.map(fetch, SOURCES.items()))
@@ -225,6 +258,7 @@ def main():
         'globe': generate_globe(sources),
         'board': generate_board(sources),
         'depth': generate_depth(sources),
+        'cityLights': generate_city_lights(sources),
     }
     write_atomic(OUTPUT/'manifest.json', (json.dumps(manifest, indent=2)+'\n').encode())
     write_atomic(OUTPUT/'LICENSE.txt', (

@@ -80,7 +80,8 @@ COUNTRY_TIER = [
     {"adm0": "NOR", "bounds": (4.5, 57.8, 31.3, 71.3), "capital": "Oslo", "cities": 9,
      "trees": 7,
      # Borgund Stave Church in Lærdal, not the modern neighbouring parish church.
-     "landmarks": [("borgund", 7.8124, 61.0473)]},
+     # Lindesnes Fyr (Norwegian Coastal Administration light 082200).
+     "landmarks": [("borgund", 7.8124, 61.0473), ("lindesnes", 7.0467, 57.9825)]},
     {"adm0": "FIN", "bounds": (19.0, 59.7, 31.6, 70.2), "capital": "Helsinki", "cities": 9,
      "trees": 7,
      # Olavinlinna on its rocky island in Kyrönsalmi, Savonlinna.
@@ -240,6 +241,15 @@ DATA = ROOT / "src" / "data" / "map-icons.json"
 GRID = 0.25  # degrees per placement-grid cell
 KM_PER_DEGREE = 111.2
 
+# A few existing wildlife sites have room for a pair to walk within its local habitat.
+HERD_SITES = {
+    "deer": (20.5, 52.8),
+    "zebra": (32.625, -18.125),
+    "bison": (-108.875, 49.125),
+    "camel": (100, 44.5),
+    "guanaco": (-70.375, -12.875),
+}
+
 # Sprite variants per kind (seeds). Kinds placed in groups use several variants.
 VARIANTS = {
     "mountain": 3, "hill": 2, "oak": 3, "pine": 2, "olive": 2, "acacia": 2, "baobab": 1,
@@ -291,6 +301,10 @@ VARIANTS = {
     "khotyn": 1,
     "elbrus": 1,
     "choirokoitia": 1,
+    **{f"{animal}-herd": 1 for animal in HERD_SITES},
+    "lindesnes": 1,
+    "ferry": 2,  # opposite headings, drawn by CountryFerry
+    "ferry-wake": 1,
 }
 FRAMES = [(kind, seed) for kind, count in VARIANTS.items() for seed in range(count)]
 # Icon-pixel offsets for groups, so a stand of trees keeps its shape at every zoom.
@@ -358,6 +372,11 @@ SWAYING = ("oak", "pine", "olive", "acacia", "baobab", "palm", "bamboo", "eucaly
 ANIMATED = {
     **{animal: ("animal", 3) for animal in sprites.FAUNA},  # still, blink, weight shift
     **{plant: ("sway", 2) for plant in SWAYING},  # still, leaning in a gust
+    **{f"{animal}-herd": ("herd", 10) for animal in HERD_SITES},
+    "orca": ("surface", 7),  # still, leading ripple, rise, blow, dive, wake, open water
+    "mountain": ("flurry", 5),  # snow crosses the face in four steps
+    "gullfoss": ("waterfall", 4),
+    "lindesnes": ("lighthouse", 7),
     "windmill": ("turn", 3),  # sails 0, 30 and 60 degrees round
     "volcano": ("smoke", 3),
     "bird": ("flap", 2),
@@ -368,11 +387,21 @@ ANIMATED = {
 ATLAS_WIDTH = 2048  # every phone GPU accepts textures this wide
 
 
+def still_image(kind, seed):
+    if kind.endswith("-herd"):
+        return sprites.herd(kind.removesuffix("-herd"), 0)
+    return sprites.ICONS[kind](seed)
+
+
 def pose_images(kind, seed, base):
     """The extra frames of an animated sprite, in pose order after the still one."""
     motion, count = ANIMATED[kind]
     if motion == "sway":
         return [sprites.swayed(base)]
+    if motion == "herd":
+        return [sprites.herd(kind.removesuffix("-herd"), pose) for pose in range(1, count)]
+    if motion == "flurry":
+        return [sprites.mountain_flurry(base, seed, pose) for pose in range(1, count)]
     images = []
     for pose in range(1, count):
         sprites.POSE = pose
@@ -586,6 +615,8 @@ def main():
     icons, placed = [], []
 
     def add(kind, lon, lat, seed, group=None, tier=0):
+        if tier == 0 and HERD_SITES.get(kind) == (lon, lat):
+            kind = f"{kind}-herd"
         offsets = GROUPS[group] if group else ((0, 0),)
         for i, (dx, dy) in enumerate(offsets):
             icons.append([frame_index(kind, seed + i), round(lon, 4), round(lat, 4), dx, dy, tier])
@@ -838,7 +869,7 @@ def main():
             building("boat", lon, lat, 0, 0, priority=(5, 0))
 
 
-    images = [sprites.ICONS[kind](seed) for kind, seed in FRAMES]
+    images = [still_image(kind, seed) for kind, seed in FRAMES]
     names = [kind for kind, _ in FRAMES]
     # Pose frames follow the still ones, named kind@pose. A pose that draws the same pixels as the
     # still frame (a penguin has no far legs to shift) reuses it instead of taking atlas space.
