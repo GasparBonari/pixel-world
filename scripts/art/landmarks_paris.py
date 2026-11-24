@@ -479,37 +479,76 @@ def notre_dame(scene, i, j):
 # ------------------------------------------------------- Arc de Triomphe --
 
 def arc_pattern(u, v, lit, width):
-    u, v = int(u), int(v)
-    base, hi, line, deep = (STONE["lit"], STONE["hi"], STONE["line"], STONE["deep"]) if lit else \
-        (STONE["dark"], STONE["mid"], STONE["deep"], rgb("#6E6454"))
-    centre = width / 2
-    span = width * 0.2
-    if abs(u - centre) <= span:  # the great vault
-        crown = 30 + math.sqrt(max(0, span * span - (u - centre) ** 2)) * 1.1
-        if v < crown:
-            return rgb("#3A3026") if v < crown - 1 else line
-    if v >= 54:
-        return hi if v % 3 else line  # attic with its row of shields
-    if v in (49, 50):
-        return line  # frieze
-    pier = u < centre - span - 1 or u > centre + span + 1
-    if pier and 14 <= v <= 40:  # sculpture groups on the piers
-        cx = width * 0.13 if u < centre else width * 0.87
-        if math.hypot(u - cx, (v - 26) * 0.55) < 4.8:
-            return hi if (u + v) % 3 else STONE["mid"]
+    base, hi, line, deep = (STONE["lit"], STONE["hi"], STONE["line"], STONE["deep"]) if lit else (
+        STONE["dark"], STONE["mid"], STONE["deep"], rgb("#6E6454"))
+    left, right = int(u), int(width - u)
+    z = int(v)
+    span = width * (.21 if lit else .22)
+    offset = u - width / 2
+    spring, rise = (28, 10.5) if lit else (17, 7)
+    if abs(offset) <= span + 1.5:
+        crown = spring + rise * math.sqrt(max(0, 1 - (offset / span) ** 2))
+        if abs(offset) <= span and v < crown:
+            # The coffered underside catches light near the rim before the passage falls into shadow.
+            inset = crown - v
+            if inset < 5:
+                return deep if inset < 1.5 or (int(inset) % 3 and left % 4) else line
+            if (offset < -span * .6 if lit else offset > span * .6) and z > 2:
+                return deep if z % 5 else rgb("#665C4E")
+            return rgb("#3D352C")
+        if v <= crown + 1.5:
+            return line if left % 4 == 0 and v > spring else hi
+
+    # Projecting cornice, sculpted frieze and the shields set into the top of the attic.
+    if z in (48, 51, 61, 63):
+        return hi
+    if z in (49, 52, 62):
+        return line
+    if 55 <= z <= 59:
+        shield = (left + 1) % 6
+        if 1 <= shield <= 4 and (z < 59 or 1 < shield < 4):
+            return deep if 1 < shield < 4 and z > 55 else hi
+    if z == 50:
+        return hi if left % 3 else line
+    if z <= 2:
+        return line if z == 2 else deep
+
+    pier = min(left, right)
+    if lit and pier < 12:
+        # High-relief groups on the main piers and the rectangular reliefs above them.
+        if 34 <= z <= 41 and 2 <= pier <= 10:
+            return line if z in (34, 41) or pier in (2, 10) else hi if (left + z) % 5 else base
+        if 9 <= z <= 28:
+            # Peaked assemblage of drapery and figures above a shallow plinth.
+            if z <= 10 and 1 <= pier <= 11:
+                return hi if z == 10 else line
+            if abs(pier - 6) < (29 - z) * .29 + 1:
+                return hi if (pier + z) % 4 else STONE["mid"]
+    if not lit and pier < 7 and 28 <= z <= 36:
+        radius = math.hypot(pier - 3.5, z - 32)
+        if radius < 3.4:
+            return hi if radius > 2.2 else line
+    if z % 7 == 3 and (z < spring or pier < 3):
+        return line
     return base
 
 
 def arc_de_triomphe(scene, i, j):
-    W, D, H = 6.0, 3.6, 64  # monumental: it rises well above the Haussmann rooftops
+    W, D, H = 6.0, 3.6, 64
 
     def draw(s):
         cover = facade(s, i, j, W, D, H, lambda u, v, lit: arc_pattern(u, v, lit, (W if lit else D) * 8))
-        T, R, B, L = corners(s, i, j, W, D, H)
-        poly(s, [T, R, B, L], lambda x, y: STONE["mid"])
-        for a, c in ((L, B), (B, R)):
-            seg(s, (a[0], a[1] - 1), (c[0], c[1] - 1), STONE["hi"])
+        roof = corners(s, i, j, W, D, H)
+        iso.fill(s, list(roof), lambda x, y: STONE["mid"], cover)
         iso.outline(s, cover, STONE["outline"])
+
+        # Low stone parapet around the inset roof terrace.
+        inset = corners(s, i + .17, j + .17, W - .34, D - .34, H)
+        for n, (a, b) in enumerate(zip(roof, roof[1:] + roof[:1])):
+            p, q = inset[n], inset[(n + 1) % len(inset)]
+            poly(s, [a, b, q, p], lambda x, y: STONE["hi"] if n != 1 else STONE["dark"])
+            seg(s, p, q, STONE["deep"] if n in (0, 3) else STONE["line"])
+
     scene.add(i + j + W + D, draw)
 
 

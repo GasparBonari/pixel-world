@@ -481,53 +481,83 @@ def cinquantenaire(scene, i, j):
 
 
 def atomium(scene, i, j):
-    """Body-centred cubic cell on a body diagonal: nine steel spheres and twenty tubes."""
+    """Body-centred cubic cell balanced on a corner, in polished stainless steel."""
     ci, cj = i + 4.5, j + 4.5
-    # Orthonormal basis: [1,1,1] vertical; the eight cube corners retain their true connectivity.
     vertices = list(itertools.product((-1, 1), repeat=3))
+    yaw = math.radians(15)
+
     def point(v):
         a, b, c = v
         east = (a - b) / math.sqrt(2)
-        north = (a + b - 2 * c) / math.sqrt(6)
+        south = (a + b - 2 * c) / math.sqrt(6)
         height = (a + b + c) / math.sqrt(3)
-        return ci + east * 2 + north * 2.8, cj - east * 2 + north * 2.8, 66 + height * 29
-    nodes = [point(v) for v in vertices] + [(ci, cj, 66)]
+        e = east * math.cos(yaw) - south * math.sin(yaw)
+        d = east * math.sin(yaw) + south * math.cos(yaw)
+        return ci + (d + e) * 2.15, cj + (d - e) * 2.15, 65 + height * 29
+
+    nodes = [point(v) for v in vertices] + [(ci, cj, 65)]
     edges = [(a, b) for a in range(8) for b in range(a + 1, 8)
              if sum(x != y for x, y in zip(vertices[a], vertices[b])) == 1]
     edges += [(8, a) for a in range(8)]
-    def sphere(s, node, radius=9):
-        x, y = P(s, *node)
+
+    def tube(s, first, last, r0, r1, trim_start=0, trim_end=0):
+        a, b = P(s, *first), P(s, *last)
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        length = math.hypot(dx, dy)
+        if length <= trim_start + trim_end:
+            return  # The spheres completely cover this tube from this angle.
+        a = a[0] + dx * trim_start / length, a[1] + dy * trim_start / length
+        b = b[0] - dx * trim_end / length, b[1] - dy * trim_end / length
+        nx, ny = dy / length, -dx / length
+        if nx > 0:
+            nx, ny = -nx, -ny
+
+        def edge(p, radius):
+            return p[0] + nx * radius, p[1] + ny * radius
+
+        for inner, outer, tone in ((-1, -.65, "outline"), (-.65, .2, "dark"),
+                                   (.2, .76, "lit"), (.76, 1, "line")):
+            poly(s, [edge(a, r0 * inner), edge(b, r1 * inner),
+                     edge(b, r1 * outer), edge(a, r0 * outer)], lambda x, y: SILVER[tone])
+
+    def sphere(s, index, radius=10):
+        x, y = P(s, *nodes[index])
         for dy in range(-radius, radius + 1):
             for dx in range(-radius, radius + 1):
                 r = (dx * dx + dy * dy) / radius ** 2
-                if r <= 1:
-                    light = (-dx * .55 - dy * .55 + math.sqrt(1 - r) * radius * .6) / radius
-                    key = "hi" if light > .7 else "lit" if light > .25 else "mid" if light > -.2 else "dark"
-                    if r > .86:
-                        key = "outline"
-                    elif abs(dy - radius * .22) < .8:
-                        key = "deep"  # observation glazing / horizontal steel seam
-                    elif abs(dx + dy * .3) < .6:
-                        key = "line"
-                    s.put(x + dx, y + dy, SILVER[key])
+                if r > 1:
+                    continue
+                light = (-dx * .65 - dy * .55) / radius + math.sqrt(1 - r) * .65
+                key = "hi" if light > .84 else "lit" if light > .48 else "mid" if light > .05 else "dark"
+                seam = dy - radius * (.20 - r * .38)
+                if r > .89:
+                    key = "outline" if light < .38 else "line"
+                elif index == 7 and -.8 < seam < .5:
+                    key = "deep"  # Panoramic glazing in the top sphere.
+                elif abs(seam) < .52 or abs(dx + dy * .35) < .5:
+                    key = "line"  # Cladding seams curve across the shell.
+                s.put(x + dx, y + dy, SILVER[key])
+
     def draw(s):
-        # Three pairs of angled steel legs support the lower outer spheres.
-        for n in (1, 2, 4):
+        # The lower three outlying spheres are carried by inclined steel supports.
+        for n in sorted((1, 2, 4), key=lambda n: sum(nodes[n][:2])):
             a, b, z = nodes[n]
-            for offset in (-.5, .5):
-                foot = P(s, a + offset, b + .8, 0)
-                seg(s, foot, P(s, a, b, z), SILVER["deep"], 2)
-                seg(s, (foot[0] - 1, foot[1]), P(s, a, b, z), SILVER["lit"])
-        # Connections terminate inside the spheres; the cladding covers all tube ends.
-        for a, b in sorted(edges, key=lambda edge: sum(sum(nodes[n][:2]) for n in edge)):
-            a, b = P(s, *nodes[a]), P(s, *nodes[b])
-            seg(s, (a[0] + 1, a[1]), (b[0] + 1, b[1]), SILVER["outline"], 2)
-            seg(s, a, b, SILVER["lit"], 2)
-        for node in sorted(nodes, key=lambda node: sum(node[:2])):
-            sphere(s, node)
-        block(s, ci - 1.2, cj - .5, 2.4, 1.6, 6, SILVER,
+            foot_i, foot_j = ci + 1.10 * (a - ci), cj + 1.10 * (b - cj)
+            block(s, foot_i - .35, foot_j - .35, .7, .7, 2, SILVER)
+            for di, dj in ((-.24, .24), (.24, -.24)):
+                tube(s, (foot_i + di, foot_j + dj, 2), (a, b, z), 1.75, 1.2, trim_end=8)
+
+        # Draw the tubes and shells by depth so near tubes cross the far spheres.
+        pieces = [(a, b) for a, b in edges] + [(n, n) for n in range(len(nodes))]
+        for a, b in sorted(pieces, key=lambda pair: sum(sum(nodes[n][:2]) for n in pair)):
+            if a == b:
+                sphere(s, a)
+            else:
+                tube(s, nodes[a], nodes[b], 2, 2, trim_start=8, trim_end=8)
+        block(s, ci - 1.05, cj - .8, 2.1, 1.8, 5, SILVER,
               lambda u, v, lit: GLASS["dark"] if int(u) % 5 else SILVER["lit"])
-        belgian_flag(s, ci, cj, 126)
+        belgian_flag(s, ci, cj, 125)
+
     scene.add(i + j + 18, draw)
 
 

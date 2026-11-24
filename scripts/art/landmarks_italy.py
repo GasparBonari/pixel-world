@@ -206,22 +206,51 @@ def st_peters(scene, i, j):
         side_pediment(s, fi + .16, j + 3, 5, 37, 9, MARBLE)
         for a in range(13):
             side_statue(s, fi + .05, j + .75 + a * .79, 38, MARBLE)
-        # Two elliptical arms east of the façade, open towards the river: independent
-        # columns with upper lintels; the far (north) arm first, then the obelisk, then the near arm.
+        # Bernini's colonnades run around the oval, with trapezoidal wings back to the façade.
+        square_i, square_j = i + 13.2, j + 5.5
         def arm(side):
-            ring = []
-            for n in range(14):
-                a = -.9 + n * 1.8 / 13
-                ci2 = i + 12.9 + 2.2 * math.sin(a)
-                cj2 = j + 5.5 + side * (3.9 + 1.4 * math.cos(a))
-                column(s, ci2, cj2, 0, 12, width=.25)
-                ring.append(P(s, ci2, cj2, 14))
-                if n % 3 == 0:
-                    side_statue(s, ci2, cj2, 15, MARBLE)
-            for a, b in zip(ring, ring[1:]):
-                seg(s, a, b, MARBLE['lit'], 2)
+            angles = [-1.06 + n * 2.12 / 14 for n in range(15)]
+            def ring(a, width, z):
+                return P(s, square_i + (2.8 + width) * math.sin(a),
+                         square_j + side * (5.1 + width) * math.cos(a), z)
+
+            start = angles[0]
+            start_i = square_i + 2.8 * math.sin(start)
+            start_j = square_j + side * 5.1 * math.cos(start)
+            wing = [(fi, square_j + side * 4.5), (start_i, start_j)]
+            a, b = wing
+            poly(s, [P(s, *a, 0), P(s, *b, 0), P(s, *b, 13), P(s, *a, 13)],
+                 lambda x, y: MARBLE['dark' if side == 1 else 'mid'])
+            poly(s, [P(s, *wing[0], 13), P(s, *wing[1], 13),
+                     P(s, wing[1][0] + .72, wing[1][1], 13),
+                     P(s, wing[0][0] + .72, wing[0][1], 13)],
+                 lambda x, y: MARBLE['lit'])
+
+            # Multiple rows read through the bays. Omit individual shafts below a pixel.
+            shafts = [(square_i + (2.8 + width) * math.sin(a),
+                       square_j + side * (5.1 + width) * math.cos(a))
+                      for width in (-.26, .28) for a in angles]
+            for ci2, cj2 in sorted(shafts, key=sum):
+                column(s, ci2, cj2, 0, 12, width=.21)
+            for a, b in zip(angles, angles[1:]):
+                for width, shade in ((-.38, 'dark'), (.40, 'mid')):
+                    poly(s, [ring(a, width, 11), ring(b, width, 11),
+                             ring(b, width, 14), ring(a, width, 14)],
+                         lambda x, y: MARBLE[shade])
+                poly(s, [ring(a, -.38, 14), ring(b, -.38, 14),
+                         ring(b, .40, 14), ring(a, .40, 14)], lambda x, y: MARBLE['hi'])
+            for a in angles[1::3]:
+                ci2 = square_i + 2.8 * math.sin(a)
+                cj2 = square_j + side * 5.1 * math.cos(a)
+                block(s, ci2 - .12, cj2 - .12, .24, .24, 1, STONE, z=14)
+                seg(s, P(s, ci2, cj2, 15), P(s, ci2, cj2, 18), MARBLE['lit'], 2)
+                seg(s, P(s, ci2, cj2, 18), P(s, ci2, cj2, 19), STONE['mid'])
+
         arm(-1)
-        obelisk(s, i + 12.9, j + 5.5, 0, 24)
+        for offset in (-2.7, 2.7):
+            basin(s, square_i, square_j + offset, .59, .59)
+            cylinder(s, square_i, square_j + offset, .13, .13, 3, 4, MARBLE)
+        obelisk(s, square_i, square_j, 0, 24)
         arm(1)
     scene.add(i + j + 26, draw)
 
@@ -449,57 +478,137 @@ def vittoriano(scene, i, j):
 
 
 def colosseum(scene, i, j):
-    """Hollow elliptical amphitheatre: surviving high outer arcade, broken south rim, hypogeum."""
+    """Surviving north façade, recessed southern arcades and the roofless arena."""
+    ci, cj = i + 5.2, j + 3.7
+    # The major axis runs east–west and the minor axis north–south.
+    east_radius, south_radius = 5, 4
+    bays = 48
+    angles = [n * math.tau / bays for n in range(bays + 1)]
+
     def draw(s):
-        ci, cj, ri, rj = i + 5.2, j + 3.7, 5.2, 3.7
-        ring = []
-        for n in range(72):
-            a, b = n * math.tau / 72, (n + 1) * math.tau / 72
+        def ground(east, south, z):
+            return P(s, ci + (south + east) / math.sqrt(2),
+                     cj + (south - east) / math.sqrt(2), z)
+
+        def point(angle, radius, z):
+            return ground(east_radius * radius * math.cos(angle),
+                          south_radius * radius * math.sin(angle), z)
+
+        def cap(radius, z, tone):
+            poly(s, [point(a, radius, z) for a in angles[:-1]], tone)
+
+        def wall(n, radius, thickness, height, attic=False, buttress=False):
+            a, b = angles[n:n + 2]
             mid = (a + b) / 2
-            depth = ri * math.cos(mid) + rj * math.sin(mid)
-            # The northern outer wall survives; the southern side exposes the inner tiers.
-            height = 58 if depth < -1.3 else 43 if depth < .6 else 29
-            ring.append((depth, n, a, b, height))
-        # Back wall first, so the open interior can be seen above the low broken near rim.
-        def wall(item):
-            depth, n, a, b, height = item
-            va, vb = (ci + ri * math.cos(a), cj + rj * math.sin(a)), (ci + ri * math.cos(b), cj + rj * math.sin(b))
-            pa, pb = P(s, *va), P(s, *vb)
-            lit = math.sin((a + b) / 2) - .5 * math.cos((a + b) / 2) > 0
+            far = math.sin(mid) < 0
+            # Show the inward wall of the far arc and the outward wall of the near arc.
+            face = radius - thickness if far else radius
+            pa, pb = point(a, face, 0), point(b, face, 0)
             dx = pb[0] - pa[0]
-            def color(x, y):
-                t = max(0, min(1, (x - pa[0]) / dx)) if abs(dx) > .01 else .5
-                v = pa[1] + t * (pb[1] - pa[1]) - y
-                u = (n + t) * 2.6
-                c, level = u % 9, v % 14
-                tone = STONE['lit' if lit else 'dark']
-                if level < 2:
-                    return STONE['hi' if lit else 'line']
-                if v < 43 and 2 < c < 7:
-                    arch = arch_opening(c, level - 2, 4.5, 2.3, 6, STONE['deep'])
-                    if arch:
-                        return BRICK['deep'] if c > 3 else STONE['deep']
-                if c < 1.4:
-                    return STONE['hi' if lit else 'mid']  # engaged orders/pilasters
-                return STONE['line' if lit else 'deep'] if int(v) % 5 == 0 else tone
-            poly(s, [pa, pb, (pb[0], pb[1] - height), (pa[0], pa[1] - height)], color)
-            # Thick exposed wall head, with visible radial masonry returns.
-            innera = P(s, ci + (ri - .45) * math.cos(a), cj + (rj - .45) * math.sin(a), height)
-            innerb = P(s, ci + (ri - .45) * math.cos(b), cj + (rj - .45) * math.sin(b), height)
-            poly(s, [(pa[0], pa[1] - height), (pb[0], pb[1] - height), innerb, innera], lambda x, y: STONE['hi'])
-            if n % 3 == 0:
-                seg(s, innera, (pa[0], pa[1] - height), STONE['line'])
-        for item in sorted(ring):
-            if item[0] < 0:
-                wall(item)
-        # Terraced seating surrounds a genuinely open arena with the exposed basement grid.
-        for r, z in ((.88, 5), (.77, 3), (.65, 1)):
-            ellipse(s, ci, cj, ri * r, rj * r, z, STONE['mid'])
-        ellipse(s, ci, cj, ri * .59, rj * .57, 1.2,
-                lambda x, y: BRICK['deep'] if (int(x) + 2 * int(y)) % 13 < 3 or (int(x) - 2 * int(y)) % 17 < 3 else STONE['dark'])
-        for item in sorted(ring):
-            if item[0] >= 0:
-                wall(item)
+            light = math.sin(mid) * .45 - math.cos(mid)
+            if far:
+                light = -light
+            material = BRICK if buttress else STONE
+            base = material['lit' if light > .15 else 'dark' if light < -.4 else 'mid']
+            edge = material['hi' if light > .15 else 'mid']
+            shadow = material['deep' if light > .15 else 'outline']
+
+            def masonry(x, y):
+                u = max(0, min(1, (x - pa[0]) / dx)) if abs(dx) > .01 else .5
+                z = pa[1] + u * (pb[1] - pa[1]) - y
+                course, level = divmod(z, 13)
+                sides = abs(u - .5)
+                if z >= height - 1 or level >= 12:
+                    return edge
+                if buttress:
+                    return material['line'] if int(z) % 4 == 0 else base
+                if attic and z >= 39:
+                    if 44 <= z < 49 and sides < .16:
+                        return shadow
+                    if sides > .39 or int(z) % 5 == 0:
+                        return edge
+                    return base
+                spring = 7 if course == 0 else 6
+                arch = spring + 3.7 * math.sqrt(max(0, 1 - (sides / .36) ** 2))
+                if sides < .36 and 1 <= level < arch:
+                    if sides > .22 or level > arch - 1.5:
+                        return material['deep']
+                    return BRICK['outline']
+                if sides < .42 and arch <= level <= arch + 1.5:
+                    return edge  # voussoirs
+                if u < .12:
+                    return edge  # engaged columns at the bay seams
+                if u > .92:
+                    return material['line']
+                return material['line'] if int(z) % 5 == 0 else base
+
+            poly(s, [pa, pb, (pb[0], pb[1] - height), (pa[0], pa[1] - height)], masonry)
+            poly(s, [point(a, radius, height), point(b, radius, height),
+                     point(b, radius - thickness, height), point(a, radius - thickness, height)],
+                 lambda x, y: material['line'] if h01(x, y, 189) < .16 else edge)
+
+        def end_wall(n, radius, thickness, height, base=0):
+            # Exposed radial return where the outer ring collapsed.
+            a = angles[n]
+            poly(s, [point(a, radius, base), point(a, radius - thickness, base),
+                     point(a, radius - thickness, height), point(a, radius, height)],
+                 lambda x, y: BRICK['line'] if y % 4 else BRICK['deep'])
+
+        # Paving and piers mark the footprint of the missing southern ambulatories.
+        cap(1, 0, lambda x, y: STONE['mid'] if h01(x, y, 85) < .2 else STONE['lit'])
+        for n in range(2, bays // 2, 3):
+            a = angles[n]
+            poly(s, [point(a - .04, .91, 0), point(a + .04, .91, 0),
+                     point(a + .04, .98, 0), point(a - .04, .98, 0)],
+                 lambda x, y: STONE['line'])
+
+        # The attic and all three travertine orders survive across the north.
+        # Later brick buttresses taper down at either end of that surviving perimeter.
+        for n in range(bays // 2, bays):
+            drop = min(n - bays // 2, bays - 1 - n)
+            height = (21, 33, 43)[drop] if drop < 3 else 54
+            wall(n, 1, .095, height, attic=True, buttress=drop < 3)
+            if drop < 3:
+                step = n + 1 if n < 3 * bays // 4 else n
+                end_wall(step, 1, .095, height)
+        end_wall(bays // 2, 1, .095, 21)
+        end_wall(bays, 1, .095, 21)
+
+        # The cavea climbs away from the arena in separate annular stone terraces.
+        for step in range(6):
+            radius = .785 - step * .038
+            z = 19 - step * 2.4
+            cap(radius, z, lambda x, y: STONE['dark'])
+            cap(radius - .035, z, lambda x, y: STONE['lit'] if h01(x, y, 76) < .12 else STONE['mid'])
+        for n in range(0, bays, 8):
+            a = angles[n]
+            for step in range(6):
+                radius = .78 - step * .038
+                z = 19 - step * 2.4
+                seg(s, point(a, radius, z), point(a, radius - .036, z), STONE['hi'])
+
+        # Exposed hypogeum, with the central passage and parallel masonry partitions.
+        cap(.566, 3, lambda x, y: BRICK['dark'] if h01(x, y, 162) < .18 else BRICK['deep'])
+        for n in range(-6, 7):
+            east = n * .39
+            span = 2.04 * math.sqrt(1 - (east / 2.8) ** 2)
+            for start, stop in ((-span, -.22), (.22, span)):
+                front, back = east + .12, east - .12
+                top = 6 + (n % 3 == 0)
+                poly(s, [ground(back, stop, 3), ground(front, stop, 3),
+                         ground(front, stop, top), ground(back, stop, top)],
+                     lambda x, y: BRICK['mid'])
+                poly(s, [ground(back, start, top), ground(back, stop, top),
+                         ground(front, stop, top), ground(front, start, top)],
+                     lambda x, y: BRICK['hi'] if h01(x, y, 174) < .16 else BRICK['lit'])
+
+        # The lower, recessed southern arcade sits where the outer two rings are missing.
+        for n in reversed(range(bays // 2)):
+            height = 17 if 9 <= n < 15 else 23 if 7 <= n < 17 else 28
+            wall(n, .86, .085, height)
+        for n, base, height in ((7, 23, 28), (9, 17, 23), (15, 17, 23), (17, 23, 28)):
+            end_wall(n, .86, .085, height, base)
+
     scene.add(i + j + 17, draw)
 
 

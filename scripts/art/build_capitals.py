@@ -967,7 +967,7 @@ def brussels():
         half = (wi + wj) * 4 + extra
         protected.append((x - half, y - height, x + half, y + (wi + wj) * 2 + 12))
 
-    landmark(bel.atomium, 250, 155, 9, 9, 143, extra=1)
+    landmark(bel.atomium, 250, 148, 9, 9, 143, extra=1)
     landmark(bel.basilica, 110, 180, 8.5, 10, 106)
     landmark(bel.cathedral, 475, 190, 7.6, 9, 80, front=4)
     landmark(bel.kings_house, 350, 220, 7.5, 4.3, 96)
