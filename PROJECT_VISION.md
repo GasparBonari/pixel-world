@@ -103,7 +103,7 @@ The interface is part of the same world as the map. Map art follows [ART_CONTRAC
 
 - **Two surfaces.** Night-navy for the frame (top bar, tab bar, sheets over the map) and cream parchment for content (cards, challenges, the passport).
 - **One gold button** for the main action on a screen. Cream bevelled buttons for everything else; green only for success and progress.
-- **One UI pixel = 2 points**, the same as map icons. Borders, bevels, notches, and shadows are whole UI pixels. Frames are nine-slice pixel art generated in the shared palette and drawn with nearest-neighbour sampling.
+- **One UI pixel = 2 points**, the same as map icons. Borders, bevels, notches, and shadows are whole UI pixels. Frames are drawn in the shared palette by the UI kit's `PixelFrame` (outline with notched corners, highlight, shade, lip); rules in [docs/ui/UI_KIT.md](./docs/ui/UI_KIT.md).
 - **Type.** Pixelify Sans for titles, labels, chips, and numbers, at fixed sizes. Longer text (collectible descriptions, challenge instructions) must stay comfortable to read; whether that is Pixelify Sans or a plainer companion font is decided by testing on a phone.
 - **Pixel icons** in the palette, not system symbols. No frosted glass, gradients, or soft glows on game UI.
 - **Stepped motion.** Short, frame-like animations (button press, card pop, stamp slam) instead of smooth fades. Respect reduced-motion settings.

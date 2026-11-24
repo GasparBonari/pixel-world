@@ -110,6 +110,8 @@ Development still prioritizes **Earth → continent → country → capital visu
 - [Project vision](./PROJECT_VISION.md) — product concept and MVP scope.
 - [Technical plan](./TECHNICAL_PLAN.md) — architecture, geographic data, asset licenses, and validation targets.
 - [Art contract](./docs/art/ART_CONTRACT.md) — shared palette and pixel rules per scale, with Europe/Malta mockups (draft for review).
+- [UI kit](./docs/ui/UI_KIT.md) — interface tokens, pixel components, and rules for every screen; preview at `/ui-kit`.
+- [Agent instructions](./AGENTS.md) — how Codex, Claude, and humans work in this repository.
 
 ## Run locally
 
@@ -223,4 +225,4 @@ Native device/emulator launches and Safari have not been verified in this worksp
 
 ## Development conventions
 
-Keep route files in `src/app/` and shared UI outside that directory. Use the shared theme tokens for colors and spacing. Read the installed SDK's documentation before changing Expo or React Native APIs, install project dependencies with `npx expo install`, and run lint/typecheck before completing a task. See [AGENTS.md](./AGENTS.md) for the full repository instructions.
+Keep route files in `src/app/` and shared UI outside that directory. Build interface from the pixel UI kit in `src/ui/` and the tokens in `src/constants/theme.ts` ([UI kit](./docs/ui/UI_KIT.md)); `npm test` enforces its rules. Rebuild UI icons with `.venv/bin/python scripts/art/build_ui_icons.py`. Read the installed SDK's documentation before changing Expo or React Native APIs, install project dependencies with `npx expo install`, and run lint/typecheck before completing a task. See [AGENTS.md](./AGENTS.md) for the full repository instructions.

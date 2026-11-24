@@ -1,0 +1,159 @@
+# Pixel UI Kit — the interface contract
+
+Status: **v1.1, 24 November 2026.** This covers DEVELOPMENT_PLAN tasks P6-01 (tokens), P6-03 (components), and P6-04 (`/ui-kit` route), built ahead of Phase 5 so the gameplay screens use real components from the start. v1.1 adds what Phase 5 needs: the screen layout, the bottom sheet, dialogs with the collectible card, and notices with Undo. What is still missing, and which phase adds it, is in [Roadmap](#roadmap-what-the-kit-does-not-have-yet). Map art follows [ART_CONTRACT.md](../art/ART_CONTRACT.md); everything drawn *over* the map follows this file.
+
+Every agent (Codex, Claude) and every human building interface reads this before writing UI. The rules are enforced by `tests/ui-kit.test.mjs`; `npm test` fails when they are broken.
+
+![UI kit preview](ui-kit-preview.png)
+
+Live preview: run `npm run web` and open <http://localhost:8081/ui-kit>. The "Overlays" panel opens the sheet, a found collectible, an Undo notice, and a confirm dialog.
+
+## Look we are aiming for
+
+Visual reference (style only, see "What the mockups show that we do not build" below):
+
+| Daily challenge | Country detail | World | Screen set |
+| --- | --- | --- | --- |
+| ![](reference/daily-challenge.webp) | ![](reference/country-detail.webp) | ![](reference/world-globe.webp) | ![](reference/screen-set.webp) |
+
+What we take from them: chunky pixel frames with dark outlines and notched corners, a **night-navy frame** around a **cream parchment** content area, one **gold** call to action, **green** only for success and progress, Pixelify Sans everywhere, small pixel icons in the map's palette, the map always visible behind.
+
+## The five rules
+
+1. **Compose from the kit.** Screens import from `@/ui` and `@/constants/theme` only. Need something new? Add it to `src/ui/` (see "Adding a component"), never inline a one-off look in a screen.
+2. **Tokens only.** No hex/rgb colours, `fontSize`, `fontFamily`, or `fontWeight` outside `src/constants/theme.ts`. Colours from `Palette`, spacing from `Space`, sizes from `Size`, text via `<PixelText variant tone>`.
+3. **Whole UI pixels.** One UI pixel `U` = 2 points. Every border, gap, offset, and size is `px(n)`. No `borderRadius` (corners are notched by `PixelFrame`), no blur, gradients, soft shadows, `elevation`, or glass.
+4. **One gold button per screen.** `variant="primary"` is the single main action. Everything else is `secondary` (cream) or `navy`. `success` (green) only shows a correct or completed state.
+5. **Never colour alone, never fake numbers.** Every state carries a symbol or a number as well as a colour (check, lock, "3 / 7"). Every count has its real denominator and comes from saved records. Demo numbers live only in `/ui-kit`.
+
+## Tokens (`src/constants/theme.ts`)
+
+| Token | What it is |
+| --- | --- |
+| `U`, `px(n)` | 2 pt per UI pixel; `px(3)` = 6 pt |
+| `Palette` | All colours. Navy frame (`space`, `night`, `navyDeep`, `navy`, `navyRaised`, `navyEdge`, `navyInk`), parchment (`parchment`, `parchmentLight`, `parchmentShadow`, `parchmentEdge`, `cream`, `creamShade`), `gold*`, `green*`, `red*`, text (`ink`, `inkSoft`, `snow`, `mist`, `muted`) |
+| `Frames` | Skins for `PixelFrame`: `parchment`, `navy`, `gold`, `cream`, `green`, `red` (destructive only), `chip`, `track` (outline, fill, highlight, shade, lip) |
+| `Space` | `xs` 4, `sm` 8, `md` 12, `lg` 16, `xl` 24, `xxl` 32 pt |
+| `Size` | `touch` 48 pt minimum target, `icon` 24 pt, `buttonDepth` 2 U, `panelDepth` 1 U, `maxContentWidth` |
+| `Type` | `display` 32, `title` 24, `heading` 20, `label` 16 (bold), `body` 16, `caption` 12 |
+| `Motion` | `frameMs` (one frame at 12 fps), notice durations, `sheetMaxShare` (0.5 of the screen) |
+| `PixelFonts` | Pixelify Sans regular/bold, loaded by the root layout |
+
+Palette hues match the map art (`scripts/art/phase3_mockups.py` `P`, `scripts/art/sprites.py`). Change a colour in one place and both stay consistent: if you change a map hue, update the token too.
+
+## Components (`src/ui/`)
+
+| Component | Use it for | Notes |
+| --- | --- | --- |
+| `Screen` | The outer layout of every screen | `header` (a `TopBar`), `footer` (the `TabBar`), `overlay` (a `BottomSheet`), `scroll`, `background` `night`/`space`/`none`. Handles safe areas and the max content width |
+| `TopBar` | The thin navy bar at the top | `onBack`, `title` or progress as children, `actions` on the right |
+| `BottomSheet` | Country and place details over the map | Controlled `expanded`/`onExpandedChange`, `onClose`, `action` (the screen's one primary button). Tap or swipe the header; never taller than half the screen. Put it in `Screen`'s `overlay` |
+| `PixelModal` | A centred dialog over the dimmed world | `visible`, `onClose` (backdrop and Android back), `label`. Pops in with a stepped scale |
+| `CollectibleCard` | Collectible details inside a `PixelModal` | `name`, `kind` (`landmark`/`wildlife`/`landscape`), `image`, `description`, `source` (always shown), `foundOn`, `justFound` (gold "Found!" ribbon) |
+| `ConfirmDialog` | Asking before an action that loses records | Name the action on the button; `destructive` makes it red. Prefer an Undo notice when the action can be reversed |
+| `NoticeProvider` / `useNotice` | Short messages: "Visit removed." with **Undo**, save failures | Mounted once in the root layout. `useNotice()({ message, icon, action })`. One at a time, at the top, announced to screen readers |
+| `useSteps` | Stepped animations | `useSteps(frames, trigger)` returns the current frame at 12 fps; reduce motion returns the last frame |
+| `PixelFrame` | The primitive behind everything: outline, notched corners, fill, highlight, shade, lip | `skin`, `depth` (UI px), `pressed`. Use directly only inside `src/ui/` |
+| `PixelText` | All text | `variant` from `Type`, `tone`: `ink`/`inkSoft` on parchment, `light`/`lightSoft` on navy, `outlined` over the map |
+| `PixelIcon` | 12×12 pixel icons, 24 pt | `name` from `IconName`. Decorative; label the control around it |
+| `PixelButton` | Actions | `variant` `primary`/`secondary`/`success`/`navy`/`danger` (destructive confirm only), `icon`, `marker` (A/B/C), `block`, `disabled`. Sinks 2 U when pressed |
+| `IconButton` | Back, close, zoom, help | `accessibilityLabel` is required |
+| `Panel` | Content cards (`parchment`) and sheets over the map (`navy`) | Column with `Space.md` gaps |
+| `SectionHeader` | Row title in a panel: icon, title, count, action | `count` like "3 / 5 found" |
+| `Divider` | 1 U rule between rows | |
+| `Ribbon` | Screen or block title banner | `parchment` for titles, `gold` for a featured block |
+| `Chip` | Non-interactive labels: place names, continent counts, tags | `light` over the map, `navy` with `detail`, `gold` selected |
+| `ProgressBar` | Segmented green bar with its count | `title`, `value`, `total`, `tone`. Total 0 shows "Coming soon", never complete |
+| `StepDots` | Short goals ("today 3 / 5") | Pair with a visible count |
+| `SegmentedTabs` | Sections inside a screen (Discover / Find it / Info) | Selected is gold |
+| `TabBar` | The app's bottom tabs | Presentational; see Navigation |
+| `CollectibleTile` | Landmark/wildlife/landscape cards | `state` `found` (gold + check), `missing` (dimmed, no badge), `locked` (lock, name hidden) |
+| `Badge` | Icon pinned to a tile corner | |
+| `QuestRow` | One challenge in a list | `done` shows a green check box, `progress` like "1 / 3 animals" |
+
+## Screen recipes
+
+- **Every screen** is a `Screen`. Background: the map (World tab, `background="none"`, `scroll={false}`) or `night` (other tabs). Content sits on `Panel`s, never directly on the map.
+- **Top bar:** `TopBar` with a back button and one `ProgressBar tone="light"` (overall progress) or a title. No avatar, currency, or level.
+- **Sheets over the map:** `BottomSheet` in the `Screen`'s `overlay`, so the map stays mounted and the camera never resets. Collapsed: title and the one primary action. Expanded: details, at most half the screen.
+- **Finding something:** open a `PixelModal` with `CollectibleCard justFound`. The card's button is the only gold one while it is open.
+- **Undo, not "Are you sure?":** reversible actions (remove a visit, un-wishlist) happen at once and show a notice with Undo. Only irreversible ones (reset all progress) use `ConfirmDialog`.
+- **Country sheet:** title + "Continent · Capital" line, `ProgressBar`, `SegmentedTabs`, `SectionHeader` + horizontal `CollectibleTile`s, one `primary` button.
+- **Challenge:** `Ribbon skin="gold"`, `Panel` with a `heading` prompt and short `body`; "find it" happens by tapping the scene. Answer choices (`PixelButton marker`) only for map questions.
+- **Lists:** `QuestRow`s with `Space.md` gaps.
+- **Layout width:** `maxWidth: Size.maxContentWidth`, centred, so tablets and web don't stretch panels.
+- **Safe areas:** `SafeAreaView` from `react-native-safe-area-context`; the tab bar sits in the bottom inset.
+
+## Navigation
+
+Per [PROJECT_VISION.md](../../PROJECT_VISION.md): three tabs, **World** (the map), **Quests**, **Passport**. The collection lives inside Passport. Country and collectible details open as sheets over the map.
+
+When P7-01 builds the tabs, use the SDK 58 custom tabs API from `expo-router/ui` (`Tabs`, `TabSlot`, `TabList`, `TabTrigger`). Render the kit's `TabBar` look inside `TabList` with each item as a `TabTrigger asChild`. The map must stay mounted between tabs. Read <https://docs.expo.dev/router/advanced/custom-tabs/> before writing it; the API is experimental and changes between SDKs.
+
+## Motion, sound, haptics
+
+- **Stepped, not smooth.** State changes jump between frames (button press = 1 step down, sheet open = one step). Short frame animations run at 12 frames per second with `useSteps`, never with easing curves: the dialog pop is `[0.85, 1.05, 1]`, the notice slide `[-8, -2, 0]` UI px.
+- **Reduce motion:** `useSteps` returns the last frame when the OS setting is on. Anything animated without it must check `useReducedMotion` from `react-native-reanimated`.
+- **Haptics** (P6-06): not installed yet. When added, `npx expo install expo-haptics`; a light impact on primary presses and finds only.
+
+## Accessibility
+
+- Touch targets at least `Size.touch` (48 pt). Buttons get `accessibilityRole="button"` and a label (the kit does this).
+- Icon-only controls require `accessibilityLabel`.
+- Progress uses `accessibilityRole="progressbar"` with min/max/now (the kit does this).
+- Text never smaller than `caption` (12 pt). Body font for long text is an open decision (Pixelify Sans vs. a plainer companion); keep long text short until it is settled.
+
+## Icons
+
+Icons are 12×12 palette-letter grids in `scripts/art/build_ui_icons.py`. To add or change one:
+
+1. Edit `ICONS` (12 rows of 12 characters; letters from `COLORS`; outline with `o`; light from the upper left).
+2. Run `.venv/bin/python scripts/art/build_ui_icons.py`. It writes `assets/ui/icons/<name>.png`, `@2x`, `@3x` (pre-scaled, so pixels stay sharp on every density) and `src/ui/icons.generated.ts`.
+3. Check it in `/ui-kit` (the icon grid lists every icon).
+
+Do not use `expo-symbols`, `@expo/vector-icons`, or emoji in game UI.
+
+## Adding a component
+
+1. Check this table first; extend an existing component with a prop before adding a new one.
+2. Build it in `src/ui/<Name>.tsx` from `PixelFrame`, `PixelText`, `PixelIcon` and tokens. Export it from `src/ui/index.ts`.
+3. Give it accessibility roles/labels and a 48 pt target if it is pressable.
+4. Add it to `src/features/ui-kit/UiKitView.tsx` and to the table above.
+5. Run `npm test`, `npm run lint`, `npm run typecheck`, then look at `/ui-kit` at 390×844.
+
+## Roadmap: what the kit does not have yet
+
+Add each when its phase starts, following "Adding a component". Do not style these inside a screen in the meantime.
+
+| Needed for | Missing | Phase |
+| --- | --- | --- |
+| "Find it" in capital scenes | Prompt bar over the scene, wrong-tap feedback (shake or short notice), the assist highlight (map side) | P5-05 |
+| Tabs | Wiring `TabBar` to `expo-router/ui` `TabTrigger`s with the map kept mounted | P7-01 |
+| Passport and travel | `Stamp`, stamp grid, list rows (visited places), wishlist toggle, date picker for visits, search field for the home country | P7-04 to P7-06 |
+| Settings | `Toggle` (mute, reduce motion), link rows (attribution) | P6-06, P8 |
+| Game feel | Stamp slam, clouds clearing, haptics on primary presses and finds, sounds | P6-06, P7-02 |
+| Icons | Share, calendar, heart (wishlist), stamp, search, flag, trophy, sound on/off | When used |
+| Accessibility | A large-text rule: fixed type sizes can overflow fixed boxes (step dots, icon buttons, quest check box) | P6-08 |
+
+## What the mockups show that we do not build
+
+The reference images are a style target. Several things in them conflict with the agreed [PROJECT_VISION.md](../../PROJECT_VISION.md); the vision wins until the owner changes it there.
+
+| In the mockups | Decision |
+| --- | --- |
+| Coins, gems, "+" shop buttons | Excluded: no currencies or shops |
+| XP, levels, "+100 XP", "+250 XP" rewards | Deferred until playtesting (P5-08). Show honest counts ("3 / 7") instead |
+| Avatar portrait, profile tab | Excluded in the first release |
+| Streak flame | Not in v1. If added later, it rewards and never punishes |
+| Multiple-choice trivia ("Which country is home to Machu Picchu?") | Challenges are "find it" taps and map questions answered on the map |
+| Four tabs (World / Quests / Collection / Passport) | Three: World / Quests / Passport (collection inside Passport) |
+| Peru, Japan, South America content | The first release covers Europe, where capital scenes exist |
+| "WorldQuest" logo | Working title only; no logo until the name is checked |
+
+## Known limits of v1
+
+- Frames are drawn with Views, not nine-slice PNGs; they have no paper grain or torn edges. A texture layer can be added inside `PixelFrame` later without changing any screen.
+- Fractional percentages in `ProgressBar` can land between device pixels.
+- Checked in Chrome at 390×844 only, including each overlay (sheet collapsed and expanded, found card, notice and Undo, confirm). Physical iPhone/Android checks are pending (P6-04): the sheet's swipe, Android back on dialogs, screen-reader focus in dialogs, and safe areas need a real phone.
+- A notice shown while a `PixelModal` is open is hidden under the dialog (React Native modals sit above everything). Close the dialog first, then notify.
+- `CollectibleTile` images in `/ui-kit` are whole capital scenes; real tiles need landmark crops from P5-01/P5-06.

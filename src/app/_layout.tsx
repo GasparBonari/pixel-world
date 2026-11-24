@@ -1,21 +1,17 @@
 import { PixelifySans_400Regular, PixelifySans_700Bold } from '@expo-google-fonts/pixelify-sans';
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { PixelFonts, WorldColors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useTheme } from '@/hooks/use-theme';
+import { Palette, PixelFonts, WorldColors } from '@/constants/theme';
+import { NoticeProvider } from '@/ui';
 
 // Keep the native splash up until the pixel font is ready, so text never swaps fonts.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const colors = useTheme();
-  const baseTheme = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
   const [fontsLoaded, fontError] = useFonts({
     [PixelFonts.regular]: PixelifySans_400Regular,
     [PixelFonts.bold]: PixelifySans_700Bold,
@@ -27,27 +23,30 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   return (
+    // One game look in light and dark system modes: night-navy frame, parchment content.
     <ThemeProvider
       value={{
-        ...baseTheme,
+        ...DarkTheme,
         colors: {
-          ...baseTheme.colors,
-          primary: colors.accent,
-          background: colors.background,
-          card: colors.backgroundElement,
-          text: colors.text,
-          border: colors.border,
+          ...DarkTheme.colors,
+          primary: Palette.gold,
+          background: Palette.space,
+          card: Palette.navyDeep,
+          text: Palette.snow,
+          border: Palette.navyEdge,
         },
       }}>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            statusBarHidden: true,
-            navigationBarHidden: true,
-            contentStyle: { backgroundColor: WorldColors.space },
-          }}
-        />
+        <NoticeProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              statusBarHidden: true,
+              navigationBarHidden: true,
+              contentStyle: { backgroundColor: WorldColors.space },
+            }}
+          />
+        </NoticeProvider>
       </GestureHandlerRootView>
     </ThemeProvider>
   );

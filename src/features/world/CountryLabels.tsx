@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 
-import { Colors, PixelFonts, WorldColors } from '@/constants/theme';
+import { Palette, PixelFonts, WorldColors } from '@/constants/theme';
 import labels from '@/data/country-labels.json';
 import { globePoint, type GlobeCamera, type GlobeViewport } from './globe-camera';
 import { BOARD_ZOOM_START } from './globe-shader';
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     fontFamily: PixelFonts.bold,
     fontSize: 13,
     lineHeight: 18,
-    color: Colors.dark.text,
+    color: Palette.snow,
     // A hard, unblurred drop shadow reads as a pixel outline over land and sea.
     textShadowColor: WorldColors.space,
     textShadowRadius: 0,

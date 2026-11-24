@@ -1,7 +1,7 @@
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { Colors, PixelFonts, Spacing, WorldColors } from '@/constants/theme';
+import { Palette, Space } from '@/constants/theme';
+import { PixelButton, PixelText } from '@/ui';
 
 export function MapStatus({
   error = false,
@@ -10,23 +10,13 @@ export function MapStatus({
   error?: boolean;
   onRetry?: () => void;
 }) {
-  const theme = Colors.dark;
   return (
     <View style={styles.container}>
-      {!error && <ActivityIndicator color={theme.accent} accessibilityLabel="Loading map" />}
-      <ThemedText type="small" style={styles.message}>
+      {!error && <ActivityIndicator color={Palette.gold} accessibilityLabel="Loading map" />}
+      <PixelText tone="light" align="center" style={styles.message}>
         {error ? 'The map couldn’t load. Please try again.' : 'Preparing your world…'}
-      </ThemedText>
-      {error && onRetry && (
-        <Pressable
-          accessibilityRole="button"
-          onPress={onRetry}
-          style={[styles.retry, { backgroundColor: theme.accent }]}>
-          <ThemedText type="smallBold" style={[styles.pixelBold, { color: theme.textOnAccent }]}>
-            Reload map
-          </ThemedText>
-        </Pressable>
-      )}
+      </PixelText>
+      {error && onRetry && <PixelButton variant="primary" label="Reload map" onPress={onRetry} />}
     </View>
   );
 }
@@ -34,20 +24,10 @@ export function MapStatus({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: WorldColors.space,
+    backgroundColor: Palette.space,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: Space.lg,
   },
-  message: {
-    textAlign: 'center',
-    paddingHorizontal: Spacing.three,
-    color: Colors.dark.text,
-    fontFamily: PixelFonts.regular,
-    fontWeight: 'normal',
-    fontSize: 16,
-  },
-  // Custom font files carry their own weight; a synthetic fontWeight would blur the pixels.
-  pixelBold: { fontFamily: PixelFonts.bold, fontWeight: 'normal' },
-  retry: { minHeight: 48, justifyContent: 'center', paddingHorizontal: Spacing.four },
+  message: { paddingHorizontal: Space.lg },
 });
