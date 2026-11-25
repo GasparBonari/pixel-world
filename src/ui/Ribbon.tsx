@@ -11,10 +11,12 @@ export type RibbonProps = {
   icon?: IconName;
   /** parchment: screen titles ("PORTUGAL"). gold: a featured block ("Daily place"). */
   skin?: 'parchment' | 'gold';
+  /** A smaller label for banners that need to fit narrow screens. */
+  variant?: 'title' | 'label';
 };
 
 /** A title banner with folded tails, centred over a panel or at the top of a screen. */
-export function Ribbon({ label, icon, skin = 'parchment' }: RibbonProps) {
+export function Ribbon({ label, icon, skin = 'parchment', variant = 'title' }: RibbonProps) {
   const f = Frames[skin];
   return (
     <View style={styles.wrap} accessibilityRole="header">
@@ -22,7 +24,7 @@ export function Ribbon({ label, icon, skin = 'parchment' }: RibbonProps) {
       <View style={[styles.tail, styles.right, { backgroundColor: f.shade, borderColor: f.outline }]} />
       <PixelFrame skin={skin} depth={1} contentStyle={styles.content}>
         {icon && <PixelIcon name={icon} />}
-        <PixelText variant="title" numberOfLines={1}>
+        <PixelText variant={variant} numberOfLines={1}>
           {label}
         </PixelText>
       </PixelFrame>

@@ -4,6 +4,7 @@ import { GestureDetector, type ComposedGesture } from 'react-native-gesture-hand
 
 export type MapSurfaceProps = PropsWithChildren<{
   gesture: ComposedGesture;
+  enabled: boolean;
   onZoom: (delta: number, x: number, y: number) => void;
   onPan: (dx: number, dy: number) => void;
   onReset: () => void;

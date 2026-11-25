@@ -25,4 +25,5 @@ export { ProgressBar, StepDots, type ProgressBarProps } from './Progress';
 export { Ribbon, type RibbonProps } from './Ribbon';
 export { Screen, TopBar, type ScreenProps, type TopBarProps } from './Screen';
 export { SegmentedTabs, TabBar, type TabItem } from './Tabs';
+export { TitleLayer, type TitleLayerProps } from './TitleLayer';
 export { useSteps } from './use-steps';

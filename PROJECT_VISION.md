@@ -1,6 +1,6 @@
-# WorldQuest — Project Vision
+# Earthia — Project Vision
 
-Status: agreed direction, 20 November 2026. Replaces the 9 November proposal. "WorldQuest" is a working title; check app-store and trademark availability before building branding around it.
+Status: agreed direction, 20 November 2026. Replaces the 9 November proposal.
 
 Development phases and tasks: [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md). Map art rules: [docs/art/ART_CONTRACT.md](./docs/art/ART_CONTRACT.md). Architecture: [TECHNICAL_PLAN.md](./TECHNICAL_PLAN.md).
 
@@ -8,7 +8,7 @@ Development phases and tasks: [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md). Map 
 
 ## The idea
 
-WorldQuest turns the real planet into a pixel-art adventure. Players spin a pixel Earth, zoom through continents and countries into illustrated capital scenes, and collect what they find there: landmarks, wildlife, landscapes. The geography is real; the visual language comes from classic 2D adventure games.
+Earthia turns the real planet into a pixel-art adventure. Players spin a pixel Earth, zoom through continents and countries into illustrated capital scenes, and collect what they find there: landmarks, wildlife, landscapes. The geography is real; the visual language comes from classic 2D adventure games.
 
 People should open the app because they are curious about what they will find next, not because they need to look something up. A session can be five minutes with today's featured place, or an hour wandering a continent.
 
@@ -148,7 +148,7 @@ Every country and its capital, with increasingly detailed scenes. More challenge
 
 ## Open decisions
 
-- **Name:** WorldQuest availability.
+- **Release name availability.** Check Earthia in app stores and trademark records.
 - **XP and levels:** add or not, after playtesting the first version.
 - **Body font:** Pixelify Sans or a companion font for longer text.
 - **Daily place selection:** curated schedule or rotation through available content.

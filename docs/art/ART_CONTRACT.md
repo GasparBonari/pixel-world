@@ -1,4 +1,4 @@
-# Pixel World — Art Contract (draft 2.1)
+# Earthia — Art Contract (draft 2.1)
 
 Status: **draft for review, 10 November 2026.** Draft 2.1 replaces the simple icons with detailed, shaded ones drawn at a finer icon pixel. This covers task P2-06 for the continent and country scales that Phase 3 builds. Draft 2 moves the look much closer to the GlobeQuest concept image: night sea, raised game-board land, puzzle-piece countries, fewer and bigger icons, chunkier pixels, and parchment screen furniture. The capital scale is outlined here and gets its full rules in Phase 4. No app renderer implements these rules yet.
 
@@ -343,6 +343,7 @@ P5-03 uses the sheet title to indicate country selection. A tap uses the globe p
 - **OpenStreetMap** (ODbL 1.0): Geofabrik Malta extract `malta-261108.osm.pbf`, SHA-256 `19bdaf3a…fe13`, cached in the git-ignored `.cache/osm/`. The mockups are produced works and carry the attribution.
 - **Icons (`scripts/art/sprites.py`), clouds and parchment UI** in the mockups are original pixel art made for this project. Ninja Adventure tiles (CC0) are only used at the capital scale.
 - **App icon and splash** use a pixel globe projected from the Natural Earth texture and coloured with the daytime globe palette on night navy. `scripts/art/build_app_icon.py` scales the artwork with nearest-neighbour sampling and records the MIT license and sources in [the launch artwork manifest](../../assets/images/manifest.json).
+- **Title logo:** `scripts/art/build_logo.py` renders Pixelify Sans Bold as a monochrome mask, adds the shared gold bevel and navy outline, and pre-scales each density with nearest-neighbour sampling. The [logo source record](../../assets/ui/title-logo.source.json) records the font and artwork licenses.
 - **Pixelify Sans:** SIL Open Font License 1.1.
 - **Reference:** the GlobeQuest concept image guides the style. Nothing from it is copied into project assets.
 
@@ -356,6 +357,7 @@ The world moves a little on its own, like a game's idle scene. Code: `src/featur
 - **Reduce motion.** With the system setting on, the clock stays at 0, the planet holds its orientation, and every effect shows its still frame.
 - **Space and planet (done):**
   - **Idle spin.** When the planet first appears it eases (over 2 seconds) straight into turning west to east at 3° a second, one turn in two minutes. After a touch, drag, scroll, key or reset it waits 3 seconds, then eases in again. The clock starts only once the planet is on screen, so a slow load never turns it away from its opening view. Any input stops it at once. The spin is full at planet zoom and fades out by zoom 1.5, where the continent board takes over.
+  - **Title hand-off.** The planet uses that idle spin behind the launch title. After Explore, the same clock eases it back to the opening longitude in stepped frames. Map input can interrupt the ease. Reduce motion keeps the planet still and cuts directly to the opening view.
   - **Weather.** Clouds and their shadows drift east, once around the planet in 15 minutes. Ocean wave highlights drift east more slowly.
   - **Day and night.** A simulated six-minute solar day moves a stepped twilight band and dims the night-side atmosphere. Warm lights mark major Natural Earth populated places, with brightness based on population and dimmed beneath clouds. Reduce motion keeps the opening solar position.
   - **Polar auroras.** Green and teal curtains run for a few seconds in each 28-second cycle, staggered between the poles and visible only on the night side. Reduce motion hides them. Both the auroras and solar lighting fade out before the continent board.

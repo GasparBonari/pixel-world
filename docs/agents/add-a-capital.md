@@ -4,7 +4,7 @@ Paste everything below the line into Codex, and fill in the two placeholders fir
 
 ---
 
-Add **{COUNTRY}** and its capital **{CAPITAL}** to Pixel World, at the same level of detail as Portugal/Lisbon, Spain/Madrid and France/Paris. Work in this repository. Expo and code rules are in `AGENTS.md`; follow them. Art rules are in `docs/art/ART_CONTRACT.md` (§1–§3a); read it first. Read `DEVELOPMENT_PLAN.md` (Phase 4) for how the existing capitals were built.
+Add **{COUNTRY}** and its capital **{CAPITAL}** to Earthia, at the same level of detail as Portugal/Lisbon, Spain/Madrid and France/Paris. Work in this repository. Expo and code rules are in `AGENTS.md`; follow them. Art rules are in `docs/art/ART_CONTRACT.md` (§1–§3a); read it first. Read `DEVELOPMENT_PLAN.md` (Phase 4) for how the existing capitals were built.
 
 ## What the player sees (do not change this structure)
 

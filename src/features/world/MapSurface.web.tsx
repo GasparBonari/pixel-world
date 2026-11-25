@@ -6,6 +6,7 @@ import type { MapSurfaceProps } from './MapSurface';
 
 export function MapSurface({
   gesture,
+  enabled,
   onZoom,
   onPan,
   onReset,
@@ -13,9 +14,15 @@ export function MapSurface({
   children,
 }: MapSurfaceProps) {
   const element = useRef<HTMLDivElement>(null);
+  const wasEnabled = useRef(enabled);
+  useEffect(() => {
+    if (enabled && !wasEnabled.current) element.current?.focus();
+    wasEnabled.current = enabled;
+  }, [enabled]);
+
   useEffect(() => {
     const node = element.current;
-    if (!node) return;
+    if (!node || !enabled) return;
     // RNGH handles the pointer gesture. Suppress the follow-up click so it cannot hit
     // a modal control that mounted on pointer-up, outside this map surface.
     function preventTouchClick(event: TouchEvent) {
@@ -38,16 +45,19 @@ export function MapSurface({
       node.removeEventListener('wheel', wheel);
       node.removeEventListener('touchend', preventTouchClick);
     };
-  }, [onZoom]);
+  }, [enabled, onZoom]);
 
   return (
     <div
       ref={element}
-      tabIndex={0}
+      tabIndex={enabled ? 0 : undefined}
+      aria-hidden={!enabled}
       role="region"
       aria-label="Interactive Earth map. Use arrow keys to pan, plus or minus to zoom, Enter to try the point at the center, and Home to reset."
-      style={{ display: 'flex', flexDirection: 'column', height: '100%', outlineOffset: 4 }}
+      // Keep browser pinch zoom off the map surface even while its gestures are disabled.
+      style={{ display: 'flex', flexDirection: 'column', height: '100%', outlineOffset: 4, touchAction: 'none' }}
       onKeyDown={(event) => {
+        if (!enabled) return;
         const bounds = event.currentTarget.getBoundingClientRect();
         if (['+', '=', '-', '_'].includes(event.key))
           onZoom(

@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Size, Space } from '@/constants/theme';
 import { CAPITAL_IMAGES } from '@/data/capital-images';
+import { WorldTitle } from '@/features/title/WorldTitle';
 import {
   BottomSheet,
   ChallengePrompt,
@@ -66,7 +67,12 @@ export function UiKitView() {
   const [sheet, setSheet] = useState<'closed' | 'collapsed' | 'expanded'>('closed');
   const [cardOpen, setCardOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [titleOpen, setTitleOpen] = useState(false);
   const notify = useNotice();
+
+  if (titleOpen) {
+    return <Screen background="space" fullBleed scroll={false} overlay={<WorldTitle onExplore={() => setTitleOpen(false)} />} />;
+  }
 
   return (
     <Screen
@@ -104,6 +110,7 @@ export function UiKitView() {
         {/* Overlays: sheet, dialogs, notices. */}
         <Panel skin="navy">
           <SectionHeader title="Overlays" icon="info" tone="light" />
+          <PixelButton variant="navy" label="Title layer" icon="globe" onPress={() => setTitleOpen(true)} />
           <PixelButton variant="navy" label="Country sheet" icon="pin" onPress={() => setSheet('collapsed')} />
           <PixelButton variant="navy" label="Find a collectible" icon="star" onPress={() => setCardOpen(true)} />
           <PixelButton

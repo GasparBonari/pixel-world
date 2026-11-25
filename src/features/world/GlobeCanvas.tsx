@@ -93,6 +93,8 @@ function GlobeScene({
   onRetry,
 }: SceneProps & { onRetry: () => void }) {
   const openingCamera = initialCamera ?? OPENING_CAMERA;
+  // A camera parsed from the launch URL goes directly to the map.
+  const [showTitle, setShowTitle] = useState(initialCamera === undefined);
   const [error, setError] = useState(false);
   const [images, setImages] = useState<Textures | null>(null);
   useEffect(() => {
@@ -109,7 +111,7 @@ function GlobeScene({
     };
   }, []);
   const camera = useSharedValue(openingCamera);
-  const { time, touch } = useWorldClock(camera, images !== null);
+  const { time, touch, returnToOpening } = useWorldClock(camera, images !== null);
   const navigation = useWorldNavigation(camera, openingCamera, viewport, touch);
   const { snapshot, selectAt } = navigation;
   // Icon pixels are two-thirds of a terrain pixel (3 points on a phone -> 2 points).
@@ -124,6 +126,11 @@ function GlobeScene({
     touch();
     selectMapPoint(viewport.width / 2, viewport.height / 2, camera.get());
   }
+
+  const enterWorld = useCallback(() => {
+    returnToOpening();
+    setShowTitle(false);
+  }, [returnToOpening]);
 
   const zoom = useCallback(
     (delta: number, x: number, y: number) => {
@@ -145,6 +152,7 @@ function GlobeScene({
   const suppressTap = useSharedValue(false);
   // Any touch stops the idle spin, even one that doesn't move far enough to start a drag.
   const pan = usePanGesture({
+    enabled: !showTitle,
     maxPointers: 1,
     minDistance: 6,
     onTouchesDown: () => touch(),
@@ -162,6 +170,7 @@ function GlobeScene({
     },
   });
   const pinch = usePinchGesture({
+    enabled: !showTitle,
     // Pinch tracks additional fingers on web even when there is too little motion to activate it.
     onTouchesDown: (event) => suppressTap.set(event.numberOfTouches > 1),
     onActivate: () => suppressTap.set(true),
@@ -184,6 +193,7 @@ function GlobeScene({
     },
   });
   const tap = useTapGesture({
+    enabled: !showTitle,
     maxDistance: 5,
     onDeactivate: (event) => {
       if (!event.canceled && !suppressTap.get()) {
@@ -217,12 +227,17 @@ function GlobeScene({
       selection={navigation.selection}
       capitalName={navigation.capitalName}
       prompt={banner && <ChallengePrompt {...banner} />}
+      onEnterWorld={showTitle ? enterWorld : undefined}
       onBack={navigation.back}
       onClose={navigation.clearSelection}
       onExplore={navigation.explore}>
-      <View style={styles.scene}>
+      <View
+        style={styles.scene}
+        accessibilityElementsHidden={showTitle}
+        importantForAccessibility={showTitle ? 'no-hide-descendants' : 'auto'}>
         <MapSurface
           gesture={gesture}
+          enabled={!showTitle}
           onZoom={zoom}
           onPan={rotate}
           onReset={navigation.reset}

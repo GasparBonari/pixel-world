@@ -1,0 +1,13 @@
+{
+  "generatedBy": "scripts/art/build_logo.py",
+  "images": ["title-logo.png", "title-logo@2x.png", "title-logo@3x.png"],
+  "font": {
+    "name": "Pixelify Sans Bold",
+    "path": "node_modules/@expo-google-fonts/pixelify-sans/700Bold/PixelifySans_700Bold.ttf",
+    "source": "https://github.com/google/fonts/tree/main/ofl/pixelifysans",
+    "license": "SIL Open Font License 1.1",
+    "licenseFile": "node_modules/@expo-google-fonts/pixelify-sans/LICENSE_FONT"
+  },
+  "artworkLicense": "MIT (repository LICENSE)",
+  "palette": "src/constants/theme.ts"
+}

@@ -1,4 +1,4 @@
-# Pixel World — Technical Plan
+# Earthia — Technical Plan
 
 Status: architecture reference. Phase 1 and the Phase 2 globe foundation are implemented; the Phase 3 hierarchy/manual-visit prototype has been removed and development now prioritizes the visual zoom journey; unused prototype images have been removed. Phase 2 validation remains open for native-device benchmarks and detailed coastal/urban styling.
 

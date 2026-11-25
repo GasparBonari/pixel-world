@@ -1,6 +1,6 @@
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
-**WorldQuest** (working title; repo `pixel-world`) turns the real planet into a pixel-art adventure: spin a pixel Earth, zoom through continents and countries into illustrated capital scenes, and collect landmarks, wildlife, and landscapes. These instructions apply to every coding agent (Codex, Claude) and to humans.
+**Earthia** (repo `pixel-world`) turns the real planet into a pixel-art adventure: spin a pixel Earth, zoom through continents and countries into illustrated capital scenes, and collect landmarks, wildlife, and landscapes. These instructions apply to every coding agent (Codex, Claude) and to humans.
 
 ## Start here
 

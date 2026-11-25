@@ -1,8 +1,8 @@
-# Pixel World
+# Earthia
 
 A mobile-first pixel-art travel exploration game built with Expo, React Native, TypeScript, and Expo Router.
 
-The app opens on a full-screen pixel Earth and star field. Drag to spin; pinch or scroll to zoom. Earth now has coastal shallows and sandy edges, varied green/arid/icy surface color, ocean highlights, cloud layers/shadows, and a brighter pixel atmosphere. Space includes a cratered moon, a satellite with solar panels, varied stars, and faint background color. The opening view faces the Atlantic. The original land shapes and pixel rendering remain. Web also supports arrow keys, +/−, and Home reset.
+Earthia opens with its title over a full-screen, idle-spinning pixel Earth and star field. **Explore** clears the title, eases the globe to its Atlantic opening view, and enables map controls. Drag to spin, or pinch or scroll to zoom. Web also supports arrow keys, +/−, and Home reset. Camera links such as `/?lon=-9.14&lat=38.72&zoom=7` open directly on the map. With reduced motion, the globe stays still while idle and the title cuts away immediately.
 
 Zooming in (1×–32×) turns the globe into the continent **game board** from the [art contract](./docs/art/ART_CONTRACT.md):
 
@@ -148,6 +148,8 @@ For an Android emulator or iOS simulator, use `npm run android` or `npm run ios`
 Run `.venv/bin/python scripts/art/build_app_icon.py` to regenerate the iOS and fallback icon, Android adaptive layers, web favicon, and splash PNG. The generator uses the existing Natural Earth globe texture and game palette. Source and license details are in [the launch artwork manifest](./assets/images/manifest.json).
 
 The splash uses `Palette.night` in both system appearances. Web can show the favicon. Check the native home-screen icon and splash in an installed build, using a preview or production build to verify the splash.
+
+To rename the title logo, edit `APP_NAME` in `scripts/art/build_logo.py` and run `.venv/bin/python scripts/art/build_logo.py`. This regenerates the three logo densities and the accessible name. See [the logo sources and licenses](./assets/ui/title-logo.source.json).
 
 ## Globe assets
 

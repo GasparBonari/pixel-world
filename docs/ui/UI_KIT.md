@@ -1,12 +1,12 @@
 # Pixel UI Kit — the interface contract
 
-Status: **v1.1, 24 November 2026.** This covers DEVELOPMENT_PLAN tasks P6-01 (tokens), P6-03 (components), and P6-04 (`/ui-kit` route), built ahead of Phase 5 so the gameplay screens use real components from the start. v1.1 adds what Phase 5 needs: the screen layout, the bottom sheet, dialogs with the collectible card, and notices with Undo. What is still missing, and which phase adds it, is in [Roadmap](#roadmap-what-the-kit-does-not-have-yet). Map art follows [ART_CONTRACT.md](../art/ART_CONTRACT.md); everything drawn *over* the map follows this file.
+Status: **v1.2, 25 November 2026.** This covers DEVELOPMENT_PLAN tasks P6-01 (tokens), P6-03 (components), P6-04 (`/ui-kit` route), and P6-10 (title layer). v1.2 adds the launch overlay for the live globe. What is still missing, and which phase adds it, is in [Roadmap](#roadmap-what-the-kit-does-not-have-yet). Map art follows [ART_CONTRACT.md](../art/ART_CONTRACT.md). Everything drawn *over* the map follows this file.
 
 Every agent (Codex, Claude) and every human building interface reads this before writing UI. The rules are enforced by `tests/ui-kit.test.mjs`; `npm test` fails when they are broken.
 
 ![UI kit preview](ui-kit-preview.png)
 
-Live preview: run `npm run web` and open <http://localhost:8081/ui-kit>. The "Overlays" panel opens the sheet, a found collectible, an Undo notice, and a confirm dialog. The "Find it" panel previews the prompt, miss feedback, and completion.
+Live preview: run `npm run web` and open <http://localhost:8081/ui-kit>. The "Overlays" panel opens the title layer, a sheet, a found collectible, an Undo notice, and a confirm dialog. The "Find it" panel previews the prompt, miss feedback, and completion.
 
 ## Look we are aiming for
 
@@ -48,6 +48,7 @@ The native splash and Android adaptive icon background use `Palette.night`. Expo
 | Component | Use it for | Notes |
 | --- | --- | --- |
 | `Screen` | The outer layout of every screen | `header` (a `TopBar`), `footer` (the `TabBar`), `overlay` (a `BottomSheet`), `scroll`, `background` `night`/`space`/`none`. Use `fullBleed` with `scroll={false}` for a full-viewport scene with an overlaid header |
+| `TitleLayer` | Launch title over a live scene | Put it in the full-bleed `Screen` overlay. Pass the logo asset, label and dimensions in artwork pixels, the tagline, and `onExplore`. The callback runs at the end of the stepped exit, or immediately with reduced motion |
 | `TopBar` | The thin navy bar at the top | `onBack` with optional `backLabel`, `title` or progress as children, `actions` on the right |
 | `ChallengePrompt` | Find-it prompt in the capital `TopBar` | `title`, optional `feedback`, `misses` to replay the whole-pixel shake with `useSteps`, `complete` for the green check and completion text. Reduce motion keeps the bar still |
 | `BottomSheet` | Country and place details over the map | Controlled `expanded`/`onExpandedChange`, `onClose`, `action` (the screen's one primary button). Tap or swipe the header. Expanded details scroll within half the screen. Put it in `Screen`'s `overlay` |
@@ -64,7 +65,7 @@ The native splash and Android adaptive icon background use `Palette.night`. Expo
 | `Panel` | Content cards (`parchment`) and sheets over the map (`navy`) | Column with `Space.md` gaps |
 | `SectionHeader` | Row title in a panel: icon, title, count, action | `count` like "3 / 5 found" |
 | `Divider` | 1 U rule between rows | |
-| `Ribbon` | Screen or block title banner | `parchment` for titles, `gold` for a featured block |
+| `Ribbon` | Screen or block title banner | `parchment` for titles, `gold` for a featured block. Use `variant="label"` for a compact banner |
 | `Chip` | Non-interactive labels: place names, continent counts, tags | `light` over the map, `navy` with `detail`, `gold` selected |
 | `ProgressBar` | Segmented green bar with its count | `title`, `value`, `total`, `tone`. Total 0 shows "Coming soon", never complete |
 | `StepDots` | Short goals ("today 3 / 5") | Pair with a visible count |
@@ -77,6 +78,7 @@ The native splash and Android adaptive icon background use `Palette.night`. Expo
 ## Screen recipes
 
 - **Every screen** is a `Screen`. The map uses `background="none"`, `scroll={false}`, and `fullBleed` so overlay controls leave the map's viewport unchanged. Other screens use `night`. Content sits on `Panel`s.
+- **Launch:** `WorldTitle` uses `TitleLayer` for the logo, parchment tagline, and one gold **Explore** button, with the centre open for the spinning globe. The world screen disables map input while the layer is visible. Explore releases input after the exit and eases the globe back to the opening camera. Camera deep links skip the title.
 - **Top bar:** `TopBar` with a back button and one `ProgressBar tone="light"` (overall progress) or a title. No avatar, currency, or level.
 - **Sheets over the map:** `BottomSheet` in the `Screen`'s `overlay`, so the map stays mounted and the camera never resets. Collapsed: title and the one primary action. Expanded: details, at most half the screen.
 - **Finding something:** open a `PixelModal` with `CollectibleCard justFound`. The card's button is the only gold one while it is open.
@@ -105,6 +107,7 @@ When P7-01 builds the tabs, use the SDK 58 custom tabs API from `expo-router/ui`
 
 - Touch targets at least `Size.touch` (48 pt). Buttons get `accessibilityRole="button"` and a label (the kit does this).
 - Icon-only controls require `accessibilityLabel`.
+- The title logo receives initial focus and carries the app name as its image label. On web, Explore transfers focus to the map after the exit.
 - A new `BottomSheet` title is announced on native and receives keyboard focus on web. Its title button toggles the details, and Close and Explore have separate buttons.
 - `ChallengePrompt` uses a polite live region for the prompt and feedback. With the map focused on web, arrow keys pan and Enter tries the center point.
 - Progress uses `accessibilityRole="progressbar"` with min/max/now (the kit does this).
@@ -134,7 +137,7 @@ Add each when its phase starts, following "Adding a component". Do not style the
 
 | Needed for | Missing | Phase |
 | --- | --- | --- |
-| Launch | Title layer (logo image, ribbon, Explore) with a stepped exit; a gesture hint that stays until the player acts | P6-10, P6-11 |
+| Launch | A gesture hint that stays until the player acts | P6-11 |
 | Tabs | Wiring `TabBar` to `expo-router/ui` `TabTrigger`s with the map kept mounted; a thin progress top bar for the World tab | P7-01 |
 | Passport and travel | `Stamp`, stamp grid, list rows (visited places), wishlist toggle, date picker for visits, search field for the home country | P7-04 to P7-06 |
 | Settings | `Toggle` (mute, reduce motion), link rows (attribution) | P6-06, P8 |
@@ -155,7 +158,7 @@ The reference images are a style target. Several things in them conflict with th
 | Multiple-choice trivia ("Which country is home to Machu Picchu?") | Challenges are "find it" taps and map questions answered on the map |
 | Four tabs (World / Quests / Collection / Passport) | Three: World / Quests / Passport (collection inside Passport) |
 | Peru, Japan, South America content | The first release covers Europe, where capital scenes exist |
-| "WorldQuest" logo | Generated by a script from one name string (P6-10), so a rename is one re-run. The name itself is still a working title |
+| Logo in the reference | The Earthia logo is generated by a script from one name string (P6-10) |
 | Illustrated title screen with an explorer and a five-button menu | Title over the live, spinning globe with one Explore button (P6-10). The menu would repeat the tab bar, and the explorer is avatar territory |
 
 ## Known limits of v1
