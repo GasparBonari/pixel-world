@@ -1,0 +1,71 @@
+{
+  "generatedBy": "scripts/art/build_capital_landmarks.py",
+  "landmarks": [
+    {
+      "id": "arc-de-triomphe",
+      "name": "Arc de Triomphe",
+      "bbox": [
+        98,
+        47,
+        80,
+        105
+      ],
+      "mask": "AAAAQAAAAAAAAAAAAPABAAAAAAAAAAD8BwAAAAAAAAAA/x8AAAAAAAAAwP9/AAAAAAAAAPD//wEAAAAAAAD8//8HAAAAAAAA////HwAAAAAA4P///38AAAAAAPj/////AQAAAAD+/////wcAAACA//////8fAAAA4P//////fwAAAPj///////8BAAD+////////BwAA/////////x8AAP////////9/AAD//////////wEA//////////8HAP//////////HwD//////////38A////////////Af///////////wf///////////8f////////////f//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+////////////+P///////////+D///////////+A////////////AP7//////////wD4//////////8A4P//////////AID//////////wAA/v////////8AAPj/////////AADg////////fwAAgP///////x8AAAD+//////8HAAAA+P//////AQAAAOD/////fwAAAACA/////x8AAAAAAP7///8HAAAAAAD4////AAAAAAAA4P//PwAAAAAAAID//w8AAAAAAAAA/v8DAAAAAAAAAPj/AAAAAAAAAADgPwAAAAAAAAAAgA8AAAAAAAAAAAACAAAA"
+    },
+    {
+      "id": "eiffel-tower",
+      "name": "Eiffel Tower",
+      "bbox": [
+        28,
+        129,
+        72,
+        176
+      ],
+      "mask": "AAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAABAAAAAAAAAAAP4AAAAAAAAAAP4AAAAAAAAAAP4AAAAAAAAAAP4AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAH4AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAAP8AAAAAAAAAgPcBAAAAAAAAgP8BAAAAAAAAgP8BAAAAAAAAgP8BAAAAAAAAgPcBAAAAAAAAgP8BAAAAAAAAgNsBAAAAAAAAgPcBAAAAAAAAgP8BAAAAAAAAwP8DAAAAAAAAwNsDAAAAAAAAwP8DAAAAAAAAwP8DAAAAAAAAwP8DAAAAAAAAwP8DAAAAAAAAwP8DAAAAAAAA4P8HAAAAAAAA4LUHAAAAAAAA4OcHAAAAAAAA4P8HAAAAAAAA4P8HAAAAAAAA4P8HAAAAAAAAcLUOAAAAAAAA8L0PAAAAAAAA8P8PAAAAAAAA8P8PAAAAAAAA8P0PAAAAAAAA+P8fAAAAAAAA/P8/AAAAAAAA/v9/AAAAAAAA+v9fAAAAAAAA/v9/AAAAAAAA/v9/AAAAAAAA/v9/AAAAAAAA/v9/AAAAAAAA/P9/AAAAAAAA/P9/AAAAAAAA/P9/AAAAAAAA/v//AAAAAAAA1nbrAAAAAAAA/v//AAAAAAAA/vf/AAAAAAAA/vf/AAAAAAAA//v/AQAAAAAA6//XAQAAAAAA7/f3AQAAAAAA//f/AQAAAAAAu3bdAQAAAACA173rAwAAAACA5/vnAwAAAACA9/fvAwAAAACAf3b+AwAAAADAffe+BwAAAADA+//fBgAAAADA87XPBwAAAADA+//fBwAAAADgP7X8DwAAAADgT//yDwAAAADg+fefDwAAAACw6XaXHQAAAACw/f+/HQAAAADwvv99HwAAAACw7//3HQAAAAD4/v9/PwAAAAD4/v9/PwAAAAC8////PQAAAAD7/////wAAAID+////fwEAAMD8////fwMAAED//////wEAAMD//////wMAAMD//////wMAAMD//////wMAAMD//////wMAAMD//////wMAAMD//////wMAAAD//////wEAAID//////wMAAIDr////3wMAAID7////3wMAAMD///9//wcAAMD7+P8f3gcAAMBv8P8f/gcAAOB9cP8fvA0AAOA94P8PuA8AAOAd4PcPsA8AAPAF4H4PoB8AAPAO4PcPYB8AANgN4P8P4DsAAPgC4P8PQDcAAFgGwH4DwDoAAHwD4HIHgH8AAHwBwP8HgH4AAOwDQOcCgHcAALYBwLUHAO8AAL4B4P8HAP8AAJ4B0PMOAPsAAPsAwLUGAN4BAP8AwPcGAP4BgD8AwP8GAPwDgN8AwPsGAP4DgB8AwPMHAPgDwAwAwPcGADAHwA8AwHYGAPAH4A8AwP8GAPAP4A8AQLECAPAP4BcAwGYHAOgPcAYA4PcHAGAe/wcAwPcHAOD/fwMAgPsBAMD+YAMAgHYBAMAGgAMAAHYAAMABAAYAgMMBAGAAAAAAgP8BAAAAAAAAoLkFAAAAAAAAwLUDAAAAAAAAgPMBAAAAAAAAwPcDAAAAAAAAwCQDAAAAAAAAALkAAAAAAAAAQHYCAAAAAAAA0PMLAAAAAAAA4PcHAAAAAAAAgJEBAAAAAAAAAH8AAAAAAAAAAH8AAAAA"
+    },
+    {
+      "id": "louvre",
+      "name": "Louvre",
+      "bbox": [
+        351,
+        157,
+        223,
+        144
+      ],
+      "mask": "AAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAfwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8P8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7/AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAID//wEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg//8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+P//AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7//wEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAID///8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg////AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+P///wEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7///8BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAID/////AwAAAAAAAAAAAAAAAAAAAAAAAAAAAADg/////wMAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+P////8DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7/////AwAAAAAAAAAAAAAAAAAAAAAAAAAAAID//////wMAAAAAAAAAAAAAAAAAAAAAAAAAAADg//////8DAAAAAAAAAAAAAAAAAAAAAAAAAAAA/P//////BwAAAAAAAAAAAAAAAAAAAAAAAAAAgP///////w8AAAAAAAAAAAAAAAAAAAAAAAAAAPD///////8PAAAAAAAAAAAAAAAAAAAAAAAAAAD+////////HwAAAAAAAAAAAAAAAAAAAAAAAADA/////////z8AAAAAAAAAAAAAAAAAAAAAAAAA+P////////9/AAAAAAAAAAAAAAAAAAAAAEAAAP///////////wAAAAAAAAAAAAAAAAAAAAD4AOD///////////8BAAAAAAAAAAAAAAAAAAAA/wD8////////////AwAAAAAAAAAAAAAAAAAA4P+B/////////////wcIAAAAAAAAAAAAAAAAAPz/8/////////////8PHwAAAAAAAAAAAAAAAAD//////////////////x8AAAAAAAAAAAAAAADA//////////////////8/AAAAAAAAAAAAAAAA8P//////////////////fwAAAAAAAAAAAAAAAPz//////////////////38AAAAAAAAAAAAAAAD///////////////////9/AAAAAAAAAAAAAADA////////////////////fwAAAAAAAAAAAAAA8P////////////////////8AAAAAAAAAAAAAAPz/////////////////////AAAAAAAAAAAAAAD//////////////////////wAAAAAAAAAAAACA//////////////////////8AAAAAAAAAAAAA4P//////////////////////AQAAAAAAAAAAAPj//////////////////////wEAAAAAAAAAAAD+//////////////////////8BAAAAAAAAAACA////////////////////////AwAAAAAAAAAA4P///////////////////////wcAAAAAAAAAAPj///////////////////////8PAAAAAAAAAAD+////////////////////////HwAAAAAAAADA/////////////////////////z8AAAAAAAAA+P////////////////////////9/AAAAAAAAAP///////////////////////////wAAAAAAAOD///////////////////////////8BAAAAAAD8////////////////////////////AwAAAACA/////////////////////////////wcAAAAA8P////////////////////////////8PAAAAAP7/////////////////////////////HwAAAMD//////////////////////////////z8AAAD4//////////////////////////////9/AAAA/////////////////////////////////wAAwP////////////////////////////////8BAPD/////////////////////////////////AwD8/////////////////////////////////wMA/v////////////////////////////////8DgP//////////////////////////////////A+D//////////////////////////////////wPw//////////////////////////////////8B/P//////////////////////////////////Af///////////////////////////////////8H////////////////////////////////////h////////////////P+L/////////////////+f///////////////wfA//////////////////z///////////////8AgP/////////////////+//////////////8fAAD/////////////////////////////////AwAA/v//////////////////////////////fwAAAPz//////////////////////////////w8ACAD4//////////////////////////////8BAA8A8P////////////////////////////8/AMAPAOD/////////////////////////////BwDwDwDA/////////////////////////////wAA/A8AgP///////////////////////////x8AAP8fAID///////////////////////////8DAMD/HwDA////////////////////////////AAD4/x8AwP//////////////////////////fwAA/v8fAID//////////////////////////x8AgP//HwAA//////////////////////////8DAID//wcAAP7///////////////////////9/AAAA//8AAAD8////////////////////////DwAAAP4fAAAA+P///////////////////////wEAAID/HwAAAPD//////////////////////z8AAADg/x8AAADg//////////////////////8HAAAA/P8/AAAAwP//////////////////////AAAAAP//PwAAAID/////////////////////HwAAAMD//z8AAAAA/////////////////////wMAAADw//8/AAAAAP7//////////////////38AAAAA/P//PwAAAADE//////////////////8PAAAAAP///z8AAAAAgP////////////////8fAQAAAOD///9/AAAAAAD/////////////////AwAAAAD4////fwAAAAAA/v//////////////fwAAAAAA/v///38AAAAAAPz//////////////w8AAAAAgP////9/AAAAAAD4//////////////8BAAAAAOD/////fwAAAAAA8P//////7/////8/AAAAAAD4/////38AAAAAAOD//////8f/////BwAAAAAA////////AAAAAADA//////+D/////wAAAAAAwP///////wAAAAAAgP//////AP///x8AAAAAAPD///////8AAAAAAAD/////HwD+//8DAAAAAAD8////////AAAAAAAA/v///wMA/P9/AAAABAAA/////////wAABAAAAPz//38AAPj/DwAAAA4AwP////////8AAA4AAAD4//8PAADw/wEAAIAfAPj/////////AYAfAAAA8P//AQAA4D8AAADAPwD+/////////wHAPwAAAOD/PwAAAMAHAAAA4H+A//////////8B4H8AAADA/wcAAACAAAAAAPj/4P//////////Afj/AAAAgP8AAAAAAAAAAAD8//v//////////wH8/wMAAAAfAAAAAAAAAAAA/v////////////8B/v8HAAAAAgAAAAAAAAAAgP////////////8/gP//DwAAAAAAAAAAAAAAAMD/////////////B8D//x8AAAAAAAAAAAAAAADg/////////////0Dg//8/AAAAAAAAAAAAAAAA+P844P///////x9w+P8AAAAAAAAAAAAAAAAAAAQAPsD///////8DfAQAAAAAAAAAAAAAAAAAAAAAwD+A//////9/AP8AAAAAAAAAAAAAAAAAAAAAAPA/AP//////D8D/AAAAAAAAAAAAAAAAAAAAAAD8fwD+/////wH4/wAAAAAAAAAAAAAAAAAAAACA/38A/P///z8A/v8BAAAAAAAAAAAAAAAAAAAA4P9/APj///8HgP//AQAAAAAAAAAAAAAAAAAAAPj/fwDw////AOD//wEAAAAAAAAAAAAAAAAAAAD+/38A4P//HwD4//8BAAAAAAAAAAAAAAAAAAAA/v8fAMD//wMA+P9/AAAAAAAAAAAAAAAAAAAAAPz/AwCA/38AAPD/DwAAAAAAAAAAAAAAAAAAAADwfwAAAP8PAADgfwEAAAAAAAAAAAAAAAAAAAAA8A8AAAD+AQAAwD8AAAAAAAAAAAAAAAAAAAAAAMABAAAANAAAAIADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPgHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8DwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/x8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgP8fAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMD/PwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADg/38AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+P//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPz//wEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+//8DAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACA/w8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "id": "luxor-obelisk",
+      "name": "Luxor Obelisk",
+      "bbox": [
+        249,
+        159,
+        7,
+        32
+      ],
+      "mask": "CASHw+FwOByOz+fz+Xw+n8/n8/l8Pp/P9////w=="
+    },
+    {
+      "id": "notre-dame",
+      "name": "Notre-Dame",
+      "bbox": [
+        548,
+        337,
+        103,
+        104
+      ],
+      "mask": "AAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAABAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAHAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAHAAAAAAAAAAAAAACAAwAAAAAAAAAAAAAAwAEAHAAAAAAAAAAAAOAAgB8AAAAAAAAAAABwAPA/AAAAAAAAAAAAOAD+PwAAAAAAAAAAABzA/38AAAAAAAAAAAAf+P9/AAAAAAAAAACAD////wAAAAAAAAAAwOf///8AAAAAAAAAAOD7////AQAAAAAAAADw/////wEAAAAAAAAA+P////8DAAAIAAAAAP7/////AwAAHwAAAMD//////wcA4D8AAAD4//////8HAPw/AAAA////////DwT/fwEA4P///////w/v//8DAPz///////+f////A4D/////////3////wHg/////////+////8A/P/////////3//9/EP//////////+///P/7///////////3//9/////////////+//////////////9/////////////////v////////////////9/////////////////v////////////////9/////////////////v////////////////9/////////////////v/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////+//////////////8f////////////////g////////////////8H//////////////+/g//////////////9x8P////////////8/OPj/////////////Hxz8/////////////w4O8P///////////x8HB/j///////////+DgwP8////////////wcEB/v//////////7+AAAP///////////3FwAID//////////z84OADA//////////8fHBwA4P//////////Dw4AAPD/////////PwcHAAD4/////////4eDAwAA/P/////////BwQEAAP7/////////4AAAAAD/////////c3AAAAAA////////fzg4AAAAAP7//////w8cHAAAAAD8//////8BDgAAAAAA8P////8/AAcAAAAAAOD/////B4ADAAAAAADA/////wDAAQAAAAAAgP///z8AAAAAAAAAAAD///8fAAAAAAAAAAAA////BwAAAAAAAAAAAP7//wAAAAAAAAAAAAD8/x8AAAAAAAAAAAAA+P8BAAAAAAAAAAAAAOA/AAAAAAAAAAAAAADABwAAAAAAAAAAAAAAgAAAAAAAAAAAAA=="
+    },
+    {
+      "id": "sacre-coeur",
+      "name": "Sacré-Cœur",
+      "bbox": [
+        484,
+        25,
+        82,
+        83
+      ],
+      "mask": "AAAAABgAAAAAAAAAAABgAAAAAAAAAAAAgAEAAAAAAAAAAAAGAAAAAAAAAAAAGAAAAAAAAAAAAGAAAAAAAAAAAACAAQAAAAAAAAAAAB8AAAAAAAAAAAD+AAAAAAAAAAAA/AcAAAAAAAAAAPg/AAAAAAAAAADg/wAAAAAAAAAAwP8HAAAAAAAAAID/PwAAgAAAAAAA/v8AAIAPAAAAAPz/BwAAPgAAAADw/x8AAPwBAAAAwP9/AAD4DwAAAID//wMA4D8AAAAA/v8PAID/AAAAAPj/PwAE/gMBAADw//8BePwfDwAAwP//B+AHAD8AAAD//x+APwD+AAAA/P9/AP4D/gMAAPD//wH4P/4PAADA//8H4P//PwAAAP//H4D///8AAAD8/38A/v//AwAA8P//Afj//w8AAOD//w/g//8/AAAA//8fgP///wAAAPz/fwD+//8DAAD8//8H+P//DwAA/P//f+D//z8AAPz///+H////EAD8////f/7//+MA/P/////////PB/z/////////vz/8///////////+/P//////////+////////////+////////////////////////////j////////////j////////////j////////////z/+////////////+P///////////+P///////////+P////////////P/7////////////4////////////4////////////4////////////8//v////////////j////////////j////////////j////////////z/+////////////+P///////////+P///////////+P////////////P/7////////////4////////////4f///////////wH///////////8B8P//////////AQD//////////wMA8P///////+EDAAD///////8BAgAA8P//////AQAAAAD//////wEAAAAA8P////8BAAAAAAD/////AQAAAAAA8P///wEAAAAAAAD///8BAAAAAAAA8P//AQAAAAAAAAD//wEAAAAAAAAA8P8BAAAAAAAAAAD/AQAAAAAAAAAA8AEAAAAAAAAAAAABAAAAAAA="
+    }
+  ]
+}

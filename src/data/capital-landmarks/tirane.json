@@ -1,0 +1,93 @@
+{
+  "generatedBy": "scripts/art/build_capital_landmarks.py",
+  "landmarks": [
+    {
+      "id": "ethem-bey-mosque",
+      "name": "Et’hem Bey Mosque",
+      "bbox": [
+        358,
+        161,
+        104,
+        129
+      ],
+      "mask": "AAAAAAAAAAAAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAIABAAAAAAAAAAAAAACAAwAAAAAAAAAAAAAAgAMAAAAAAAAAAAAAAIADAAAAAAAAAAAAAADAAwAAAAAAAAAAAAAAwAcAAAAAAAAAAAAAAMAHAAAAAAAAAAAAAADABwAAAAAAAAAAAAAAwAcAAAAAAAAAAAAAAOAPAAAAAAAAAAAAAADgDwAAAAAAAAAAAAAA4A8AAAAAAAAAAAAAAOAPAAAAAAAAAAAAAADwHwAAAAAAAAAAAAAA8B8AAAAAAAAAAAAAAPAfAAAAAAAAAAAAAADwHwAAAAAAAAAAAAAA+D8AAAAAAAAAAAAAAPg/AAAAAAAAAAAAAAD4PwAAAAAAAAAAAAAA8B8AAAAAAAAAAAAAAOAPAAAAAAAAAAAAAADgDwAAAAAAAAAAAAAA4A8AAAAAAAAAAAAAAOAPAAAAAAAAAAAAAADgDwAAAAAAAAAAAAAA4A8AAAAAAAAAAAAAAOAPAAAAAAAAAAAAAADgDwAAAAAAAAAAAAAA4A8AAAAAAAAAAAAAAOAPAAAAAAAAAAAAAADoLwAAAAAAAAAAAAAA6C8AAAAAAAAAAAAAAPq/AAAAAAAAAAAAAAD+/wAAAAAAAAAAAAAA/v8AAAAAAAAAAAAAAP7/AAAAAAAAAAAAAAD+/wAAAAAAAAAAAAAA/v8AAAAAAAAAAAAAAP7/AAAAAAAAAABwAAD+/wAAAAAAAAAAeAAA/v8AAAAAAAAAAHgAAPx/AAAAAAAAAAB4AAD8fwAAAAAAAAAAIAAA+D8AAAAAAAAAAHgAAPAfAAAAAAAAAMD/DwDwHwAAAAAAAAD8//8A8B8AAAAAAAAA////B/AfAAAAAAAAwP///x/wHwAAAAAAAOD///8/8B8AAAAAAADw////f/AfAAAAAAAA/P/////wHwAAAAAAAP7/////8R8AAAAAAAD///////MfAAAAAACA////////HwAAAAAAgP///////x8AAAAAAMD///////8fAAAAAADA////////HwAAAAAA4P///////x8AAAAAAOD///////8fAAAAAADw////////HwAAAAAA8P///////x8AAAAAAPD///////8fAAAAAAD4////////HwAAAAAA/v///////x8AAAAAgP////////8/AAAAAOD//////////wAAAAD4//////////8DAAAA/v//////////BwAAgP///////////wcAAMD///////////8fAADA////////////PwAA+P////////////8AAPz/////////////AwD//////////////w/A//////////////8/8P////////////////z//////////////7////////////////9v/f//////////////G/b//////////////wf4//////////////8B4P//////////////AYD//////////////wGA//////////////8BgP//////////////AYD//////////////wGA//////////////8BgP//////////////AYD//////////////wGA//////////////8BgP//////////////AYD//////////////wGA//////////////8BgP//////////////AYD//////////////wGg//////////////cA4P////////////9DAODv////////////AwCAr////////////wMAAD7///////////8DAAD4////////////AwAA4P///////////wMAAID///////////8DAAAAPv//////////AwAAAPj8/////////wMAAADg//////////8DAAAAgP//////////AwAAAAD+/////+f//wEAAAAA/Pn///+B/H8AAAAAAPDr////APAfAAAAAADA7////wDABwAAAAAAAP////8AAAEAAAAAAAD8//95AAAAAAAAAAAA8M//IQAAAAAAAAAAAMDv/wEAAAAAAAAAAAAA//8BAAAAAAAAAAAAAHz/AAAAAAAAAAAAAAAQPwAAAAAAAAAAAAAAAB4AAAAAAAAAAAAAAAAEAAAAAAAA"
+    },
+    {
+      "id": "national-history-museum",
+      "name": "National History Museum",
+      "bbox": [
+        59,
+        58,
+        146,
+        116
+      ],
+      "mask": "AAAAAACAAQAAAAAAAAAAAAAAAAAAAAAAHwAAAAAAAAAAAAAAAAAAAAAA/wEAAAAAAAAAAAAAAAAAAAAA/x8AAAAAAAAAAAAAAAAAAAAA//8BAAAAAAAAAAAAAAAAAAAA//8fAAAAAAAAAAAAAAAAAAAA////AQAAAAAAAAAAAAAAAAAA////HwAAAAAAAAAAAAAAAAAA/////wEAAAAAAAAAAAAAAAAA/////x8AAAAAAAAAAAAAAAAA//////8BAAAAAAAAAAAAAAAA//////8fAAAAAAAAAAAAAAAA////////AQAAAAAAAAAAAABA////////HwAAAAAAAAAAAACA/////////wEAAAAAAAAAAAAA/v///////x8AAAAAAAAAAAAA+P////////8BAAAAAAAAAAAA4P////////8fAAAAAAAAAAAAwP//////////AQAAAAAAAAAAwP//////////HwAAAAAAAAAAwP///////////wEAAAAAAAAAgP///////////x8AAAAAAAAAgP////////////8BAAAAAAAAsP////////////8fAAAAAAAAwP//////////////AQAAAAAAAP//////////////HwAAAAAAAPz//////////////wEAAAAAAPD//////////////x8AAAAAAMD///////////////8BAAAAAAD///////////////8fAAAAAAD8////////////////AQAAAADw////////////////HwAAAADA/////////////////wEAAAAA/////////////////x8AAAAA/P////////////////8BAAAA8P////////////////8fAAAAwP//////////////////AQAAAP//////////////////HwAAAPz//////////////////wEAAPD//////////////////x8AAMD///////////////////8BAAD///////////////////8fAAD8////////////////////AQDw////////////////////HwDA/////////////////////wEA/////////////////////x8A/P////////////////////8B8P////////////////////8/wP//////////////////////Af//////////////////////D/z/////////////////////P/D//////////////////////8D//////////////////////wH//////////////////////w/8/////////////////////z/w///////////////////////A//////////////////////8D//////////////////////8P/P////////////////////8/8P//////////////////////wP//////////////////////A///////////////////////D/z/////////////////////P/D//////////////////////4D//////////////////////wP8/////////////////////w/4/////////////////////z/g///////////////////////A//////////////////////+D////z/////////////////+P////D/////////////////8/////P/z//////////////////v////P/////////////////////////////////////////////////////////////////v///////5/////////////////j/////h////////////////4P/////P/7//////////////w/4//////v//////////////z+A//////////////////////8A+P///////f////////////8DgP//////8f////////////8PAPj/////w/////////////8/AID/////P///////////////AAD4////////////////////AwCA////////////////////DwAA+P///////P//////////PwAAgP//////8P///////////wAAAPj/////w////////////wMAAID/////P////////////w8AAAD4/////////////////z8AAACA//////////////////8AAAAA+P///////v////////8BAAAAgP////9/+P////////8BAAAAAPj/////4/////////8BAAAAAID/////v/////////8BAAAAAAD4//////////////8BAAAAAACA//////////////8BAAAAAAAA+P////////////8BAAAAAAAAgP////////////8BAAAAAAAAAPj///////////8BAAAAAAAAAID///////////8BAAAAAAAAAAD4//////////8BAAAAAAAAAACA//////////8BAAAAAAAAAAAA+P////////8BAAAAAAAAAAAAgP////////8BAAAAAAAAAAAAAPj//////38BAAAAAAAAAAAAAID//////38AAAAAAAAAAAAAAAD4/////38AAAAAAAAAAAAAAACA////+P8AAAAAAAAAAAAAAAAA+P//gP8AAAAAAAAAAAAAAAAAgP9/APgAAAAAAAAAAAAAAAAAAPj/AIAAAAAAAAAAAAAAAAAAAID/AQAAAAAAAAAAAAAAAAAAAAD4AQAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAA="
+    },
+    {
+      "id": "palace-of-culture",
+      "name": "Palace of Culture",
+      "bbox": [
+        407,
+        76,
+        155,
+        121
+      ],
+      "mask": "AAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAHwAAAAAAAAAAAAAAAAAAAAAAAD4DwAAAAAAAAAAAAAAAAAAAAAA8P8BAAAAAAAAAAAAAAAAAAAAAOD/PwAAAAAAAAAAAAAAAAAAAADA//8HAAAAAAAAAAAAAAAAAAAAgP///wAAAAAAAAAAAAAAAAAAAAD///8fAAAAAAAAAAAAAAAAAAAA/v///wMAAAAAAAAAAAAAAAAAAPz///9/AAAAAAAAAAAAAAAAAAD4/////w8AAAAAAAAAAAAAAAAA8P//////AQAAAAAAAAAAAAAAAOD//////z8AAAAAAAAAAAAAAADA////////BwAAAAAAAAAAAAAAgP////////8AAAAAAAAAAAAAAAD/////////HwAAAAAAAAAAAAAA/v////////8DAAAAAAAAAAAAAP3/////////fwAAAAAAAAAAAAD8//////////8PAAAAAAAAAAAA4P///////////wEAAAAAAAAAAED///////////8/AAAAAAAAAAAA/v///////////wcAAAAAAAAAAPD/////////////AAAAAAAAAACA/////////////x8AAAAAAAAAAPz/////////////AwAAAAAAAADg/////////////38AAAAAAAAAAP//////////////DwAAAAAAAAD4//////////////8BAAAAAAAAgP//////////////PwAAAAAAAADw//////////////8HAAAAAAAAAP///////////////wAAAAAAAAD4//////////////8fAAAAAAAAwP///////////////wMAAAAAAAD+//////////////9/AAAAAAAA8P///////////////w8AAAAAAID/////////////////AQAAAAAA/P///////////////z8AAAAAAOD/////////////////BwAAAAAA//////////////////8AAAAAAPj/////////////////HwAAAADA//////////////////8DAAAAAP7/////////////////fwAAAADw//////////////////8PAAAAgP///////////////////wEAAAD8//////////////////8/AAAA4P///////////////////wcAAAD/////////////////////AAAA+P///////////////////x8AAMD/////////////////////AwAA/v///////////////////38AAPD/////////////////////DwCA//////////////////////8DAPz/////////////////////PwDg//////////////////////8DAP//////////////////////HwD4//////////////////////8AxP//////////////////////A/j//////////////////////z/g////////////////////////gf9//////////////////////w/+//j///////////////////9/+P/P/////////////////////+P///////////////////////+f//////////////////////////7////+///////////////////3////8f///////////////////////5//////////////////////////////////////////////7////////////////////////3/8//////3/////////////////g//////j/////////////////x/w////v///////////////////AP7//////////////////////wfA//////////////////////8/APj/////+////////////////wEA/////8f///////////////8PAOD///9/////////////////fwAA/P////////////////////8DAID/////////////////////HwAA8P/////3//////////////8AAAD+////j///////////////BwAAwP/////+/////////////z8AAAD4////////////////////AQAAAP///////////////////w8AAADg/////+////////////9/AAAAAPz///8f/////////////wMAAACA//////z///////////8fAAAAAPD//////////////////wAAAAAA/v/////7//////////8HAAAAAMD/////x///////////PwAAAAAA+P///x/+//////////8BAAAAAAD/////+f//////////DwAAAAAA4P///////////////38AAAAAAAD8//////f/////////AQAAAAAAAP////+H/////////wMAAAAAAADg////H/z///////8HAAAAAAAAAPz////z////////DwAAAAAAAACA/////////////w8AAAAAAAAAAPD/////5/////8fAAAAAAAAAAAA/v///w//////PwAAAAAAAAAAAMD///8/+P///38AAAAAAAAAAAAA+P///+f/////AAAAAAAAAAAAAAD//////////wEAAAAAAAAAAAAA4P/////P//8BAAAAAAAAAAAAAAD8////H/7/AwAAAAAAAAAAAAAAgP///3/w/wcAAAAAAAAAAAAAAADw////z/8LAAAAAAAAAAAAAAAAAP7/////DwAAAAAAAAAAAAAAAADA/////x8AAAAAAAAAAAAAAAAAAPj///8/AAAAAAAAAAAAAAAAAAAA////fwAAAAAAAAAAAAAAAAAAAOD///8DAAAAAAAAAAAAAAAAAAAA/P//HwAAAAAAAAAAAAAAAAAAAID///8AAAAAAAAAAAAAAAAAAAAA8P//BwAAAAAAAAAAAAAAAAAAAAD+/z8AAAAAAAAAAAAAAAAAAAAAwP//AAAAAAAAAAAAAAAAAAAAAAD4/wMAAAAAAAAAAAAAAAAAAAAAAP8HAAAAAAAAAAAAAAAAAAAAAADgDwAAAAAAAAAAAAAAAAAAAAAAABQAAAAAAAA="
+    },
+    {
+      "id": "pyramid-of-tirana",
+      "name": "Pyramid of Tirana",
+      "bbox": [
+        521,
+        412,
+        114,
+        87
+      ],
+      "mask": "AAAAAAAAAAAEAAAAAAAAAAAAAAAAAHwAAAAAAAAAAAAAAAAA/AcAAAAAAAAAAAAAAAD8/wAAAAAAAAAAAAAAAP7/DwAAAAAAAAAAAAAA+P9/AAAAAAAAAAAAAAD///8BAAAAAAAAAAAAAP///wcAAAAAAAAAAAAA/v//HwAAAAAAAAAAAAD+//9/AAAAAAAAAAAAAPz///8BAAAAAAAAAAAA8P///wcAAAAAAAAAAADw////HwAAAAAAAAAAAND///9/AAAAAAAAAAAAwP////8BAAAAAAAAAADA/////w8AAAAAAAAAAID/////fwAAAAAAAAAAAP//////AwAAAAAAAAAA/v////8fAAAAAAAAAAD8//////8AAAAAAAAAAPj//////wcAAAAAAAAA+P//////fwAAAAAAAADw////////AwAAAAAAAOD///////8fAAAAAAAA4P////////8BAAAAAADA/////////w8AAAAAAIH/////////fwAAAAAAH///////////AwAAAAD+//////////8/AAAAAP7///////////8BAAAA/v///////////w8AAAD8////////////fwAAAP7/////////////DwAA+P//////////////AADg//////////////8PAID///////////////8BAP7//////////////x8A+P///////////////wPg////////////////D4D///////////////8/AP7///////////////8A+P///////////////wPg////////////////D8D///////////////8/gP////////////////8A/////////////////wP8////////////////D/D///////////////8/wP/////////////////A//////////////////f/////////////////3/////////////////9////////////////////9//////////////////f///////////////////////////////////////////////////////////////////////////f/////////////////3/////////////////9////////////////////8//////////////////P/////////////////j/////////////////8f+P///////////////z+A/////////////////wD4////////////////AYD///////////////8DAPj//////////////wcAgP//////////////DwAA+P////////////8HAADg/////////////x8AAAD+////////////HwAAAOD///////////8fAAAAAP///////////z8AAAAA4P//////////HwAAAAAA/v////////8fAAAAAACA/////////wcAAAAAAAD8////////BwAAAAAAAAD+//////8fAAAAAAAAAMD//////z8AAAAAAAAAAED4////PwAAAAAAAAAAAACA4P8/AAAAAAAAAAAAAAAA/j8AAAAAAAAAAAAAAADgPwAAAAAAAAAAAAAAAAA+AAAAAAAAAAAAAAAAACAAAAAAAA=="
+    },
+    {
+      "id": "resurrection-cathedral",
+      "name": "Resurrection Cathedral",
+      "bbox": [
+        161,
+        255,
+        136,
+        154
+      ],
+      "mask": "AIAAAAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAAAAAAAAIABAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAA8AMAAAAAAAAAAAAAAAAAAAD8DwAAAAAAAAAAAAAAAAAAAP4fAAAAAAAAAAAAAAAAAAAA/j8AAAAAAAAAAAAAAAAAAAD/fwAAAAAAAAAAAAAAAAAAgP//AAAAAAAAAAAAAAAAAACA//8AAAAAAAAAAAAAAAAAAMD//wAAAAAAAAAAAAAAAAAAwP//AQAAAAAAAAAAAAAAAADA//8BAAAAAAAAAAAAAAAAAOD//wMAAAAAAAAAAAAAAAAA8P//BwAAAAAAAAAAAAAAAADw//8HAAAAAAAAAAAAAAAAAPD//wcAAAAAAAAAAAAAAAAA8P//BwAAAAAAAAAAAAAAAADw//8HAAAAAAAAAAAAAAAAAPD//wcAAAAAAAAAAAAAAAAA/P//DwAAAAAAAAAAAAAAAAD+//8fAAAAAAAAAAAAAAAAAP7//x8AAAAAAAAAAAAAAAAA/v//HwAAAAAAAAAAAAAAAAD8//8PAAAAAAAAAAAAAAAAAPD//wcAAAAAAAAAAAAAAAAA8P//BwAAAAAAAAAAAAAAAADw//8HAAAAAAAAAAAAAAAAAPD//wcAAAAAAAAAAAAAAAAA8P//BwAAAAAAAAAAAAAAAADw//8HAAAAAAAAAAAAAAAAAPD//wcAAAAAAAAAAAAAAAAA/P//DwAAAAAAAAAAAAAAAAD+//8fAAAAAAAAAAAAAAAAAP7//x8AAAAAAAAAAAAAAAAA/v//HwAAAAAAAAAAAAAAAAD8//8PAAAAAAAAAAAAAAAAAPD//wcAAAAAAAAAAAAAAAAA8P//BwAAAAAAAAAAAAAAAADw//8HAAAAAAAAAMAAAAAAAPD//wcAAAAAAAAAyAAAAAAA8P//BwAAAAAAAADwAAAAAADw//8HAAAAAAAAAMAAAAAAAPD//wcAAAAAAAAAwAEAAAAA/P//DwAAAAAAAMD/PwAAAAD+//8fAAAAAAAA+P//AQAAAP7//x8AAAAAAID///8fAAAA/v//HwAAAAAA8P////8AAAD8//8PAAAAAAD+/////w8AAPD//wcAAAAAgP//////PwAA8P//BwAAAADA//////9/AADw//8HAAAAAPD///////8BAPD//wcAAAAA+P///////wMA8PnnBwAAAAD+////////DwDw8eMHAAAAAP////////8fAPDx4wcAAADA/////////38A8PHjBwAAAOD//////////wDw8eMHAAAA8P//////////AfDx4wcAAADw//////////8B8PHjBwAAAPj//////////wPw8eMHAAAA/P//////////B/Dx4wcAAAD+//////////8P8PHjBwAAAP///////////w/w8eMHQAAA////////////H/Dx4wfwAYD///////////8f8PHjB/wHwP///////////z/w8eMH/w/A////////////P/Dx44f/D8D///////////9/8PHjh/8PwP///////////3/w8eOH/x/g////////////f/Dx44f//+f/////////////8PHjh//////////////////w8eOH//////////////////Dx44f/////////////////8PHjh//////////////////w8eOH//////////////////Dx44f/////////////////8PHjh//////////////////w8eOH////////////////f/Dx44f///////////////9/8PHjh////////////////3/w8eOH////////////////f/Dx44f///////////////9/8PHjh////////////////3/w8eOH////////////////f/Dx44f///////////////9/8PHjh////////////////z/w8eOH////////////////P/Dx44f///////////////8/8PHjh////////////////z/w8eOH////////////////P/Dx44f///////////////8/8PHjh////////////////z/w8eOH////////////////P/Dx44f///////////////8/8PHjh////////////////z/w8eOH////////////////P/Dx44f///////////////8/8PHjh////////////////z/w8eOH////////////////P/Dx44f///////////////8/8PHjh////////////////z/w8eOH////////////////P/D974f///////////////8/8P//h////////////////z/w//+H////////////////P/j//4f///////////////8//v//n////////////////z//////////////////////P/////////////////////8//////////////////////z//////////////////////P/////////////////////8//v///////////////////z/4////////////////////P+D///////////////////8/gP///////////////////z8A/v//////////////////HwD4//////////////////8fAODz/////////////////x8AgOD/////////////////DwAAgP////////////////8HAAAA/v///////////////wcAAAD4////////////////AwAAAOD///////////////8BAAAAgP//////////////fwAAAAAA/v////////////9/AAAAAAD4/////////////z8AAAAAAOD/////////////DwAAAAAAgP////////////8BAAAAAAAA/v//////////HwAAAAAAAAD4//////////8DAAAAAAAAAOD/////////AwAAAAAAAAAAgP///////z8AAAAAAAAAAAAA/v//////PwAAAAAAAAAAAADw//////8/AAAAAAAAAAAAAMD//////z8AAAAAAAAAAAAAAP//////PwAAAAAAAAAAAAAA/P////8/AAAAAAAAAAAAAADw/////z8AAAAAAAAAAAAAAMD/////PwAAAAAAAAAAAAAAAP////8fAAAAAAAAAAAAAAAA/P///wcAAAAAAAAAAAAAAADw////AQAAAAAAAAAAAAAAAMD//0cAAAAAAAAAAAAAAAAAAP//AQAAAAAAAAAAAAAAAAAA/P8AAAAAAAAAAAAAAAAAAADwPwAAAAAAAAAAAAAAAAAAAMAPAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAA="
+    },
+    {
+      "id": "skanderbeg-monument",
+      "name": "Skanderbeg Monument",
+      "bbox": [
+        294,
+        209,
+        73,
+        95
+      ],
+      "mask": "AAAABAAAAAAAAAAAHAAAAAAAAAAAOAAAAAAAAAAA4AAAAAAAAAAAwAEYAAAAAAAAgIN/AAAAAAAAAI7/AAAAAAAAAJz/AQAAAAAAADj/AQAAAAAAACj/AwAAAAAAAPj+BwAAAAAAAPz/DwAAAAAAAPz/HwAAAAAAAPj/PwAAAAAAAPD/fwAAAAAAAOD//wAAAAAAAMD//yEAAAAAAID//+MAAAAAAAD//98DAAAAAAD+//8HAAAAAAD8//8PAAAAAAD4//8/AAAAAADw//9/AAAAAADg////AQAAAADA////BwAAAACA////DwAAAACA////HwAAAAAA////fwAAAAAA/////wAAAAAA/v///wMAAAAA/P///wcAAAAA/P///wcAAAAA+P///wcAAAAA4P///wMAAAAAwP///wcAAAAAgP///x8AAAAAAP///z8AAAAAAP7//38AAAAAAPz///8BAAAAAPj///8DAAAAAPD///8HAAAAAPD///8PAAAAAOD///8fAAAAAMD///8/AAAAAID///9/AAAAAAD+////AAAAAAD4////AQAAAADw////AQAAAADw////AwAAAADw////BwAAAADg////PwAAAADw/////wEAAAD4/////w8AAAD4//////8AAAD8//////8HAAD+//////8/AAD8//////9/AAD4////////AAD4////////AQD8////////BwD4////////PwDw////////fwDw/////////wDw/////////wH4/////////w/w/////////3/g///////////A///////////B///////////j///////////H//////////+f////////////////////////////////////////////////5///////////D///////////H/j/////////D8D/////////DwD+////////BwDw////////AwCA////////AQAA/P//////AQAA4P//////AAAAAP7///9/AAAAAPD///8/AAAAAID///8/AAAAAAD8//8fAAAAAADg//8PAAAAAAAA//8PAAAAAAAA+P8HAAAAAAAAwP8DAAAAAAAAAP4BAAAAAAAAAPABAAAAAAAAAIAAAAAA"
+    },
+    {
+      "id": "tanners-bridge",
+      "name": "Tanners’ Bridge",
+      "bbox": [
+        608,
+        358,
+        84,
+        54
+      ],
+      "mask": "AAAAAMB/AAAAAAAAAACA/w8AAAAAAAAAAP7/AxAAAAAAAAD4/3/gBwAAAAAAwP//D38AAAAAAAD+///4FwAAAAAA8P//3/8HAAAAAMD//////wEAAAAA/v////8/AAAAAPD//////w8AAACA////////HwAAAPz///////8HAADA////////fwAAAP7///////8HAADw/////////wEAgP////////9/AAD8/////////w8AwP//////////AAD+/////////w8A4P///5//////AAD///9/4P//8w8A8P///wP4/x/8AID///8PAP7/AQcA+P//fwCA/x8AAID///8DAOD/AQAA+P//HwAA+B8AAID///8AAAD+AQDg/f//BwAAgA8AgP///z8AAAAgAAD8////AQAAAAAA4P///x8AAAAAAAD+////AAAAAAAA8P///w8AAAAAAAD///9/AAAAAAAA8P///wMAAAAAAAD///8/AAAAAAAA/v///wEAAAAAAPD///8fAAAAAAAA/////wEAAAAAAPD///8fAAAAAAAA/////wMAAAAAAPD///8/AAAAAAAA/////wMAAAAAAOD///8/AAAAAAAA+P///wMAAAAAAAD+/88/AAAAAAAAgP//8AEAAAAAAADg/w8EAAAAAAAAAPj/AAAAAAAAAAAA/w8AAAAAAAAAAMD/AAAAAAAAAAAA8A8AAAAAAAAAAAB8AAAAAAAAAAAAAAEAAAAAAAAA"
+    },
+    {
+      "id": "tirana-clock-tower",
+      "name": "Tirana Clock Tower",
+      "bbox": [
+        527,
+        183,
+        56,
+        130
+      ],
+      "mask": "AAAAEAAAAAAAABAAAAAAAAAQAAAAAAAAEAAAAAAAABAAAAAAAAAQAAAAAAAAOAAAAAAAAP4AAAAAAAD/AQAAAADA/wcAAAAA4P8PAAAAAPj/HwAAAAD8/38AAAAA////AAAAgP///wMAAOD///8HAADw////HwAA/P///z8AAP7///9/AID//////wHA//////8D8P//////D/j//////x/4//////8f4P//////B8D//////wMA//////8AAP//////AABn////5wAAh/3//+EAAAf2/3/gAAAH2P8f4AAAB+D/B+AAAAfw/w/gAAAH/P8/4AAAB/7//+AAAIf////jAADn////7wAY//////8YeP7///9/Hvj//////x/g//////8HwP//////A8D//////wPA//////8DwP//////A8D//////wPA//////8DwP//////A8D//////wPA//////8DwP//////A8D//////wPA//////8DwP//////A8D//////wPA//////8DwP//////A8D//////wPA//////8D3v//////e/7//////3/+//////9//v//////f/7//////3/+//////9///////////////////////////////////////z//////z/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D/D//////w/w//////8P8P//////D+D//////weA//////8BAP7///9/AAD4////HwAA4P///wcAAID///8BAAAA/P9/AAAAAPD/HwAAAADA/wcAAAAAAP8BAAAAAAB8AAAAAAAAEAAAAA=="
+    }
+  ]
+}

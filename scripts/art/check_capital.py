@@ -12,21 +12,20 @@ Renders the scene, finds each landmark's drawn position and painted pixels, and 
 Exit status 1 if anything fails. Read-only for the repository (writes only the optional PNG).
 """
 import functools
-import glob
 import importlib
 import inspect
 import math
-import os
 import sys
 from collections import Counter
+from contextlib import ExitStack
+from pathlib import Path
+from unittest.mock import patch
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, HERE)
-os.chdir(HERE)
-import iso  # noqa: E402
-import build_capitals as bc  # noqa: E402
-from capital_sites import SITES as KNOWN  # noqa: E402
+import iso
+import build_capitals as bc
+from capital_sites import SITES as KNOWN
 
+HERE = Path(__file__).resolve().parent
 MIN_METRES = 120
 # Drawing functions that are part of a larger landmark, not landmarks of their own:
 # Dublin Castle draws its round Record Tower with landmarks_ireland.round_tower.
@@ -46,21 +45,22 @@ HELPERS = {'P', 'seg', 'poly', 'corners', 'facade', 'preview', 'tones', 'palette
            'bateau', 'chequy', 'shield', 'cross', 'lifted', 'helm', 'figure', 'clock'}
 
 
-def main():
-    cap_id = sys.argv[1]
-    mods = [importlib.import_module(os.path.basename(f)[:-3]) for f in sorted(glob.glob('landmarks_*.py'))]
+def render_landmark_calls(capital):
+    """Render with temporary wrappers so the checker and exporter can trace any number of scenes."""
+    mods = [importlib.import_module(path.stem) for path in sorted(HERE.glob('landmarks_*.py'))]
     mods.append(bc)
-    calls, depth, originals = [], [0], {}
+    calls, depth, originals = [], 0, {}
 
     def wrap(modname, name, fn):
         @functools.wraps(fn)
         def inner(*a, **k):
-            top = depth[0] == 0 and a and isinstance(a[0], iso.Scene) and len(a) >= 3
-            depth[0] += 1
+            nonlocal depth
+            top = depth == 0 and len(a) >= 3 and isinstance(a[0], iso.Scene)
+            depth += 1
             try:
                 return fn(*a, **k)
             finally:
-                depth[0] -= 1
+                depth -= 1
                 if top:
                     calls.append((modname, name, a[1:], k))
         return inner
@@ -71,64 +71,77 @@ def main():
             if inspect.isfunction(fn) and fn.__module__ == m.__name__ and name not in HELPERS | capitals:
                 originals[(m.__name__, name)] = fn
     wrapped, site_of = {}, {}
-    for m in mods:
-        for name, fn in list(vars(m).items()):
-            key = (getattr(fn, '__module__', None), name)
-            if key in originals:
-                wrapped.setdefault(key, wrap(key[0], name, originals[key]))
-                setattr(m, name, wrapped[key])
-        if hasattr(m, 'SITES'):   # SITES tuples hold direct references; swap in the wrapped builders
-            new = []
-            for site in m.SITES:
-                key = (site[1].__module__, site[1].__name__)
-                if key in wrapped:
-                    site_of[key] = (site[0], site[3])   # name, real (longitude, latitude)
-                    site = (site[0], wrapped[key]) + tuple(site[2:])
-                new.append(site)
-            m.SITES = new
+    with ExitStack() as patches:
+        for m in mods:
+            for name, fn in list(vars(m).items()):
+                key = (getattr(fn, '__module__', None), name)
+                if key in originals:
+                    if key not in wrapped:
+                        wrapped[key] = wrap(key[0], name, originals[key])
+                    patches.enter_context(patch.object(m, name, wrapped[key]))
+            if hasattr(m, 'SITES'):  # SITES tuples hold direct references to builders.
+                new = []
+                for site in m.SITES:
+                    key = (site[1].__module__, site[1].__name__)
+                    if key in wrapped:
+                        site_of[key] = (site[0], site[3])  # name, real (longitude, latitude)
+                        site = (site[0], wrapped[key]) + tuple(site[2:])
+                    new.append(site)
+                patches.enter_context(patch.object(m, 'SITES', new))
+        image = capital['render']()
+    return image, calls, originals, site_of
 
-    capital = next(c for c in bc.CAPITALS if c['id'] == cap_id)
-    image = capital['render']()
-    if len(sys.argv) > 2:
-        image.save(sys.argv[2])
+
+def measure_landmarks(capital):
+    """Return the rendered scene and its landmark silhouettes in scene pixels."""
+    cap_id = capital['id']
+    image, calls, originals, site_of = render_landmark_calls(capital)
     final = image.convert('RGB').load()
     W, H = image.size
 
     count = Counter(name for _, name, _, _ in calls)
     seen, marks = set(), []
-    for modname, name, args, kw in list(calls):
+    for modname, name, args, kw in calls:
         key = (name, repr(args), repr(sorted(kw.items())))
         if key in seen or count[name] > 3 or name in FILLER or (modname, name) in PARTS:
             continue
         seen.add(key)
-        depth[0] = 1
-        try:
-            # Large canvas: full silhouette (for clipping). Same frame: exact pixels (for hiding),
-            # since some textures are keyed to absolute pixel positions.
-            base = bc.new_scene()
-            big = iso.Scene(W + 400, H + 400, (base.ox + 200, base.oy + 200))
-            originals[(modname, name)](big, *args, **kw)
-            big.paint_objects()
-            same = bc.new_scene()
-            originals[(modname, name)](same, *args, **kw)
-            same.paint_objects()
-        finally:
-            depth[0] = 0
-        big_px, box = big.img.convert('RGB').load(), big.img.convert('RGB').getbbox()
+        # Large canvas: full silhouette (for clipping). Same frame: exact pixels (for hiding),
+        # since some textures are keyed to absolute pixel positions.
+        base = bc.new_scene()
+        big = iso.Scene(W + 400, H + 400, (base.ox + 200, base.oy + 200))
+        originals[(modname, name)](big, *args, **kw)
+        big.paint_objects()
+        same = bc.new_scene()
+        originals[(modname, name)](same, *args, **kw)
+        same.paint_objects()
+        big_rgb = big.img.convert('RGB')
+        big_px, box = big_rgb.load(), big_rgb.getbbox()
         if not box:
             continue
         pixels = {(x - 200, y - 200) for x in range(box[0], box[2]) for y in range(box[1], box[3])
                   if big_px[x, y] != (0, 0, 0)}
         inside = {p for p in pixels if 0 <= p[0] < W and 0 <= p[1] < H}
-        same_px = same.img.convert('RGB').load()
-        hidden = sum(1 for p in inside if same_px[p] != (0, 0, 0) and final[p] != same_px[p])
+        same_rgb = same.img.convert('RGB')
+        same_px = same_rgb.load()
+        painted = {p for p in inside if same_px[p] != (0, 0, 0)}
+        visible = {p for p in painted if final[p] == same_px[p]}
         left, right, bottom = box[0] - 200, box[2] - 200, box[3] - 200
         site = site_of.get((modname, name))
         if not site and name in KNOWN.get(cap_id, {}):  # capitals built before SITES tables
             site = (name, KNOWN[cap_id][name][:2])
-        marks.append({'name': site[0] if site else name, 'real': site[1] if site else None,
-                      'base': ((left + right) / 2, bottom), 'pixels': pixels, 'hidden': hidden,
-                      'clipped': len(pixels) - len(inside)})
+        marks.append({'builder': name, 'name': site[0] if site else name, 'real': site[1] if site else None,
+                      'base': ((left + right) / 2, bottom), 'pixels': pixels, 'visible': visible,
+                      'hidden': len(painted) - len(visible), 'clipped': len(pixels) - len(inside)})
+    return image, marks
+
+
+def main():
+    cap_id = sys.argv[1]
+    capital = next(c for c in bc.CAPITALS if c['id'] == cap_id)
+    image, marks = measure_landmarks(capital)
+    if len(sys.argv) > 2:
+        image.save(HERE / sys.argv[2])
 
     failures = 0
     print(f'{cap_id}: {len(marks)} landmarks')

@@ -175,6 +175,19 @@ The script verifies eight pinned Natural Earth source hashes (land, countries, l
 
 The development dependency footprint is separate from the artwork. A platform build uses its own binaries; these figures are not an installed-app size measurement. The renderer retains the decoded 32 MiB globe texture and 8 MiB board texture and reuses them at every zoom level, plus renderer/transient overhead. Phone measurements remain pending.
 
+## Capital landmark data
+
+Regenerate the hit shapes in `src/data/capital-landmarks/` with the project virtual environment.
+
+```bash
+.venv/bin/python scripts/art/build_capital_landmarks.py
+# Export only the Phase 5 playtest capitals
+.venv/bin/python scripts/art/build_capital_landmarks.py lisbon paris athens
+```
+
+The exporter checks its render against each existing scene PNG and writes only the landmark JSON. The files use the shared geometry from `scripts/art/check_capital.py`. See the exporter docstring for the bounding box and mask format, and `scripts/art/capital_landmark_names.py` for stable IDs and display names.
+The shapes come from the project's original capital art scripts and are distributed under the [repository's MIT license](./LICENSE).
+
 ## Phase 3 design mockups
 
 `scripts/art/phase3_mockups.py` renders the continent (Europe) and country (Malta) design targets in `docs/art/phase3/` from real data, following the [art contract](./docs/art/ART_CONTRACT.md). The app does not load them. The Malta view reads an OpenStreetMap extract, which needs pyosmium, so use the project virtual environment:
