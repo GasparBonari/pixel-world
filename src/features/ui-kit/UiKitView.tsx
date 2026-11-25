@@ -217,7 +217,7 @@ export function UiKitView() {
         <Panel skin="navy">
           <SectionHeader title="Map labels" icon="pin" tone="light" />
           <View style={styles.wrap}>
-            <Chip label="Lisbon" icon="pin" />
+            <Chip label="Lisbon" icon="pin" compact accessibilityLabel="Open Lisbon" onPress={() => setSheet('collapsed')} />
             <Chip label="Europe" detail="18 / 44" skin="navy" />
             <Chip label="Selected" skin="gold" />
           </View>

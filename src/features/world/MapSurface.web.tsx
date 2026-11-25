@@ -57,7 +57,7 @@ export function MapSurface({
       // Keep browser pinch zoom off the map surface even while its gestures are disabled.
       style={{ display: 'flex', flexDirection: 'column', height: '100%', outlineOffset: 4, touchAction: 'none' }}
       onKeyDown={(event) => {
-        if (!enabled) return;
+        if (!enabled || event.target !== event.currentTarget) return;
         const bounds = event.currentTarget.getBoundingClientRect();
         if (['+', '=', '-', '_'].includes(event.key))
           onZoom(

@@ -66,7 +66,7 @@ The native splash and Android adaptive icon background use `Palette.night`. Expo
 | `SectionHeader` | Row title in a panel: icon, title, count, action | `count` like "3 / 5 found" |
 | `Divider` | 1 U rule between rows | |
 | `Ribbon` | Screen or block title banner | `parchment` for titles, `gold` for a featured block. Use `variant="label"` for a compact banner |
-| `Chip` | Non-interactive place names, continent labels and tags | `light` over the map, `navy` with optional `detail`, `gold` selected. Use `compact` where map space is limited |
+| `Chip` | Place names, continent labels and tags | `light` over the map, `navy` with optional `detail`, `gold` selected. Use `compact` where map space is limited. With `onPress`, it has a 48 pt button target and accepts an `accessibilityLabel`. Pass `mapTap` to coordinate the chip and its map's tap, pan and pinch gestures |
 | `ProgressBar` | Segmented green bar with its count | `title`, `value`, `total`, `tone`, optional `icon` to the left. Use `compact` for the title and count in one row. Total 0 shows "Coming soon", never complete |
 | `StepDots` | Short goals ("today 3 / 5") | Pair with a visible count |
 | `SegmentedTabs` | Sections inside a screen (Discover / Find it / Info) | Selected is gold |
@@ -81,7 +81,7 @@ The native splash and Android adaptive icon background use `Palette.night`. Expo
 - **Launch:** `WorldTitle` uses `TitleLayer` for the logo, parchment tagline, and one gold **Explore** button, with the centre open for the spinning globe. The world screen disables map input while the layer is visible. Explore releases input after the exit and eases the globe back to the opening camera. Camera deep links skip the title.
 - **World progress:** after Explore, the Earth overview shows `Countries completed` in a floating navy `Panel` with the globe icon, track and `n / N`. The total comes from catalog countries with released content. A country counts as completed when every checked collectible in its pack has a discovery record. These records last for the current session until P5-07 adds persistence. The count moves to a compact `TopBar` during the zoom toward the continent.
 - **Continent labels:** compact navy `Chip`s follow the globe below zoom 0.6. They show continent names, yield to each other when space is tight, and let map gestures pass through. The launch title leaves the globe clear of labels.
-- **Regional headers:** at continent and country zoom, a floating cream Back button and parchment ribbon name the place under the camera centre. Use a tier label over open water. Compact navy country names appear on the continent board. A selected country gets a gold outline and a gold name chip with a pin where its capital is in view. Its sheet supplies the heading. The capital keeps the usual navy header with Back and the title or find-it prompt.
+- **Regional headers:** at continent and country zoom, a floating cream Back button and parchment ribbon name the place under the camera centre. Use a tier label over open water. Compact navy country names appear on the continent board. A selected country gets a gold outline and its sheet supplies the heading. On the country map, a cream chip with a pin names a visible capital with a scene. Prefer the selected country's capital or the country under the camera centre when its capital is visible. The capital scene keeps the usual navy header with Back and the title or find-it prompt.
 - **Sheets over the map:** `BottomSheet` in the `Screen`'s `overlay`, so the map stays mounted and the camera never resets. Collapsed: title and the one primary action. Expanded: details, at most half the screen.
 - **Finding something:** open a `PixelModal` with `CollectibleCard justFound`. The card's button is the only gold one while it is open.
 - **Undo, not "Are you sure?":** reversible actions (remove a visit, un-wishlist) happen at once and show a notice with Undo. Only irreversible ones (reset all progress) use `ConfirmDialog`.
@@ -95,7 +95,7 @@ The native splash and Android adaptive icon background use `Palette.night`. Expo
 
 Per [PROJECT_VISION.md](../../PROJECT_VISION.md): three tabs, **World** (the map), **Quests**, **Passport**. The collection lives inside Passport. Country and collectible details open as sheets over the map.
 
-At country zoom, tap a country with a capital scene to open its sheet. Tap open sea or press Close to clear the selection. Explore focuses the capital on the same map. Back restores the previous country view after Explore. From a country or continent, Back zooms out around the current location.
+At country zoom, tap the capital label to enter its scene or keep pinching toward it to zoom in. Tap the country to open its sheet, or tap open sea or press Close to clear the selection. The label and the sheet's Explore button focus the capital on the same map, and Back after either action restores the previous country view. From a country or continent, Back zooms out around the current location.
 
 `GameTabs` uses the SDK 58 custom tabs API from `expo-router/ui`. Its hidden `TabList` registers the three routes. The visible `TabBar` uses `TabTrigger asChild` for each pixel button and sits inside the bottom safe area. The title reveals the bar after Explore finishes the launch exit. Camera deep links go directly to World with the tabs.
 

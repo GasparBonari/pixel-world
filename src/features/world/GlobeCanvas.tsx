@@ -30,6 +30,7 @@ import { WorldReadyContext } from '@/features/navigation/GameTabs';
 import { ChallengePrompt } from '@/ui';
 import { boardCountryIndex } from './board-country-lookup';
 import { Birds } from './Birds';
+import { CapitalLabel } from './CapitalLabel';
 import { ContinentLabels } from './ContinentLabels';
 import { CountryFerry } from './CountryFerry';
 import { CountryLabels } from './CountryLabels';
@@ -290,9 +291,20 @@ function GlobeScene({
               />
             ))}
           </Canvas>
+          {!showTitle && (
+            <CapitalLabel
+              viewport={viewport}
+              camera={camera}
+              snapshot={snapshot}
+              preferredId={navigation.preferredCapitalId}
+              selected={!!navigation.selection}
+              mapTap={{ gesture: tap, suppressed: suppressTap }}
+              onExplore={navigation.focusCapital}
+            />
+          )}
         </MapSurface>
         {!showTitle && earthOverview && <ContinentLabels viewport={viewport} camera={camera} snapshot={snapshot} />}
-        <CountryLabels viewport={viewport} camera={camera} snapshot={snapshot} selection={navigation.selection} />
+        <CountryLabels viewport={viewport} camera={camera} snapshot={snapshot} />
       </View>
       {focused && recentFind && (
         <FoundLandmarkDialog

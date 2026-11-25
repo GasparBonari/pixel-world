@@ -6,6 +6,7 @@ import {
   getSelectableCountry,
   getWorldTier,
   selectCountryAtTap,
+  type SelectableCountry,
 } from '../country-sheet/country-selection';
 import { boardContinentAt, boardCountryAt } from './board-country-lookup';
 import labels from '../../data/country-labels.json';
@@ -78,6 +79,8 @@ export function useWorldNavigation(
   const regional = !active && snapshot.zoom >= CONTINENT_ZOOM_START;
   const centerId = regional ? boardCountryAt(snapshot.longitude, snapshot.latitude) : null;
   const center = centerId ? labelsById.get(centerId) : undefined;
+  const preferredCapitalId = selection?.capital.id ?? (tier === 'country' && centerId
+    ? getSelectableCountry(centerId)?.capital.id : undefined);
   let regionalTitle: string | undefined;
   if (regional && tier === 'country') regionalTitle = center?.name ?? 'Country map';
   else if (regional) {
@@ -85,14 +88,16 @@ export function useWorldNavigation(
     regionalTitle = continent === 'Australia' ? 'Oceania' : continent ?? 'Continent map';
   }
 
-  function explore() {
-    if (!selection) return;
+  function focusCapital({ id, longitude, latitude }: Pick<SelectableCountry['capital'], 'id' | 'longitude' | 'latitude'>) {
     const current = camera.get();
     if (getWorldTier(current) !== 'country') return;
-    const { id, longitude, latitude } = selection.capital;
     touch();
     countryCamera.current = current;
     camera.set({ longitude, latitude, zoom: CAPITAL_ZOOM.full, capitalId: id });
+  }
+
+  function explore() {
+    if (selection) focusCapital(selection.capital);
   }
 
   function back() {
@@ -115,7 +120,7 @@ export function useWorldNavigation(
   }
 
   return {
-    snapshot, selection, capitalName, regionalTitle, clearSelection, selectAt, reset, explore,
+    snapshot, selection, capitalName, regionalTitle, preferredCapitalId, clearSelection, selectAt, reset, explore, focusCapital,
     back: tier !== 'overview' || regional ? back : undefined,
     backLabel: active ? 'Back to country' : tier === 'country' ? 'Back to continent' : 'Back to Earth',
   };

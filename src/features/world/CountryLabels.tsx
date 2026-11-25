@@ -3,7 +3,6 @@ import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reani
 
 import { Size, Space, U, px } from '@/constants/theme';
 import labels from '@/data/country-labels.json';
-import type { SelectableCountry } from '@/features/country-sheet/country-selection';
 import { Chip } from '@/ui';
 
 import { COUNTRY_ZOOM, globePoint, type GlobeCamera, type GlobeViewport } from './globe-camera';
@@ -13,30 +12,16 @@ type Props = {
   viewport: GlobeViewport;
   camera: SharedValue<GlobeCamera>;
   snapshot: GlobeCamera;
-  selection?: SelectableCountry;
 };
 type PlaceLabel = { name: string; longitude: number; latitude: number };
 
 const HALF_WIDTH = px(34);
 const HALF_HEIGHT = px(6);
 const HEADER_SPACE = Size.touch + 2 * Space.md;
-const SHEET_SPACE = px(78);
 const LABEL_LIMIT = 8;
 const RIM_DEPTH = 0.25;
 
-export function CountryLabels({ snapshot, camera, viewport, selection }: Props) {
-  if (selection) {
-    return (
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <CountryLabel
-          place={{ ...selection.capital, name: selection.country.name }}
-          camera={camera}
-          viewport={viewport}
-          selected
-        />
-      </View>
-    );
-  }
+export function CountryLabels({ snapshot, camera, viewport }: Props) {
   if (snapshot.zoom < CONTINENT_ZOOM_START || snapshot.zoom >= COUNTRY_ZOOM.in) return null;
 
   const visible: (typeof labels)[number][] = [];
@@ -61,32 +46,29 @@ export function CountryLabels({ snapshot, camera, viewport, selection }: Props) 
   );
 }
 
-function CountryLabel({ camera, viewport, place, selected = false }: {
+function CountryLabel({ camera, viewport, place }: {
   camera: SharedValue<GlobeCamera>;
   viewport: GlobeViewport;
   place: PlaceLabel;
-  selected?: boolean;
 }) {
   const { longitude, latitude, name } = place;
   const position = useAnimatedStyle(() => {
     const current = camera.get();
     const { x, y, depth } = globePoint(longitude, latitude, current, viewport);
-    const atTier = selected
-      ? current.zoom >= COUNTRY_ZOOM.in && current.zoom < COUNTRY_ZOOM.max
-      : current.zoom >= CONTINENT_ZOOM_START && current.zoom < COUNTRY_ZOOM.in;
+    const atTier = current.zoom >= CONTINENT_ZOOM_START && current.zoom < COUNTRY_ZOOM.in;
     const visible = atTier && depth >= RIM_DEPTH && y >= HEADER_SPACE &&
-      y < viewport.height - (selected ? SHEET_SPACE : HALF_HEIGHT) && x >= 0 && x <= viewport.width;
+      y < viewport.height - HALF_HEIGHT && x >= 0 && x <= viewport.width;
     return {
       opacity: visible ? 1 : 0,
       transform: [
         { translateX: Math.min(viewport.width - 2 * HALF_WIDTH, Math.max(0, Math.round(x / U) * U - HALF_WIDTH)) },
-        { translateY: Math.round(y / U) * U - (selected ? Size.icon + Space.sm : HALF_HEIGHT) },
+        { translateY: Math.round(y / U) * U - HALF_HEIGHT },
       ],
     };
   });
   return (
     <Animated.View style={[styles.label, position]}>
-      <Chip skin={selected ? 'gold' : 'navy'} label={name} icon={selected ? 'pin' : undefined} compact />
+      <Chip skin="navy" label={name} compact />
     </Animated.View>
   );
 }

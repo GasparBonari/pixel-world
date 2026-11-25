@@ -96,7 +96,7 @@ The Earth overview takes its brighter cyan rim, ochre desert and navy star field
 ## 3a. Country and capital tiers (decided 10 November 2026)
 
 - **Country tier** (zoom 4.4–5.0 fade-in, up to 6.4 over a covered country): built by `scripts/art/build_map_icons.py` from Natural Earth populated places. **One sprite per place** (20 November 2026; previously castles and churches stood among houses, which crowded small neighbouring countries).
-  - The capital is a walled town crowned with a **gold star**, the map symbol for a capital.
+  - The capital is a walled town crowned with a **gold star**, the map symbol for a capital. A tappable city name sits near a visible capital at country zoom and clears when the capital scene opens. See the [UI kit navigation](../ui/UI_KIT.md#navigation).
   - The next two cities are churches.
   - Other cities, at least 75 km apart (up to 9 in all), alternate between a church and a house.
   - **Building families** (20 November 2026): each country draws its capital, churches and houses in one regional family (`FAMILY` in `build_map_icons.py`, palettes and forms in `sprites.py`), so neighbouring regions look different:

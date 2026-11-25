@@ -135,7 +135,7 @@ To start directly in a browser:
 npm run web
 ```
 
-Open [Portugal at country zoom](http://localhost:8081/?lon=-8.5&lat=39.5&zoom=5) and tap the country to open its sheet. The title toggles the landmark row. **Explore Lisbon** opens the capital, **Back to country** restores the previous map view, and **Back to continent** zooms out around the current location. Tap open sea or press Close to clear the selection. On web, focus the map and use the arrow keys to pan, plus or minus to zoom, and Enter to select the centered country.
+Open [Portugal at country zoom](http://localhost:8081/?lon=-8.5&lat=39.5&zoom=5). Tap the **Lisbon** label or zoom toward it to enter the capital. Tap the country to open its sheet. The title toggles the landmark row, and **Explore Lisbon** also opens the capital. **Back to country** restores the previous map view after using the label or Explore, and **Back to continent** zooms out around the current location. Tap open sea or press Close to clear the selection. On web, focus the map and use the arrow keys to pan, plus or minus to zoom, and Enter to select the centered country.
 
 At full zoom in [Lisbon](http://localhost:8081/?lon=-9.1365&lat=38.71&zoom=7), [Paris](http://localhost:8081/?lon=2.3522&lat=48.8566&zoom=7), or [Athens](http://localhost:8081/?lon=23.7275&lat=37.9838&zoom=7), the top bar names the landmark to find. Pan around the scene and tap the landmark itself. Three misses on that prompt reveal an area hint. A find opens a card with a scene crop, a checked fact and its source. Close the card to get the next prompt. Finds update the country sheet for the current app session. On web, Enter tries the point at the center of the focused map.
 
