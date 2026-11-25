@@ -22,7 +22,7 @@ const { longitudeLatitudeToWorld, worldToLongitudeLatitude, MAX_LATITUDE } =
   await loadLogic('projection');
 const { constrainCamera, initialCamera, panCamera, zoomCamera } = await loadLogic('camera');
 const { ImageCache } = await loadLogic('image-cache');
-const { globePoint, globeLocation, rotateGlobe, zoomGlobe, MAX_GLOBE_ZOOM, constrainGlobe } =
+const { globePoint, globeLocation, globeRadius, rotateGlobe, zoomGlobe, MAX_GLOBE_ZOOM, constrainGlobe } =
   await loadLogic('globe-camera');
 
 const viewport = { width: 390, height: 360 };
@@ -115,6 +115,17 @@ test('spinning wraps longitude, limits tilt, and zoom preserves its surface anch
   const next = zoomGlobe(camera, 1.5, point.x, point.y, viewport);
   const projected = globePoint(before.longitude, before.latitude, next, viewport);
   assert.ok(Math.hypot(projected.x - point.x, projected.y - point.y) < 0.1);
+});
+
+test('the Earth framing grows into the board without a scale jump', () => {
+  for (const view of [{ width: 390, height: 778 }, { width: 1024, height: 700 }]) {
+    const opening = globeRadius(view, 0);
+    assert.ok(opening <= view.width * 0.45 && opening <= view.height * 0.34);
+    assert.ok(globeRadius(view, 0.3) > opening);
+    assert.ok(globeRadius(view, 0.6) > globeRadius(view, 0.3));
+    assert.ok(globeRadius(view, 0.6) - globeRadius(view, 0.5999) < 0.1);
+    assert.equal(globeRadius(view, 2.5), Math.min(view.width, view.height) * 0.41 * 2 ** 2.5);
+  }
 });
 
 test('country zoom stays on the same globe projection beyond the previous handoff', () => {

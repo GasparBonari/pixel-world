@@ -1,6 +1,6 @@
 # Pixel UI Kit — the interface contract
 
-Status: **v1.2, 25 November 2026.** This covers DEVELOPMENT_PLAN tasks P6-01 (tokens), P6-03 (components), P6-04 (`/ui-kit` route), and P6-10 (title layer). v1.2 adds the launch overlay for the live globe. What is still missing, and which phase adds it, is in [Roadmap](#roadmap-what-the-kit-does-not-have-yet). Map art follows [ART_CONTRACT.md](../art/ART_CONTRACT.md). Everything drawn *over* the map follows this file.
+Status: **v1.3, 25 November 2026.** This covers DEVELOPMENT_PLAN tasks P6-01 (tokens), P6-03 (components), P6-04 (`/ui-kit` route), P6-10 (title layer), and P7-01 (tabs and World progress). What is still missing, and which phase adds it, is in [Roadmap](#roadmap-what-the-kit-does-not-have-yet). Map art follows [ART_CONTRACT.md](../art/ART_CONTRACT.md). Everything drawn *over* the map follows this file.
 
 Every agent (Codex, Claude) and every human building interface reads this before writing UI. The rules are enforced by `tests/ui-kit.test.mjs`; `npm test` fails when they are broken.
 
@@ -47,9 +47,9 @@ The native splash and Android adaptive icon background use `Palette.night`. Expo
 
 | Component | Use it for | Notes |
 | --- | --- | --- |
-| `Screen` | The outer layout of every screen | `header` (a `TopBar`), `footer` (the `TabBar`), `overlay` (a `BottomSheet`), `scroll`, `background` `night`/`space`/`none`. Use `fullBleed` with `scroll={false}` for a full-viewport scene with an overlaid header |
+| `Screen` | The outer layout of every screen | `header` (usually a `TopBar`), `footer`, `overlay` (a `BottomSheet`), `scroll`, `background` `night`/`space`/`none`. Use `fullBleed` with `scroll={false}` for a scene that fills the tab viewport with an overlaid header. `floatingHeader` insets that header over the scene. Use `bottomInset={false}` when the navigator already reserves the bottom safe area |
 | `TitleLayer` | Launch title over a live scene | Put it in the full-bleed `Screen` overlay. Pass the logo asset, label and dimensions in artwork pixels, the tagline, and `onExplore`. The callback runs at the end of the stepped exit, or immediately with reduced motion |
-| `TopBar` | The thin navy bar at the top | `onBack` with optional `backLabel`, `title` or progress as children, `actions` on the right |
+| `TopBar` | The thin navy bar at the top | `onBack` with optional `backLabel`, `title` or progress as children, `actions` on the right. `compact` fits a single line of text |
 | `ChallengePrompt` | Find-it prompt in the capital `TopBar` | `title`, optional `feedback`, `misses` to replay the whole-pixel shake with `useSteps`, `complete` for the green check and completion text. Reduce motion keeps the bar still |
 | `BottomSheet` | Country and place details over the map | Controlled `expanded`/`onExpandedChange`, `onClose`, `action` (the screen's one primary button). Tap or swipe the header. Expanded details scroll within half the screen. Put it in `Screen`'s `overlay` |
 | `PixelModal` | A centred dialog over the dimmed world | `visible`, `onClose` (backdrop and Android back), `label`. Pops in with a stepped scale. The dialog fits inside the safe area and its contents scroll when tall |
@@ -66,20 +66,21 @@ The native splash and Android adaptive icon background use `Palette.night`. Expo
 | `SectionHeader` | Row title in a panel: icon, title, count, action | `count` like "3 / 5 found" |
 | `Divider` | 1 U rule between rows | |
 | `Ribbon` | Screen or block title banner | `parchment` for titles, `gold` for a featured block. Use `variant="label"` for a compact banner |
-| `Chip` | Non-interactive labels: place names, continent counts, tags | `light` over the map, `navy` with `detail`, `gold` selected |
-| `ProgressBar` | Segmented green bar with its count | `title`, `value`, `total`, `tone`. Total 0 shows "Coming soon", never complete |
+| `Chip` | Non-interactive place names, continent labels and tags | `light` over the map, `navy` with optional `detail`, `gold` selected. Use `compact` where map space is limited |
+| `ProgressBar` | Segmented green bar with its count | `title`, `value`, `total`, `tone`, optional `icon` to the left. Use `compact` for the title and count in one row. Total 0 shows "Coming soon", never complete |
 | `StepDots` | Short goals ("today 3 / 5") | Pair with a visible count |
 | `SegmentedTabs` | Sections inside a screen (Discover / Find it / Info) | Selected is gold |
-| `TabBar` | The app's bottom tabs | Presentational; see Navigation |
+| `TabBar` | The app's bottom tabs | Matches item keys to the router's registered `TabTrigger` names and displays the focused tab. `/ui-kit` supplies local selection props to preview the same buttons |
 | `CollectibleTile` | Landmark/wildlife/landscape cards | `state` `found` (gold + check), `missing` (dimmed, no badge), `locked` (lock, name hidden) |
 | `Badge` | Icon pinned to a tile corner | |
 | `QuestRow` | One challenge in a list | `done` shows a green check box, `progress` like "1 / 3 animals" |
 
 ## Screen recipes
 
-- **Every screen** is a `Screen`. The map uses `background="none"`, `scroll={false}`, and `fullBleed` so overlay controls leave the map's viewport unchanged. Other screens use `night`. Content sits on `Panel`s.
+- **Every screen** is a `Screen`. The map uses `background="none"`, `scroll={false}`, and `fullBleed` so headers and sheets lay over the map inside the tab viewport. Other screens use `night`. Content sits on `Panel`s.
 - **Launch:** `WorldTitle` uses `TitleLayer` for the logo, parchment tagline, and one gold **Explore** button, with the centre open for the spinning globe. The world screen disables map input while the layer is visible. Explore releases input after the exit and eases the globe back to the opening camera. Camera deep links skip the title.
-- **Top bar:** `TopBar` with a back button and one `ProgressBar tone="light"` (overall progress) or a title. No avatar, currency, or level.
+- **World progress:** after Explore, the Earth overview shows `Countries completed` in a floating navy `Panel` with the globe icon, track and `n / N`. The total comes from catalog countries with released content. A country counts as completed when every checked collectible in its pack has a discovery record. These records last for the current session until P5-07 adds persistence. Further in, the count moves to a compact `TopBar`. At country and capital zoom, that position holds Back and the title or find-it prompt.
+- **Continent labels:** compact navy `Chip`s follow the globe below zoom 0.6. They show continent names, yield to each other when space is tight, and let map gestures pass through. The launch title leaves the globe clear of labels.
 - **Sheets over the map:** `BottomSheet` in the `Screen`'s `overlay`, so the map stays mounted and the camera never resets. Collapsed: title and the one primary action. Expanded: details, at most half the screen.
 - **Finding something:** open a `PixelModal` with `CollectibleCard justFound`. The card's button is the only gold one while it is open.
 - **Undo, not "Are you sure?":** reversible actions (remove a visit, un-wishlist) happen at once and show a notice with Undo. Only irreversible ones (reset all progress) use `ConfirmDialog`.
@@ -95,7 +96,11 @@ Per [PROJECT_VISION.md](../../PROJECT_VISION.md): three tabs, **World** (the map
 
 At country zoom, tap a country with a capital scene to open its sheet. Tap open sea or press Close to clear the selection. Explore focuses the capital on the same map. Back restores the previous country view after Explore, and Back at country zoom opens the continent view around the current location.
 
-When P7-01 builds the tabs, use the SDK 58 custom tabs API from `expo-router/ui` (`Tabs`, `TabSlot`, `TabList`, `TabTrigger`). Render the kit's `TabBar` look inside `TabList` with each item as a `TabTrigger asChild`. The map must stay mounted between tabs. Read <https://docs.expo.dev/router/advanced/custom-tabs/> before writing it; the API is experimental and changes between SDKs.
+`GameTabs` uses the SDK 58 custom tabs API from `expo-router/ui`. Its hidden `TabList` registers the three routes. The visible `TabBar` uses `TabTrigger asChild` for each pixel button and sits inside the bottom safe area. The title reveals the bar after Explore finishes the launch exit. Camera deep links go directly to World with the tabs.
+
+`TabSlot` keeps visited tabs laid out at full size and hides their views when inactive. This keeps the Skia drawing surface sized while World pauses its animation clock. The same canvas, camera, country sheet and find-it state are available on return. Quests and Passport show short previews of upcoming content, and Passport counts landmarks found in the current session.
+
+The tabs API is experimental. Read the matching SDK reference before changing the navigator. [Expo custom tabs](https://docs.expo.dev/router/advanced/custom-tabs/)
 
 ## Motion, sound, haptics
 
@@ -138,7 +143,6 @@ Add each when its phase starts, following "Adding a component". Do not style the
 | Needed for | Missing | Phase |
 | --- | --- | --- |
 | Launch | A gesture hint that stays until the player acts | P6-11 |
-| Tabs | Wiring `TabBar` to `expo-router/ui` `TabTrigger`s with the map kept mounted; a thin progress top bar for the World tab | P7-01 |
 | Passport and travel | `Stamp`, stamp grid, list rows (visited places), wishlist toggle, date picker for visits, search field for the home country | P7-04 to P7-06 |
 | Settings | `Toggle` (mute, reduce motion), link rows (attribution) | P6-06, P8 |
 | Game feel | Stamp slam, clouds clearing, haptics on primary presses and finds, sounds | P6-06, P7-02 |

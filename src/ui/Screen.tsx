@@ -10,6 +10,8 @@ import { PixelText } from './PixelText';
 export type ScreenProps = PropsWithChildren<{
   /** Fixed at the top, under the status bar: usually a `TopBar`. */
   header?: ReactNode;
+  /** Give a framed header in a full-bleed scene space around it. */
+  floatingHeader?: boolean;
   /** Fixed at the bottom, above the home indicator: usually the `TabBar`. */
   footer?: ReactNode;
   /** Drawn over the body, between header and footer: a `BottomSheet`, notices pinned to a screen. */
@@ -18,6 +20,8 @@ export type ScreenProps = PropsWithChildren<{
   scroll?: boolean;
   /** Let a non-scrolling scene fill the screen, with the header over it. */
   fullBleed?: boolean;
+  /** Set false when an outer navigator already reserves the bottom safe area. */
+  bottomInset?: boolean;
   /**
    * night: the night-sea colour, for Quests, Passport and other non-map screens.
    * none: transparent, for content drawn over the map.
@@ -35,25 +39,31 @@ const Backgrounds = { night: Palette.night, space: Palette.space, none: 'transpa
  */
 export function Screen({
   header,
+  floatingHeader = false,
   footer,
   overlay,
   scroll = true,
   fullBleed = false,
+  bottomInset = true,
   background = 'night',
   contentStyle,
   children,
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
+  const bottom = bottomInset ? insets.bottom : 0;
   const sides = { paddingLeft: insets.left, paddingRight: insets.right };
   const column = fullBleed && !scroll
     ? contentStyle
-    : [styles.column, !footer && { paddingBottom: insets.bottom + Space.lg }, contentStyle];
+    : [styles.column, !footer && { paddingBottom: bottom + Space.lg }, contentStyle];
+  const floating = fullBleed && floatingHeader;
 
   return (
     <View style={[styles.root, { backgroundColor: Backgrounds[background] }]}>
       {header ? (
-        <View style={[styles.header, fullBleed && styles.overlaidHeader, sides, { paddingTop: insets.top }]}>
-          {header}
+        <View
+          pointerEvents={floating ? 'box-none' : undefined}
+          style={[!floating && styles.header, fullBleed && styles.overlaidHeader, sides, { paddingTop: insets.top }]}>
+          {floating ? <View style={styles.floatingHeader} pointerEvents="box-none">{header}</View> : header}
         </View>
       ) : (
         !fullBleed && <View style={{ height: insets.top }} />
@@ -68,13 +78,13 @@ export function Screen({
         )}
         {overlay && (
           <View
-            style={[StyleSheet.absoluteFill, fullBleed && sides, !footer && { bottom: insets.bottom }]}
+            style={[StyleSheet.absoluteFill, fullBleed && sides, !footer && { bottom }]}
             pointerEvents="box-none">
             {overlay}
           </View>
         )}
       </View>
-      {footer && <View style={[styles.footer, sides, { paddingBottom: insets.bottom }]}>{footer}</View>}
+      {footer && <View style={[styles.footer, sides, { paddingBottom: bottom }]}>{footer}</View>}
     </View>
   );
 }
@@ -86,6 +96,8 @@ export type TopBarProps = PropsWithChildren<{
   backLabel?: string;
   /** A screen title; omit when the bar holds progress instead. */
   title?: string;
+  /** Use the height of the content for a one-line label or count. */
+  compact?: boolean;
   /** Right-side controls (an IconButton for settings or help). */
   actions?: ReactNode;
 }>;
@@ -94,9 +106,9 @@ export type TopBarProps = PropsWithChildren<{
  * The thin navy bar at the top of a screen: back, title or progress (children), actions.
  * Keep it to one line; no avatars, currencies, or levels.
  */
-export function TopBar({ onBack, backLabel = 'Back', title, actions, children }: TopBarProps) {
+export function TopBar({ onBack, backLabel = 'Back', title, compact, actions, children }: TopBarProps) {
   return (
-    <View style={styles.bar}>
+    <View style={[styles.bar, !compact && styles.barHeight]}>
       {onBack && <IconButton icon="back" accessibilityLabel={backLabel} onPress={onBack} />}
       <View style={styles.fill}>
         {title && (
@@ -128,6 +140,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Frames.navy.highlight,
   },
   overlaidHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 },
+  floatingHeader: { width: '100%', maxWidth: Size.maxContentWidth, alignSelf: 'center', padding: Space.md },
   footer: { backgroundColor: Palette.navyDeep },
   bar: {
     flexDirection: 'row',
@@ -135,6 +148,6 @@ const styles = StyleSheet.create({
     gap: Space.md,
     paddingHorizontal: Space.lg,
     paddingVertical: Space.sm,
-    minHeight: Size.touch + Space.lg,
   },
+  barHeight: { minHeight: Size.touch + Space.lg },
 });

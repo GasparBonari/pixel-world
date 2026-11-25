@@ -90,13 +90,15 @@ So the shallow North Sea, Adriatic, Baltic and Sunda Shelf read lighter, and the
 
 | Scale | Approx. ground per art pixel | Data | New at this scale |
 | --- | --- | --- | --- |
-| Earth (built) | varies over the sphere | Natural Earth 1:10m land and lakes, 1:50m borders | Sphere shading, clouds, atmosphere, space |
+| Earth (built) | varies over the sphere | Natural Earth 1:10m land and lakes, 1:50m borders, selected ranges from the continent atlas | Daylit Atlantic opening, deep blue ocean, turquoise coasts, layered clouds, a cyan atmosphere, and sparse terrain sprites |
 | Continent | ~20 km | + Natural Earth mountain ranges (scalerank ≤ 4) | Night sea, raised coasts, puzzle-piece countries, mountain and tree icons, selection glow |
 | Country | ~0.3 km (Malta) | OpenStreetMap extract: coastline, land use, towns, ferries | Field patchwork, woods, houses and castles, sailboats |
 | Country (Portugal) | ~1–3 km | Natural Earth populated places | One building per real city: a walled capital crowned with a gold star, churches (or mosques) and houses at towns in the country's building family, plus trees and boats, revealed in zoom steps |
 | Capital (Lisbon, Madrid, Paris, Berlin, Amsterdam, Brussels, London, Dublin, Rome, Copenhagen, Stockholm, Oslo, Helsinki, Reykjavík, Bern, Vienna, Valletta, Prague, Warsaw, Luxembourg City, Bratislava, Budapest, Tallinn, Riga, Vilnius, Ljubljana, Zagreb, Sarajevo, Belgrade, Podgorica, Tirane, Skopje, Athens, Bucharest, Ankara, Andorra la Vella, Sofia, Chișinău, Minsk, Pristina, Kyiv, Moscow, Nicosia, Vaduz) | illustrated, not to scale | Curated real landmarks in their real relative positions | Isometric diorama in the concept image's style; see §3a |
 
 All scales use the globe's orthographic projection, so zooming in keeps the same sphere and its curvature fades on its own. There is never a switch to a separate flat map. **Decided:** the globe's daytime ocean darkens gradually into the night sea while zooming in. In the app, one shader blends the globe into the board between zoom 1.5 and 2.5. Terrain pixels are 3 points at every zoom, so the pixel grid never changes size. Icons fade in over the second half of the blend.
+
+The Earth overview takes its brighter cyan rim, ochre desert and navy star field from the [Earth UI reference](../ui/reference/world-globe.webp). The opening globe uses up to 90% of the viewport width and 68% of its height, easing into the standard map scale by zoom 0.6. Clouds and their shadows stay within the globe's silhouette. A small draw from the existing map atlas uses sourced locations for mountain and dune sprites. On phones these sprites use one screen point per source pixel. They fade away by zoom 0.6. Continent names are screen-space chips, projected from interior label positions on the Natural Earth land mask.
 
 ## 3a. Country and capital tiers (decided 10 November 2026)
 
@@ -352,16 +354,17 @@ P5-03 uses the sheet title to indicate country selection. A tap uses the globe p
 The world moves a little on its own, like a game's idle scene. Code: `src/features/world/motion.ts` (timing rules), `use-world-clock.ts` (the clock), the `time` uniform in `globe-shader.ts` and `space-shader.ts`.
 
 - **One clock, pixel-art frame rate.** Every animation reads one `time` value that advances in whole frames at **12 per second**. The scene redraws only when it ticks, so an idle screen costs 12 redraws a second, not 60; gestures still redraw at the display rate.
+- **Tab focus.** The clock pauses while Quests or Passport is open and resumes from the same time when World is visible again. Leaving World restarts the idle spin delay so the player returns to the same orientation.
 - **Stepped, never smooth.** Sprites change frame, positions move in whole pixels and effects switch between a few tones. Nothing slides between pixels.
 - **Fixed to the world.** Anything on the planet (clouds, waves) moves in longitude and latitude, so panning never makes it shimmer. Space effects are fixed to the screen, like a distant backdrop.
 - **Reduce motion.** With the system setting on, the clock stays at 0, the planet holds its orientation, and every effect shows its still frame.
 - **Space and planet (done):**
   - **Idle spin.** When the planet first appears it eases (over 2 seconds) straight into turning west to east at 3° a second, one turn in two minutes. After a touch, drag, scroll, key or reset it waits 3 seconds, then eases in again. The clock starts only once the planet is on screen, so a slow load never turns it away from its opening view. Any input stops it at once. The spin is full at planet zoom and fades out by zoom 1.5, where the continent board takes over.
   - **Title hand-off.** The planet uses that idle spin behind the launch title. After Explore, the same clock eases it back to the opening longitude in stepped frames. Map input can interrupt the ease. Reduce motion keeps the planet still and cuts directly to the opening view.
-  - **Weather.** Clouds and their shadows drift east, once around the planet in 15 minutes. Ocean wave highlights drift east more slowly.
+  - **Weather.** Clouds and their shadows drift east across Earth's surface, once around the planet in 15 minutes. Ocean wave highlights drift east more slowly.
   - **Day and night.** A simulated six-minute solar day moves a stepped twilight band and dims the night-side atmosphere. Warm lights mark major Natural Earth populated places, with brightness based on population and dimmed beneath clouds. Reduce motion keeps the opening solar position.
   - **Polar auroras.** Green and teal curtains run for a few seconds in each 28-second cycle, staggered between the poles and visible only on the night side. Reduce motion hides them. Both the auroras and solar lighting fade out before the continent board.
-  - **Stars.** About a third of the small stars twinkle with a brief dip, each at its own rhythm; the gold stars' rays grow for a moment, then rest shorter.
+  - **Stars.** About a third of the small stars twinkle with a brief dip, each at its own rhythm. The brightest stars have blue or gold rays that grow for a moment, then rest shorter.
   - **Shooting star.** Every 11 seconds, a one-pixel diagonal streak with a plus-shaped head and a fading tail crosses the upper sky for three quarters of a second, starting somewhere new each time. It passes behind the planet and the moon.
   - **Satellite.** Floats in a slow 36-second loop in whole pixels, a sunlight glint sweeps across its solar arrays, and its antenna beacon blinks once a second. A full orbit was rejected: the space layer is drawn only around the planet, so a satellite crossing in front of it would vanish as if behind it.
 - **Continent board and its icons (done):**

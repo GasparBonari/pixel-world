@@ -3,6 +3,10 @@ export type GlobeViewport = { width: number; height: number };
 // 32x: continent scale (~20 km per terrain pixel at 2.6) with room to look closer. Countries and
 // capitals with detail allow more (COVERAGE).
 export const MAX_GLOBE_ZOOM = 5;
+/** Above this zoom the globe no longer fits as an overview with continent labels. */
+export const EARTH_OVERVIEW_END = 0.6;
+export const EARTH_WIDTH_RADIUS_SHARE = 0.45;
+export const EARTH_HEIGHT_RADIUS_SHARE = 0.34;
 
 /** Zoom tiers beyond the continent board (ART_CONTRACT.md): a country's buildings, then its capital. */
 export const COUNTRY_ZOOM = { in: 4.4, full: 5.0, max: 6.4 };
@@ -102,9 +106,12 @@ export function maxZoomAt(longitude: number, latitude: number) {
   return max;
 }
 
-export function globeRadius(viewport: GlobeViewport) {
+export function globeRadius(viewport: GlobeViewport, zoom: number) {
   'worklet';
-  return Math.min(viewport.width, viewport.height) * 0.41;
+  const base = Math.min(viewport.width, viewport.height) * 0.41;
+  const opening = Math.min(viewport.width * EARTH_WIDTH_RADIUS_SHARE, viewport.height * EARTH_HEIGHT_RADIUS_SHARE);
+  const overview = Math.max(0, 1 - zoom / EARTH_OVERVIEW_END);
+  return (base + (opening - base) * overview) * 2 ** zoom;
 }
 
 export function constrainGlobe(camera: GlobeCamera, coverage = true): GlobeCamera {
@@ -184,7 +191,7 @@ export function globePoint(
   const delta = (longitude - camera.longitude) * radians;
   const lat = latitude * radians;
   const center = camera.latitude * radians;
-  const radius = globeRadius(viewport) * 2 ** camera.zoom;
+  const radius = globeRadius(viewport, camera.zoom);
   return {
     x: viewport.width / 2 + radius * Math.cos(lat) * Math.sin(delta),
     y:
@@ -203,7 +210,7 @@ export function globeLocation(
   viewport: GlobeViewport
 ) {
   'worklet';
-  const radius = globeRadius(viewport) * 2 ** camera.zoom;
+  const radius = globeRadius(viewport, camera.zoom);
   const nx = (x - viewport.width / 2) / radius;
   const ny = -(y - viewport.height / 2) / radius;
   const distance = nx * nx + ny * ny;
@@ -231,7 +238,7 @@ export function cameraAtGlobePoint(
 ) {
   'worklet';
   const radians = Math.PI / 180;
-  const radius = globeRadius(viewport) * 2 ** camera.zoom;
+  const radius = globeRadius(viewport, camera.zoom);
   const lat = latitude * radians;
   const nx = (x - viewport.width / 2) / radius;
   const ny = (viewport.height / 2 - y) / radius;
@@ -253,7 +260,7 @@ export function rotateGlobe(
     const point = globePoint(capital.longitude, capital.latitude, camera, viewport);
     return cameraAtGlobePoint(camera, capital.longitude, capital.latitude, point.x + dx, point.y + dy, viewport);
   }
-  const degrees = 180 / (Math.PI * globeRadius(viewport) * 2 ** camera.zoom);
+  const degrees = 180 / (Math.PI * globeRadius(viewport, camera.zoom));
   return constrainGlobe({
     ...camera,
     longitude: camera.longitude - dx * degrees,

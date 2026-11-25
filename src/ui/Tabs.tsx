@@ -1,3 +1,5 @@
+import { TabTrigger, type TabTriggerSlotProps } from 'expo-router/ui';
+import type { ComponentProps } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Frames, Palette, Size, Space, px } from '@/constants/theme';
@@ -41,33 +43,49 @@ export function SegmentedTabs<K extends string>({ items, value, onChange }: Tabs
   );
 }
 
-/**
- * The app's bottom tab bar (World / Quests / Passport). Presentational: wire it to
- * expo-router/ui `TabTrigger`s in the tabs layout (see docs/ui/UI_KIT.md, "Navigation").
- */
-export function TabBar<K extends string>({ items, value, onChange }: TabsProps<K>) {
+type TabBarProps<K extends string> = TabsProps<K> | { items: readonly TabItem<K>[] };
+
+/** The app's bottom tabs. Register their names and routes in the navigator's TabList. */
+export function TabBar<K extends string>(props: TabBarProps<K>) {
   return (
     <View style={styles.bar} accessibilityRole="tablist">
-      {items.map((item) => {
-        const selected = item.key === value;
-        return (
-          <Pressable
-            key={item.key}
-            style={styles.grow}
-            onPress={() => onChange(item.key)}
-            accessibilityRole="tab"
-            accessibilityState={{ selected }}
-            accessibilityLabel={item.label}>
-            <PixelFrame skin={selected ? 'gold' : 'navy'} contentStyle={styles.tab}>
-              {item.icon && <PixelIcon name={item.icon} />}
-              <PixelText variant="caption" tone={selected ? 'ink' : 'light'} numberOfLines={1}>
-                {item.label}
-              </PixelText>
-            </PixelFrame>
-          </Pressable>
-        );
-      })}
+      {props.items.map((item) => 'onChange' in props ? (
+        <TabBarButton
+          key={item.key}
+          label={item.label}
+          icon={item.icon}
+          style={styles.grow}
+          isFocused={item.key === props.value}
+          onPress={() => props.onChange(item.key)}
+        />
+      ) : (
+        <TabTrigger key={item.key} name={item.key} style={styles.grow} asChild>
+          <TabBarButton label={item.label} icon={item.icon} />
+        </TabTrigger>
+      ))}
     </View>
+  );
+}
+
+function TabBarButton({
+  label, icon, isFocused = false, ...props
+}: ComponentProps<typeof Pressable> & Pick<TabTriggerSlotProps, 'href' | 'isFocused'> & {
+  label: string;
+  icon?: IconName;
+}) {
+  return (
+    <Pressable
+      {...props}
+      accessibilityRole="tab"
+      aria-selected={isFocused}
+      accessibilityLabel={label}>
+      <PixelFrame skin={isFocused ? 'gold' : 'navy'} depth={1} pressed={isFocused} contentStyle={styles.tab}>
+        {icon && <PixelIcon name={icon} />}
+        <PixelText variant="caption" tone={isFocused ? 'ink' : 'light'} numberOfLines={1}>
+          {label}
+        </PixelText>
+      </PixelFrame>
+    </Pressable>
   );
 }
 

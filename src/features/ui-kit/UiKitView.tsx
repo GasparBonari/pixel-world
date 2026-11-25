@@ -77,8 +77,8 @@ export function UiKitView() {
   return (
     <Screen
       header={
-        <TopBar onBack={() => {}} actions={<IconButton icon="settings" accessibilityLabel="Settings" />}>
-          <ProgressBar title="Europe discovered" value={18} total={44} segments={0} tone="light" />
+        <TopBar compact>
+          <ProgressBar title="Countries completed" value={1} total={3} tone="light" compact />
         </TopBar>
       }
       footer={<TabBar items={TABS} value={tab} onChange={setTab} />}
@@ -106,6 +106,11 @@ export function UiKitView() {
         <PixelText variant="caption" tone="lightSoft" align="center">
           UI kit preview — demo data
         </PixelText>
+
+        <Panel skin="navy">
+          <ProgressBar title="Countries completed" value={1} total={3} tone="light" icon="globe" />
+          <Chip label="Europe" skin="navy" compact />
+        </Panel>
 
         {/* Overlays: sheet, dialogs, notices. */}
         <Panel skin="navy">

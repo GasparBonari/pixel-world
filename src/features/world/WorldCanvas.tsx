@@ -14,6 +14,8 @@ export default function WorldCanvas({ initialCamera }: { initialCamera?: GlobeCa
       onLayout={({ nativeEvent: { layout } }) => {
         const width = Math.round(layout.width),
           height = Math.round(layout.height);
+        // A hidden tab may report zero size. Keep its scene mounted with the last visible viewport.
+        if (width <= 0 || height <= 0) return;
         setViewport((value) =>
           value.width === width && value.height === height ? value : { width, height }
         );

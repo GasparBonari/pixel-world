@@ -29,6 +29,7 @@ const { boardCountryAt } = loadLogic(new URL('../src/features/world/board-countr
 const { globeLocation, globePoint, COUNTRY_ZOOM, CAPITAL_ZOOM } = loadLogic(
   new URL('../src/features/world/globe-camera.ts', import.meta.url)
 );
+const { getWorldProgress } = loadLogic(new URL('../src/features/world/world-progress.ts', import.meta.url));
 
 test('only catalog countries with a playable capital can be selected', () => {
   const portugal = getSelectableCountry('PRT');
@@ -64,6 +65,18 @@ test('landmark progress counts checked catalog entries against the shared record
   records.markFound('arco-rua-augusta', new Date(2026, 10, 25));
   assert.equal(getCountryProgress('lisbon', records.getSnapshot()).value, 2);
   assert.equal(getCountryProgress('paris', records.getSnapshot()).value, 0);
+});
+
+test('World counts a country only when its released pack is complete', () => {
+  const { catalogEntries, hasContent } = loadLogic(new URL('../src/features/catalog/catalog.ts', import.meta.url));
+  const { landmarks } = getCountryProgress('lisbon', new Set());
+  const total = catalogEntries.filter(({ id }) => hasContent(id)).length;
+  const found = new Set(landmarks.slice(1).map(({ id }) => id));
+
+  assert.ok(landmarks.length > 1);
+  assert.deepEqual(getWorldProgress(found), { value: 0, total });
+  found.add(landmarks[0].id);
+  assert.deepEqual(getWorldProgress(found), { value: 1, total });
 });
 
 test('projected screen positions find the board country, including borders, islands and sea', () => {

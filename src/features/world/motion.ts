@@ -30,12 +30,12 @@ export const OPENING_INPUT = -SPIN.idleSeconds;
 
 const EARTH_DAY_SECONDS = 360;
 
-/** Illustrative sunlight in camera space, with dusk visible from the opening camera. */
+/** Illustrative sunlight in camera space. The opening Atlantic view starts in daylight. */
 export function sunDirection(longitude: number, latitude: number, time: number) {
   'worklet';
   const radians = Math.PI / 180;
-  const sunLongitude = -72 - ((time % EARTH_DAY_SECONDS) / EARTH_DAY_SECONDS) * 360;
-  const declination = -12 * radians;
+  const sunLongitude = -38 - ((time % EARTH_DAY_SECONDS) / EARTH_DAY_SECONDS) * 360;
+  const declination = 25 * radians;
   const relativeLongitude = (sunLongitude - longitude) * radians;
   const tilt = latitude * radians;
   const north = Math.sin(declination);

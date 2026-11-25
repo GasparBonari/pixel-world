@@ -114,6 +114,10 @@ The reference’s quest lists, avatar, XP, badges, statistics, and parchment car
 
 - [x] **P2-08 — Add reference-inspired Earth and space detail.** Brighter land/ocean/ice texture, readable coasts, cloud bodies/highlights/shadows, atmosphere/glow, varied stars, a cratered moon, and a detailed satellite. Keep the scene interactive, use responsive object placement, hide distant objects naturally behind the zooming sphere, preserve the geography mask, and avoid new image downloads.
 
+- [x] **P2-09 — Bring the Earth overview closer to the UI references.** Reframe the daylit opening globe, strengthen the cyan atmosphere and coastal palette, layer clouds over the planet's surface, and reuse sourced terrain sprites. After Explore, show continent names on the globe and frame the existing completion count. Both yield to the usual map presentation as the player zooms.
+  - *Done (25 November 2026):* checked launch, globe rotation, keyboard zoom and reset, retained tab camera, and reduced motion in Chrome at 390×844, 320×568, and 1024×768. At 390×844, checked two-finger pinch, the kit variants, and continent and Lisbon deep links. The continent canvas matched its before screenshot pixel for pixel. Lint, typecheck, all 211 tests, and iOS and Android exports passed. Physical phones, Safari, and on-device GPU performance were not checked.
+  - *Cloud revision (25 November 2026):* removed the decorative clouds outside the globe. Checked launch and Earth in Chrome at 390×844. The sampled surface weather and continent canvas matched the previous renders. Lint, typecheck and all 211 tests passed. Physical devices were not checked for this revision.
+
 **Exit criteria:** Earth reads clearly at phone/tablet/desktop sizes; drag/pinch remain responsive; the shared art rules are concrete enough to guide the next scales. Device evidence remains tracked rather than inferred from a bundle export.
 
 ## Phase 3 — Continent/country scenery and visual zoom
@@ -1409,8 +1413,9 @@ From the moment the app opens, in the style of [docs/ui/reference/screen-set.web
 
 **Dependencies:** Phase 5 records and Phase 6 components.
 
-- [ ] **P7-01 — Three-tab navigation.** World (the map), Quests, and Passport through Expo Router. The map stays mounted and the camera is preserved.
+- [x] **P7-01 — Three-tab navigation.** World (the map), Quests, and Passport through Expo Router. The map stays mounted and the camera is preserved.
   - *Pulled forward (25 November 2026) as part of the launch experience, after P6-10.* Also adds the World tab's thin top bar with honest progress (completed countries out of countries with content, from the same records as the country sheet). Quests and Passport start as honest empty screens until P7-03 and P7-05.
+  - *Done (25 November 2026).* Explore reveals the three pixel tabs. World shows completed countries at globe and continent zoom, and Passport shows session landmark finds. Chrome at 390×844 preserved the canvas, exact camera, expanded Portugal sheet and Lisbon prompt and hint across tab switches. One find raised Passport to 1 / 17, and completing Lisbon raised World to 1 / 3. Checked the title with normal and reduced motion, browser Back, the Lisbon deep link and `/ui-kit`. Lint, typecheck, all 210 tests and the Android bundle export passed. Android hardware Back, physical phones, Safari and screen readers were not checked.
 - [ ] **P7-02 — Clouds over undiscovered countries.** Pixel clouds or fog cover undiscovered countries and clear with a short stepped animation when discovered. Seeded per country; works on the globe and the board.
 - [ ] **P7-03 — Daily featured place.** One country or capital per day with 3–5 discoveries, shown in Quests. Document the selection rule (curated or rotating). No penalty for missed days. Optional, opt-in local reminder with no server.
 - [ ] **P7-04 — Travel track.** Dated manual visits with undo, a wishlist, and visited pins on the map, shown differently from discovery. Viewing or discovering never records travel.

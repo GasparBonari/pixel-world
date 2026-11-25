@@ -9,7 +9,8 @@ import {
   loadData,
   type SkImage,
 } from '@shopify/react-native-skia';
-import { useCallback, useEffect, useState } from 'react';
+import { useIsFocused } from 'expo-router';
+import { use, useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import {
   usePanGesture,
@@ -25,12 +26,16 @@ import capitals from '@/data/capitals.json';
 import { WorldMapScreen } from '@/features/country-sheet/WorldMapScreen';
 import { FoundLandmarkDialog } from '@/features/find-it/FoundLandmarkDialog';
 import { useFindIt } from '@/features/find-it/use-find-it';
+import { WorldReadyContext } from '@/features/navigation/GameTabs';
 import { ChallengePrompt } from '@/ui';
 import { Birds } from './Birds';
+import { ContinentLabels } from './ContinentLabels';
 import { CountryFerry } from './CountryFerry';
 import { CountryLabels } from './CountryLabels';
+import { EarthScenery } from './EarthScenery';
 import {
   activeCapital,
+  EARTH_OVERVIEW_END,
   globeRadius,
   OPENING_CAMERA,
   rotateGlobe,
@@ -93,10 +98,15 @@ function GlobeScene({
   onRetry,
 }: SceneProps & { onRetry: () => void }) {
   const openingCamera = initialCamera ?? OPENING_CAMERA;
+  const focused = useIsFocused();
+  const revealTabs = use(WorldReadyContext);
   // A camera parsed from the launch URL goes directly to the map.
   const [showTitle, setShowTitle] = useState(initialCamera === undefined);
   const [error, setError] = useState(false);
   const [images, setImages] = useState<Textures | null>(null);
+  useEffect(() => {
+    if (!showTitle && images && effect) revealTabs?.();
+  }, [showTitle, images, revealTabs]);
   useEffect(() => {
     let active = true;
     loadTextures()
@@ -111,9 +121,10 @@ function GlobeScene({
     };
   }, []);
   const camera = useSharedValue(openingCamera);
-  const { time, touch, returnToOpening } = useWorldClock(camera, images !== null);
+  const { time, touch, returnToOpening } = useWorldClock(camera, focused && images !== null);
   const navigation = useWorldNavigation(camera, openingCamera, viewport, touch);
   const { snapshot, selectAt } = navigation;
+  const earthOverview = snapshot.zoom < EARTH_OVERVIEW_END;
   // Icon pixels are two-thirds of a terrain pixel (3 points on a phone -> 2 points).
   const iconScale = (Math.max(1.25, Math.min(viewport.width, viewport.height) / CELLS_ACROSS) * 2) / 3;
   const { tapAt, banner, assist, capitalId, recentFind, closeCard } = useFindIt(snapshot, viewport, iconScale);
@@ -210,7 +221,7 @@ function GlobeScene({
     return {
       viewport: [viewport.width, viewport.height],
       angles: [(c.longitude * Math.PI) / 180, (c.latitude * Math.PI) / 180],
-      radius: globeRadius(viewport) * 2 ** c.zoom,
+      radius: globeRadius(viewport, c.zoom),
       zoom: c.zoom,
       time: sceneTime,
       sun: sunDirection(c.longitude, c.latitude, sceneTime),
@@ -224,6 +235,7 @@ function GlobeScene({
   if (!images) return <MapStatus />;
   return (
     <WorldMapScreen
+      earthOverview={earthOverview}
       selection={navigation.selection}
       capitalName={navigation.capitalName}
       prompt={banner && <ChallengePrompt {...banner} />}
@@ -254,6 +266,7 @@ function GlobeScene({
                 <ImageShader image={images.lights} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
               </Shader>
             </Fill>
+            {earthOverview && <EarthScenery image={images.icons} camera={camera} viewport={viewport} time={time} />}
             <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={0} time={time} />
             <CountryFerry image={images.icons} camera={camera} viewport={viewport} scale={iconScale} time={time} />
             <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={1} time={time} />
@@ -274,9 +287,10 @@ function GlobeScene({
             ))}
           </Canvas>
         </MapSurface>
+        {!showTitle && earthOverview && <ContinentLabels viewport={viewport} camera={camera} snapshot={snapshot} />}
         <CountryLabels viewport={viewport} camera={camera} snapshot={snapshot} />
       </View>
-      {recentFind && (
+      {focused && recentFind && (
         <FoundLandmarkDialog
           found={recentFind}
           sceneImage={images[recentFind.prompt.landmark.parentId as keyof typeof CAPITAL_IMAGES]}

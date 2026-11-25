@@ -1,12 +1,15 @@
-import type { PropsWithChildren, ReactNode } from 'react';
+import { useSyncExternalStore, type PropsWithChildren, type ReactNode } from 'react';
 
+import { landmarkProgress } from '@/features/find-it/landmark-progress';
 import { WorldTitle } from '@/features/title/WorldTitle';
-import { Screen, TopBar } from '@/ui';
+import { getWorldProgress } from '@/features/world/world-progress';
+import { Panel, ProgressBar, Screen, TopBar } from '@/ui';
 
 import { CountrySheet } from './CountrySheet';
 import type { SelectableCountry } from './country-selection';
 
 type Props = PropsWithChildren<{
+  earthOverview: boolean;
   selection?: SelectableCountry;
   capitalName?: string;
   prompt?: ReactNode;
@@ -17,21 +20,24 @@ type Props = PropsWithChildren<{
 }>;
 
 export function WorldMapScreen({
-  selection, capitalName, prompt, onEnterWorld, onBack, onClose, onExplore, children,
+  earthOverview, selection, capitalName, prompt, onEnterWorld, onBack, onClose, onExplore, children,
 }: Props) {
   return (
     <Screen
       background="none"
       scroll={false}
       fullBleed
-      header={!onEnterWorld && onBack && (
-        <TopBar
-          title={prompt ? undefined : capitalName ?? 'World'}
-          backLabel={capitalName ? 'Back to country' : 'Back to continent'}
-          onBack={onBack}
-        >
-          {prompt}
-        </TopBar>
+      floatingHeader={earthOverview}
+      bottomInset={!!onEnterWorld}
+      header={!onEnterWorld && (
+        onBack ? (
+          <TopBar
+            title={prompt ? undefined : capitalName ?? 'World'}
+            backLabel={capitalName ? 'Back to country' : 'Back to continent'}
+            onBack={onBack}>
+            {prompt}
+          </TopBar>
+        ) : <WorldProgressBar earthOverview={earthOverview} />
       )}
       overlay={
         onEnterWorld ? (
@@ -47,5 +53,22 @@ export function WorldMapScreen({
       }>
       {children}
     </Screen>
+  );
+}
+
+function WorldProgressBar({ earthOverview }: { earthOverview: boolean }) {
+  const found = useSyncExternalStore(landmarkProgress.subscribe, landmarkProgress.getSnapshot);
+  const progress = getWorldProgress(found);
+  if (earthOverview) {
+    return (
+      <Panel skin="navy">
+        <ProgressBar title="Countries completed" {...progress} tone="light" icon="globe" />
+      </Panel>
+    );
+  }
+  return (
+    <TopBar compact>
+      <ProgressBar title="Countries completed" {...progress} tone="light" compact />
+    </TopBar>
   );
 }

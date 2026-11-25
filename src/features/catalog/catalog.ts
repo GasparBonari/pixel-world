@@ -115,15 +115,17 @@ export function getCheckedLandmarks(capitalId: string): readonly CheckedLandmark
   );
 }
 
-function hasCheckedFact(entry: CatalogEntry): boolean {
+function hasCheckedFact(entry: CatalogEntry): entry is CollectibleEntry {
   return 'fact' in entry && entry.fact?.status === 'checked';
+}
+
+export function getCheckedCountryCollectibles(countryId: string): readonly CollectibleEntry[] {
+  return getCatalogChildren(countryId)
+    .flatMap((entry) => entry.kind === 'capital' ? getCatalogChildren(entry.id) : [entry])
+    .filter(hasCheckedFact);
 }
 
 export function hasContent(countryId: string): boolean {
   return getCatalogEntry(countryId)?.kind === 'country'
-    && getCatalogChildren(countryId).some((entry) =>
-      entry.kind === 'capital'
-        ? getCatalogChildren(entry.id).some(hasCheckedFact)
-        : hasCheckedFact(entry)
-    );
+    && getCheckedCountryCollectibles(countryId).length > 0;
 }

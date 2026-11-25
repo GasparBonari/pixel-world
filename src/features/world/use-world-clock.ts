@@ -3,6 +3,7 @@ import {
   useFrameCallback,
   useReducedMotion,
   useSharedValue,
+  type FrameInfo,
   type SharedValue,
 } from 'react-native-reanimated';
 import { scheduleOnUI } from 'react-native-worklets';
@@ -24,13 +25,13 @@ export function useWorldClock(camera: SharedValue<GlobeCamera>, visible: boolean
   const time = useSharedValue(0);
   const lastInput = useSharedValue(OPENING_INPUT);
   const openingEase = useSharedValue<{ start: number; longitudeOffset: number } | null>(null);
-  // The frame callback re-registers whenever the scene re-renders (the spin itself refreshes the
-  // country labels), which restarts its own timeSinceFirstFrame. Keep our own origin instead.
-  const origin = useSharedValue(-1);
-  const clock = useFrameCallback((frame) => {
+  const elapsed = useSharedValue(0);
+  const tick = useCallback((frame: FrameInfo) => {
     'worklet';
-    if (origin.get() < 0) origin.set(frame.timestamp);
-    const now = animationTime(frame.timestamp - origin.get());
+    // The first frame after tab focus has no delta, so the camera never catches up on hidden time.
+    const delta = frame.timeSincePreviousFrame ?? 0;
+    elapsed.set(elapsed.get() + delta);
+    const now = animationTime(elapsed.get());
     const previous = time.get();
     if (now === previous) return;
     time.set(now);
@@ -52,16 +53,18 @@ export function useWorldClock(camera: SharedValue<GlobeCamera>, visible: boolean
         constrainGlobe({ ...current, longitude: current.longitude - speed * animationStep(previous, now) })
       );
     }
-  }, false);
-  // Start once the planet is on screen, so a slow load doesn't turn it away from its opening view.
-  useEffect(() => {
-    clock.setActive(visible && !reduceMotion);
-  }, [clock, visible, reduceMotion]);
+  }, [camera, elapsed, lastInput, openingEase, time]);
+  const clock = useFrameCallback(tick, false);
   const touch = useCallback(() => {
     'worklet';
     lastInput.set(time.get());
     openingEase.set(null);
   }, [lastInput, openingEase, time]);
+  useEffect(() => {
+    // Leaving World counts as input. Give the player the usual idle delay on return.
+    if (!visible && clock.isActive) touch();
+    clock.setActive(visible && !reduceMotion);
+  }, [clock, visible, reduceMotion, touch]);
 
   const returnToOpening = useCallback(() => {
     scheduleOnUI(() => {

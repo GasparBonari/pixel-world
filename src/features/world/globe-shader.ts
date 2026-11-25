@@ -86,8 +86,8 @@ float surfaceNoise(float2 coordinate, float2 scale, float2 offset) {
 }
 
 float cloudField(float2 uv) {
-  float2 wind = float2(uv.x+sin(uv.y*28.0)*0.018,uv.y);
-  return surfaceNoise(wind,float2(18,28),float2(6,3))*0.80 + surfaceNoise(wind,float2(55,70),float2(0))*0.20;
+  float2 wind = float2(uv.x+sin(uv.y*42.0)*0.012,uv.y);
+  return surfaceNoise(wind,float2(21,30),float2(6,3))*0.72 + surfaceNoise(wind,float2(63,85),float2(0))*0.28;
 }
 
 // Screen point -> (u, v, z) on the sphere; z < 0 means off the planet.
@@ -236,15 +236,16 @@ half4 main(float2 position) {
   float planet = 1.0-smoothstep(0.6,${BOARD_ZOOM_START.toFixed(2)},zoom);
   if (d > 1.0) {
     float3 space = universe(position,viewport);
-    float glow = floor(pow(1.0-smoothstep(1.0,1.20,d),2.0)*6.0)/6.0;
+    float glow = floor((1.0-smoothstep(1.025,1.24,d))*4.0)/4.0;
     float atmosphere = 1.0;
-    if (planet > 0.0 && d < 1.20) {
+    if (planet > 0.0 && d < 1.24) {
       float limbLight = smoothstep(-0.30,0.10,dot(p/sqrt(d),sun.xy));
       atmosphere = mix(1.0,0.35+limbLight*0.65,planet);
     }
-    space = mix(space,float3(0.09,0.32,0.66),glow*0.48*atmosphere);
+    space = mix(space,float3(0.07,0.37,0.82),glow*0.64*atmosphere);
     float rim = 1.0-smoothstep(1.0,1.035,d);
-    return half4(mix(space,float3(0.38,0.77,0.97),rim*0.85*atmosphere),1);
+    space = mix(space,float3(0.43,0.89,1.0),rim*0.96*atmosphere);
+    return half4(space,1);
   }
 
   float3 here = surface(point);
@@ -256,30 +257,30 @@ half4 main(float2 position) {
 
   float terrain = surfaceNoise(uv,float2(140,90),float2(0));
   float grain = surfaceNoise(uv,float2(460,280),float2(0));
-  float forest = smoothstep(0.42,0.76,terrain);
-  float3 land = mix(float3(0.54,0.76,0.25),float3(0.20,0.48,0.25),floor(forest*4.0)/4.0);
-  land *= 0.94+floor(grain*4.0)*0.025;
+  float forest = smoothstep(0.32,0.74,terrain);
+  float3 land = mix(float3(0.65,0.84,0.26),float3(0.14,0.52,0.25),floor(forest*5.0)/5.0);
+  land *= 0.96+floor(grain*4.0)*0.024;
   // Broad illustrative climate zones, not measured vegetation or elevation.
   float sahara = 1.0-smoothstep(0.55,1.0,length(float2((lonDegrees-15.0)/36.0,(degrees-24.0)/11.0)));
   float arabia = 1.0-smoothstep(0.45,1.0,length(float2((lonDegrees-46.0)/14.0,(degrees-24.0)/14.0)));
   float australia = 1.0-smoothstep(0.40,1.0,length(float2((lonDegrees-133.0)/23.0,(degrees+25.0)/13.0)));
   float desert = floor(max(max(sahara,arabia),australia)*4.0)/4.0;
-  float3 sand = mix(float3(0.82,0.70,0.39),float3(0.92,0.81,0.52),floor(terrain*3.0)/3.0);
+  float3 sand = mix(float3(0.82,0.55,0.26),float3(1.0,0.87,0.56),floor(terrain*4.0)/4.0);
   land = mix(land,sand,desert);
   if (abs(degrees) > 69.0+terrain*6.0)
-    land = mix(float3(0.74,0.87,0.79),float3(0.94,0.98,0.88),floor(grain*3.0)/3.0);
+    land = mix(float3(0.61,0.80,0.94),float3(0.99,1.0,0.97),floor(grain*4.0)/4.0);
 
   float oceanTone = floor((terrain*0.7+grain*0.3)*5.0)/5.0;
-  float3 ocean = mix(float3(0.09,0.27,0.60),float3(0.16,0.45,0.75),oceanTone);
+  float3 ocean = mix(float3(0.035,0.19,0.47),float3(0.07,0.47,0.80),oceanTone);
   // Real depth from space: shelves a step lighter (turquoise over tropical banks), the abyss a
   // step darker.
   float seaDepth = seabed.eval(uv*seabedSize).r*4.0;
   float warmSea = 1.0-smoothstep(23.0,40.0,abs(degrees));
-  if (seaDepth < 0.5) ocean = mix(ocean,mix(float3(0.20,0.53,0.80),float3(0.22,0.70,0.78),floor(warmSea*2.0)/2.0),0.55);
+  if (seaDepth < 0.5) ocean = mix(ocean,mix(float3(0.16,0.58,0.84),float3(0.20,0.78,0.78),floor(warmSea*2.0)/2.0),0.58);
   else if (seaDepth > 3.5) ocean *= 0.86;
   // Wave highlights drift slowly east (one noise cell, about 4 degrees, every 30 s).
-  float wave = step(0.85,surfaceNoise(uv-float2(time/2700.0,0),float2(85,420),float2(0)));
-  ocean = mix(ocean,float3(0.32,0.63,0.84),wave*0.32);
+  float wave = step(0.78,surfaceNoise(uv-float2(time/2700.0,0),float2(65,240),float2(0)));
+  ocean = mix(ocean,float3(0.21,0.64,0.88),wave*0.42);
 
   float isLand = step(0.5,data.r);
   float coastTexels = max(1.0,9.0/exp2(zoom));
@@ -290,8 +291,8 @@ half4 main(float2 position) {
   float south = geography.eval(texel-float2(0,coastTexels)).r;
   float shoreWater = (1.0-isLand)*max(max(east,west),max(north,south));
   float shoreLand = isLand*(1.0-min(min(east,west),min(north,south)));
-  ocean = mix(ocean,float3(0.25,0.66,0.77),shoreWater*0.80);
-  land = mix(land,float3(0.79,0.84,0.43),shoreLand*0.55);
+  ocean = mix(ocean,float3(0.36,0.79,0.84),shoreWater*0.92);
+  land = mix(land,float3(0.86,0.94,0.41),shoreLand*0.64);
   float3 color = mix(ocean,land,isLand);
   color = mix(color,ocean,step(0.5,data.b));
   float border = data.g*smoothstep(0.5,1.4,zoom);
@@ -299,13 +300,19 @@ half4 main(float2 position) {
 
   float cloudFade = 1.0-smoothstep(0.5,1.8,zoom);
   // Weather drifts east over the surface: once round the planet in 15 minutes.
-  float2 weather = uv-float2(time/900.0,0);
-  float clouds = cloudField(weather);
-  float shadow = step(0.68,cloudField(weather+float2(0.003,0.004)))*cloudFade;
-  color = mix(color,color*float3(0.61,0.69,0.78),shadow*0.55);
-  float cover = step(0.68,clouds)*cloudFade;
-  float3 cloudColor = clouds > 0.76 ? float3(0.98,1.0,0.96) : float3(0.79,0.89,0.93);
-  color = mix(color,cloudColor,cover);
+  float cover = 0.0;
+  if (cloudFade > 0.0) {
+    float2 weather = uv-float2(time/900.0,0);
+    float clouds = cloudField(weather);
+    float upper = cloudField(weather+float2(0.003,0.005));
+    float shadow = step(0.71,upper)*cloudFade;
+    color = mix(color,color*float3(0.50,0.65,0.82),shadow*0.6);
+    cover = step(0.71,clouds)*cloudFade;
+    float3 cloudColor = float3(0.54,0.73,0.93);
+    if (upper < 0.71 || clouds > 0.78) cloudColor = float3(0.81,0.91,0.99);
+    if (upper < 0.68 || clouds > 0.83) cloudColor = float3(1.0,0.99,0.95);
+    color = mix(color,cloudColor,cover);
+  }
 
   // Zooming in: the sea darkens into the night sea and the land becomes the game board.
   float boardMix = smoothstep(${BOARD_ZOOM_START.toFixed(2)},${BOARD_ZOOM_END.toFixed(2)},zoom);
@@ -313,7 +320,7 @@ half4 main(float2 position) {
     color = mix(color,boardColor(point,cell,here,lonDegrees,degrees,terrain,desert),boardMix);
 
   float light = dot(float3(p,z),normalize(float3(-0.35,0.55,1.0)));
-  float shade = clamp(floor((0.45+light*0.55)*8.0)/8.0,0.35,1.0);
+  float shade = clamp(floor((0.50+light*0.57)*8.0)/8.0,0.35,1.0);
   color = mix(float3(0.08,0.13,0.26),color,mix(shade,1.0,boardMix));
   if (z < 0.16) color = mix(color,float3(0.38,0.74,0.94),0.58*(1.0-boardMix));
 

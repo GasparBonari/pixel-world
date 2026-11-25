@@ -3,15 +3,18 @@ import { StyleSheet, View } from 'react-native';
 import { Palette, Space, px } from '@/constants/theme';
 
 import { PixelFrame } from './PixelFrame';
-import { PixelIcon } from './PixelIcon';
+import { PixelIcon, type IconName } from './PixelIcon';
 import { PixelText, type TextTone } from './PixelText';
 
 export type ProgressBarProps = {
   value: number;
   /** The real denominator. A total of 0 means "no content yet" and never reads as complete. */
   total: number;
-  /** Visible title above the bar, e.g. "Country progress". Also the accessibility label. */
+  /** Visible title and accessibility label, e.g. "Country progress". */
   title: string;
+  icon?: IconName;
+  /** Show only the title and numerical count in one row. */
+  compact?: boolean;
   /** Dividers in the bar; defaults to one per item up to 10. */
   segments?: number;
   /** Text colour for the title and count: ink on parchment, light on navy. */
@@ -22,13 +25,13 @@ export type ProgressBarProps = {
  * A segmented green bar with its count always written beside it ("6 / 10"), so progress never
  * relies on colour alone.
  */
-export function ProgressBar({ value, total, title, segments, tone = 'ink' }: ProgressBarProps) {
+export function ProgressBar({ value, total, title, icon, compact, segments, tone = 'ink' }: ProgressBarProps) {
   const ratio = total > 0 ? Math.min(1, Math.max(0, value / total)) : 0;
   const parts = segments ?? (total > 0 && total <= 10 ? total : 0);
   const count = total > 0 ? `${value} / ${total}` : 'Coming soon';
   return (
     <View
-      style={styles.wrap}
+      style={styles.progress}
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={title}
@@ -36,23 +39,28 @@ export function ProgressBar({ value, total, title, segments, tone = 'ink' }: Pro
       aria-valuemax={total > 0 ? total : undefined}
       aria-valuenow={total > 0 ? value : undefined}
       aria-valuetext={total > 0 ? `${value} of ${total}` : count}>
-      <View style={styles.row}>
-        <PixelText variant="label" tone={tone} style={styles.grow}>
-          {title}
-        </PixelText>
-        <PixelText variant="label" tone={tone}>
-          {count}
-        </PixelText>
-      </View>
-      <PixelFrame skin="track" contentStyle={styles.track}>
-        <View style={[styles.fill, { width: `${ratio * 100}%` }]}>
-          <View style={styles.fillHighlight} />
-          <View style={styles.fillShade} />
+      {icon && <PixelIcon name={icon} />}
+      <View style={styles.wrap}>
+        <View style={styles.row}>
+          <PixelText variant="label" tone={tone} style={styles.grow}>
+            {title}
+          </PixelText>
+          <PixelText variant="label" tone={tone}>
+            {count}
+          </PixelText>
         </View>
-        {Array.from({ length: Math.max(0, parts - 1) }, (_, i) => (
-          <View key={i} style={[styles.divider, { left: `${((i + 1) / parts) * 100}%` }]} />
-        ))}
-      </PixelFrame>
+        {!compact && (
+          <PixelFrame skin="track" contentStyle={styles.track}>
+            <View style={[styles.fill, { width: `${ratio * 100}%` }]}>
+              <View style={styles.fillHighlight} />
+              <View style={styles.fillShade} />
+            </View>
+            {Array.from({ length: Math.max(0, parts - 1) }, (_, i) => (
+              <View key={i} style={[styles.divider, { left: `${((i + 1) / parts) * 100}%` }]} />
+            ))}
+          </PixelFrame>
+        )}
+      </View>
     </View>
   );
 }
@@ -78,7 +86,8 @@ export function StepDots({ done, total, label }: { done: number; total: number; 
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: Space.xs, alignSelf: 'stretch' },
+  progress: { flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', gap: Space.sm },
+  wrap: { flex: 1, gap: Space.xs },
   row: { flexDirection: 'row', alignItems: 'baseline', gap: Space.sm },
   grow: { flex: 1 },
   track: { padding: px(1), height: px(8) },

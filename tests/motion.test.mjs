@@ -20,10 +20,10 @@ test('sunlight follows geographic longitude across a full simulated day and at t
     actual.forEach((value, i) => assert.ok(Math.abs(value - expected[i]) < 1e-12));
   }
   // At the subsolar point the sun is overhead. At its antipode it is directly behind the globe.
-  near(sunDirection(-72, -12, 0), [0, 0, 1]);
-  near(sunDirection(108, 12, 0), [0, 0, -1]);
-  near(sunDirection(-162, -12, 90), [0, 0, 1]);
-  near(sunDirection(-72, -12, 360), [0, 0, 1]);
+  near(sunDirection(-38, 25, 0), [0, 0, 1]);
+  near(sunDirection(142, -25, 0), [0, 0, -1]);
+  near(sunDirection(-128, 25, 90), [0, 0, 1]);
+  near(sunDirection(-38, 25, 360), [0, 0, 1]);
   near(sunDirection(-180, 25, 60), sunDirection(180, 25, 60));
 });
 
