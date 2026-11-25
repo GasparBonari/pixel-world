@@ -83,7 +83,7 @@ So the shallow North Sea, Adriatic, Baltic and Sunda Shelf read lighter, and the
 
 | Scale | Approx. ground per art pixel | Data | New at this scale |
 | --- | --- | --- | --- |
-| Earth (built) | varies over the sphere | Natural Earth 1:10m land and lakes, 1:50m borders, selected ranges from the continent atlas | Daylit Atlantic opening, deep blue ocean, turquoise coasts, layered clouds, a cyan atmosphere, and sparse terrain sprites |
+| Earth (built) | varies over the sphere | Natural Earth 1:10m land and lakes, 1:50m borders | Daylit Atlantic opening, deep blue ocean, turquoise coasts, layered clouds, and a cyan atmosphere |
 | Continent | ~20 km | + Natural Earth mountain ranges (scalerank ≤ 4) and continent outlines | Night sea, raised coasts, puzzle-piece countries, country labels and spaced scenery |
 | Country (early Malta mockup) | ~0.3 km | OpenStreetMap extract: coastline, land use, towns, ferries | Field patchwork, woods, houses and castles, sailboats |
 | Country (Portugal) | ~1–3 km | Natural Earth populated places | One building per real city: a walled capital crowned with a gold star, churches (or mosques) and houses at towns in the country's building family, plus trees and boats, revealed in zoom steps |
@@ -91,7 +91,7 @@ So the shallow North Sea, Adriatic, Baltic and Sunda Shelf read lighter, and the
 
 All scales use the globe's orthographic projection, so zooming in keeps the same sphere and its curvature fades on its own. The globe's daytime ocean darkens gradually into the night sea while zooming in. One shader blends the globe into the board between zoom 1.5 and 2.5. Terrain pixels are 3 points at every zoom. The wide scenery appears during the blend and denser placements appear on closer views.
 
-The Earth overview takes its brighter cyan rim, ochre desert and navy star field from the [Earth UI reference](../ui/reference/world-globe.webp). The opening globe uses up to 90% of the viewport width and 68% of its height, easing into the standard map scale by zoom 0.6. Clouds and their shadows stay within the globe's silhouette. A small draw from the existing map atlas uses sourced locations for mountain and dune sprites. On phones these sprites use one screen point per source pixel. They fade away by zoom 0.6. Continent names are screen-space chips, projected from interior label positions on the Natural Earth land mask.
+The Earth overview takes its brighter cyan rim, ochre desert and navy star field from the [Earth UI reference](../ui/reference/world-globe.webp). The opening globe uses up to 90% of the viewport width and 68% of its height, easing into the standard map scale by zoom 0.6. Clouds and their shadows stay within the globe's silhouette. Mountain, dune and other map sprites first appear as the continent board comes into view. Continent names are screen-space chips, projected from interior label positions on the Natural Earth land mask.
 
 ## 3a. Country and capital tiers (decided 10 November 2026)
 

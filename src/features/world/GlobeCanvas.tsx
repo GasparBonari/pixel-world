@@ -33,7 +33,6 @@ import { Birds } from './Birds';
 import { ContinentLabels } from './ContinentLabels';
 import { CountryFerry } from './CountryFerry';
 import { CountryLabels } from './CountryLabels';
-import { EarthScenery } from './EarthScenery';
 import {
   activeCapital,
   EARTH_OVERVIEW_END,
@@ -272,7 +271,6 @@ function GlobeScene({
                 <ImageShader image={images.lights} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
               </Shader>
             </Fill>
-            {earthOverview && <EarthScenery image={images.icons} camera={camera} viewport={viewport} time={time} />}
             <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={0} time={time} />
             <CountryFerry image={images.icons} camera={camera} viewport={viewport} scale={iconScale} time={time} />
             <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={1} time={time} />
