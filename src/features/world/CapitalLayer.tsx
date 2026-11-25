@@ -1,9 +1,11 @@
 import { FilterMode, Group, Image, MipmapMode, type SkImage } from '@shopify/react-native-skia';
 import { useDerivedValue, type SharedValue } from 'react-native-reanimated';
 
+import type { LandmarkBounds } from '../find-it/challenge';
+import { CapitalAssist } from './CapitalAssist';
 import { CapitalMotion } from './CapitalMotion';
 import { activeCapital, type GlobeCamera, type GlobeViewport } from './globe-camera';
-import { capitalOpacity, capitalRect, type CapitalScene } from './capitals';
+import { capitalOpacity, capitalScreenRect, type CapitalScene } from './capitals';
 
 const NEAREST = { filter: FilterMode.Nearest, mipmap: MipmapMode.None } as const;
 
@@ -21,6 +23,7 @@ export function CapitalLayer({
   icons,
   time,
   animated,
+  assist,
 }: {
   image: SkImage;
   scene: CapitalScene;
@@ -30,11 +33,9 @@ export function CapitalLayer({
   icons: SkImage;
   time: SharedValue<number>;
   animated: boolean;
+  assist?: LandmarkBounds;
 }) {
-  const rect = useDerivedValue(() => {
-    const r = capitalRect(scene, camera.get(), viewport, iconScale);
-    return { x: Math.round(r.x), y: Math.round(r.y), width: r.width, height: r.height };
-  });
+  const rect = useDerivedValue(() => capitalScreenRect(scene, camera.get(), viewport, iconScale));
   const x = useDerivedValue(() => rect.get().x);
   const y = useDerivedValue(() => rect.get().y);
   const width = useDerivedValue(() => rect.get().width);
@@ -48,6 +49,7 @@ export function CapitalLayer({
     <Group opacity={opacity}>
       <Image image={image} x={x} y={y} width={width} height={height} fit="fill" sampling={NEAREST} />
       {animated && <CapitalMotion icons={icons} scene={scene} sceneRect={rect} time={time} />}
+      {assist && <CapitalAssist bounds={assist} scene={scene} sceneRect={rect} time={time} camera={camera} />}
     </Group>
   );
 }

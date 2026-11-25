@@ -3,6 +3,7 @@
  * @/constants/theme. Rules: docs/ui/UI_KIT.md. Live preview: the /ui-kit route.
  */
 export { BottomSheet, type BottomSheetProps } from './BottomSheet';
+export { ChallengePrompt } from './ChallengePrompt';
 export { Chip, type ChipProps } from './Chip';
 export { CollectibleCard, type CollectibleCardProps, type CollectibleKind } from './CollectibleCard';
 export {

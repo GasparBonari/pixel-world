@@ -21,6 +21,8 @@ export type CollectibleCardProps = {
   kind: CollectibleKind;
   /** Crop of the capital scene or the landmark's 4× study. */
   image?: ImageSourcePropType;
+  /** Use contain to show a crop in full, including tall and narrow landmarks. */
+  imageFit?: 'cover' | 'contain';
   /** One or two checked sentences from the content catalog. Never written in the component. */
   description: string;
   /** Where the facts come from; always shown. */
@@ -45,6 +47,7 @@ export function CollectibleCard({
   name,
   kind,
   image,
+  imageFit = 'cover',
   description,
   source,
   foundOn,
@@ -58,7 +61,7 @@ export function CollectibleCard({
       {justFound && <Ribbon label="Found!" icon="star" skin="gold" />}
       <View style={styles.picture}>
         {image ? (
-          <Image source={image} style={styles.image} resizeMode="cover" accessibilityIgnoresInvertColors />
+          <Image source={image} style={styles.image} resizeMode={imageFit} accessibilityIgnoresInvertColors />
         ) : (
           <PixelIcon name={k.icon} />
         )}

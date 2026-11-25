@@ -5,6 +5,7 @@ import { Size, Space } from '@/constants/theme';
 import { CAPITAL_IMAGES } from '@/data/capital-images';
 import {
   BottomSheet,
+  ChallengePrompt,
   Chip,
   CollectibleCard,
   CollectibleTile,
@@ -61,6 +62,7 @@ export function UiKitView() {
   const [tab, setTab] = useState<(typeof TABS)[number]['key']>('world');
   const [section, setSection] = useState<(typeof SECTIONS)[number]['key']>('discover');
   const [answer, setAnswer] = useState<string>();
+  const [misses, setMisses] = useState(0);
   const [sheet, setSheet] = useState<'closed' | 'collapsed' | 'expanded'>('closed');
   const [cardOpen, setCardOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -144,6 +146,17 @@ export function UiKitView() {
           </ScrollView>
           <Divider />
           <PixelButton variant="primary" label="Explore Lisbon" icon="globe" block />
+        </Panel>
+
+        <Panel skin="navy">
+          <SectionHeader title="Find it" icon="landmark" tone="light" />
+          <ChallengePrompt
+            title="Find Belém Tower"
+            misses={misses}
+            feedback={misses >= 3 ? 'Look near the river.' : misses > 0 ? 'Keep looking!' : undefined}
+          />
+          <PixelButton label="Preview a miss" onPress={() => setMisses((count) => count + 1)} />
+          <ChallengePrompt title="All 4 landmarks found in Lisbon" complete />
         </Panel>
 
         {/* Challenge card. */}

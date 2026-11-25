@@ -37,6 +37,18 @@ export function capitalRect(
   return { x: point.x - width / 2, y: point.y - height / 2, width, height };
 }
 
+/** The image and its interactive overlays share this whole-point origin. */
+export function capitalScreenRect(
+  scene: CapitalScene,
+  camera: GlobeCamera,
+  viewport: GlobeViewport,
+  iconScale: number
+) {
+  'worklet';
+  const { x, y, width, height } = capitalRect(scene, camera, viewport, iconScale);
+  return { x: Math.round(x), y: Math.round(y), width, height };
+}
+
 /**
  * Once a capital scene is larger than the screen, keep it covering the screen: panning stops at
  * the scene's edges instead of revealing the board underneath.

@@ -135,6 +135,10 @@ To start directly in a browser:
 npm run web
 ```
 
+Open [Portugal at country zoom](http://localhost:8081/?lon=-8.5&lat=39.5&zoom=5) and tap the country to open its sheet. The title toggles the landmark row. **Explore Lisbon** opens the capital, **Back to country** restores the previous map view, and **Back to continent** zooms out around the current location. Tap open sea or press Close to clear the selection. On web, focus the map and use the arrow keys to pan, plus or minus to zoom, and Enter to select the centered country.
+
+At full zoom in [Lisbon](http://localhost:8081/?lon=-9.1365&lat=38.71&zoom=7), [Paris](http://localhost:8081/?lon=2.3522&lat=48.8566&zoom=7), or [Athens](http://localhost:8081/?lon=23.7275&lat=37.9838&zoom=7), the top bar names the landmark to find. Pan around the scene and tap the landmark itself. Three misses on that prompt reveal an area hint. A find opens a card with a scene crop, a checked fact and its source. Close the card to get the next prompt. Finds update the country sheet for the current app session. On web, Enter tries the point at the center of the focused map.
+
 Bulgaria and Sofia examples (web): [country](http://localhost:8081/?lon=25.4&lat=42.7&zoom=5), [Sofia](http://localhost:8081/?lon=23.3219&lat=42.6977&zoom=7), [Rila Monastery](http://localhost:8081/?lon=23.3401&lat=42.1333&zoom=5.5). Scroll into Sofia from country zoom, then drag to explore the bounded scene. Regenerate its seven landmark studies with `.venv/bin/python scripts/art/landmarks_bulgaria.py`; researched coordinate sources and visual limits are in Phase 4 of the development plan.
 
 For an Android emulator or iOS simulator, use `npm run android` or `npm run ios` with the appropriate platform tools installed. SDK 58 lists Skia as bundled in Expo Go; use a matching client for an initial phone check. Native rendering has not yet been exercised on a device here.
@@ -145,6 +149,7 @@ The active game artwork is:
 
 - `assets/world/globe.png`: a 4096×2048 equirectangular texture of land, country-border and lake masks.
 - `assets/world/board.png`: 2048×1024. It holds each country's index, the distance from water to land in 3 km steps, and mountain-range areas, for the board's puzzle tones, borders, night-sea bands and relief tint.
+- `src/data/board-country-lookup.json`: the geography build packs the same country raster into rows of runs for CPU tap lookup. The manifest records its Natural Earth source and public-domain license.
 - `assets/world/map-icons.png`: a sheet of original icons, placed by `src/data/map-icons.json`.
 
 Clouds, terrain/forest-like colors, lighting, stars, moon, and satellite are decorative and render in Skia shaders. Source URLs/checksums and license terms are retained in [the pack manifest](./assets/world/manifest.json) and [license](./assets/world/LICENSE.txt).

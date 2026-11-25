@@ -15,12 +15,17 @@ import {
   usePanGesture,
   usePinchGesture,
   useSimultaneousGestures,
+  useTapGesture,
 } from 'react-native-gesture-handler';
-import { useAnimatedReaction, useDerivedValue, useSharedValue } from 'react-native-reanimated';
+import { useDerivedValue, useSharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { CAPITAL_IMAGES } from '@/data/capital-images';
 import capitals from '@/data/capitals.json';
+import { WorldMapScreen } from '@/features/country-sheet/WorldMapScreen';
+import { FoundLandmarkDialog } from '@/features/find-it/FoundLandmarkDialog';
+import { useFindIt } from '@/features/find-it/use-find-it';
+import { ChallengePrompt } from '@/ui';
 import { Birds } from './Birds';
 import { CountryFerry } from './CountryFerry';
 import { CountryLabels } from './CountryLabels';
@@ -41,6 +46,7 @@ import { MapStatus } from './MapStatus';
 import { MapSurface } from './MapSurface';
 import { sunDirection } from './motion';
 import { useWorldClock } from './use-world-clock';
+import { useWorldNavigation } from './use-world-navigation';
 
 const effect = Skia.RuntimeEffect.Make(globeShader);
 // Globe (32 MiB decoded), board (8 MiB), depth (2 MiB) and icon sheet, each decoded once per app session.
@@ -104,13 +110,21 @@ function GlobeScene({
   }, []);
   const camera = useSharedValue(openingCamera);
   const { time, touch } = useWorldClock(camera, images !== null);
+  const navigation = useWorldNavigation(camera, openingCamera, viewport, touch);
+  const { snapshot, selectAt } = navigation;
   // Icon pixels are two-thirds of a terrain pixel (3 points on a phone -> 2 points).
   const iconScale = (Math.max(1.25, Math.min(viewport.width, viewport.height) / CELLS_ACROSS) * 2) / 3;
-  const [snapshot, setSnapshot] = useState(openingCamera);
-  const reset = useCallback(() => {
+  const { tapAt, banner, assist, capitalId, recentFind, closeCard } = useFindIt(snapshot, viewport, iconScale);
+  const selectMapPoint = useCallback((x: number, y: number, current: GlobeCamera) => {
+    selectAt(x, y, current);
+    tapAt(x, y, current);
+  }, [selectAt, tapAt]);
+
+  function selectCenter() {
     touch();
-    camera.set(openingCamera);
-  }, [camera, openingCamera, touch]);
+    selectMapPoint(viewport.width / 2, viewport.height / 2, camera.get());
+  }
+
   const zoom = useCallback(
     (delta: number, x: number, y: number) => {
       touch();
@@ -128,20 +142,13 @@ function GlobeScene({
     [camera, viewport, iconScale, touch]
   );
 
-  useAnimatedReaction(
-    () => {
-      const c = camera.get();
-      return `${Math.floor(c.longitude / 5)}:${Math.floor(c.latitude / 5)}:${Math.floor(c.zoom * 10)}`;
-    },
-    (next, previous) => {
-      if (next !== previous) scheduleOnRN(setSnapshot, camera.get());
-    }
-  );
+  const suppressTap = useSharedValue(false);
   // Any touch stops the idle spin, even one that doesn't move far enough to start a drag.
   const pan = usePanGesture({
     maxPointers: 1,
     minDistance: 6,
     onTouchesDown: () => touch(),
+    onActivate: () => suppressTap.set(true),
     onUpdate: (event) => {
       touch();
       camera.set(
@@ -155,6 +162,9 @@ function GlobeScene({
     },
   });
   const pinch = usePinchGesture({
+    // Pinch tracks additional fingers on web even when there is too little motion to activate it.
+    onTouchesDown: (event) => suppressTap.set(event.numberOfTouches > 1),
+    onActivate: () => suppressTap.set(true),
     onUpdate: (event) => {
       touch();
       camera.set(
@@ -173,7 +183,15 @@ function GlobeScene({
       );
     },
   });
-  const gesture = useSimultaneousGestures(pan, pinch);
+  const tap = useTapGesture({
+    maxDistance: 5,
+    onDeactivate: (event) => {
+      if (!event.canceled && !suppressTap.get()) {
+        scheduleOnRN(selectMapPoint, event.x, event.y, camera.get());
+      }
+    },
+  });
+  const gesture = useSimultaneousGestures(pan, pinch, tap);
   // Only the capital being visited runs its scene animation (snapshot follows the camera in steps).
   const visiting = activeCapital(snapshot)?.id;
   const uniforms = useDerivedValue(() => {
@@ -195,46 +213,62 @@ function GlobeScene({
   if (error || !effect) return <MapStatus error onRetry={onRetry} />;
   if (!images) return <MapStatus />;
   return (
-    <View style={styles.scene}>
-      <MapSurface
-        label="Interactive Earth globe. Use arrow keys to spin, plus or minus to zoom, and Home to reset."
-        gesture={gesture}
-        onZoom={zoom}
-        onPan={rotate}
-        onReset={reset}>
-        <Canvas style={styles.fill} testID="world-globe">
-          <Fill>
-            <Shader source={effect} uniforms={uniforms}>
-              <ImageShader image={images.globe} tx="repeat" ty="clamp" fit="none" sampling={NEAREST} />
-              <ImageShader image={images.board} tx="repeat" ty="clamp" fit="none" sampling={NEAREST} />
-              {/* The same board image, filtered: smooth distance-to-coast for the sea bands. */}
-              <ImageShader image={images.board} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
-              {/* Ocean depth, filtered so depth contours blend. */}
-              <ImageShader image={images.depth} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
-              <ImageShader image={images.lights} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
-            </Shader>
-          </Fill>
-          <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={0} time={time} />
-          <CountryFerry image={images.icons} camera={camera} viewport={viewport} scale={iconScale} time={time} />
-          <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={1} time={time} />
-          <Birds image={images.icons} camera={camera} viewport={viewport} scale={iconScale} time={time} />
-          {capitals.map((scene) => (
-            <CapitalLayer
-              key={scene.id}
-              image={images[scene.id as keyof typeof CAPITAL_IMAGES]}
-              scene={scene}
-              camera={camera}
-              viewport={viewport}
-              iconScale={iconScale}
-              icons={images.icons}
-              time={time}
-              animated={visiting === scene.id}
-            />
-          ))}
-        </Canvas>
-      </MapSurface>
-      <CountryLabels viewport={viewport} camera={camera} snapshot={snapshot} />
-    </View>
+    <WorldMapScreen
+      selection={navigation.selection}
+      capitalName={navigation.capitalName}
+      prompt={banner && <ChallengePrompt {...banner} />}
+      onBack={navigation.back}
+      onClose={navigation.clearSelection}
+      onExplore={navigation.explore}>
+      <View style={styles.scene}>
+        <MapSurface
+          gesture={gesture}
+          onZoom={zoom}
+          onPan={rotate}
+          onReset={navigation.reset}
+          onSelectCenter={selectCenter}>
+          <Canvas style={styles.fill} testID="world-globe">
+            <Fill>
+              <Shader source={effect} uniforms={uniforms}>
+                <ImageShader image={images.globe} tx="repeat" ty="clamp" fit="none" sampling={NEAREST} />
+                <ImageShader image={images.board} tx="repeat" ty="clamp" fit="none" sampling={NEAREST} />
+                {/* The same board image, filtered: smooth distance-to-coast for the sea bands. */}
+                <ImageShader image={images.board} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
+                {/* Ocean depth, filtered so depth contours blend. */}
+                <ImageShader image={images.depth} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
+                <ImageShader image={images.lights} tx="repeat" ty="clamp" fit="none" sampling={LINEAR} />
+              </Shader>
+            </Fill>
+            <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={0} time={time} />
+            <CountryFerry image={images.icons} camera={camera} viewport={viewport} scale={iconScale} time={time} />
+            <MapIcons image={images.icons} camera={camera} viewport={viewport} scale={iconScale} tier={1} time={time} />
+            <Birds image={images.icons} camera={camera} viewport={viewport} scale={iconScale} time={time} />
+            {capitals.map((scene) => (
+              <CapitalLayer
+                key={scene.id}
+                image={images[scene.id as keyof typeof CAPITAL_IMAGES]}
+                scene={scene}
+                camera={camera}
+                viewport={viewport}
+                iconScale={iconScale}
+                icons={images.icons}
+                time={time}
+                animated={visiting === scene.id}
+                assist={capitalId === scene.id ? assist?.bbox : undefined}
+              />
+            ))}
+          </Canvas>
+        </MapSurface>
+        <CountryLabels viewport={viewport} camera={camera} snapshot={snapshot} />
+      </View>
+      {recentFind && (
+        <FoundLandmarkDialog
+          found={recentFind}
+          sceneImage={images[recentFind.prompt.landmark.parentId as keyof typeof CAPITAL_IMAGES]}
+          onClose={closeCard}
+        />
+      )}
+    </WorldMapScreen>
   );
 }
 

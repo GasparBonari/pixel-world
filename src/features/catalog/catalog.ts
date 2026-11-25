@@ -65,6 +65,7 @@ export type LandmarkEntry = ChildEntry & Coordinates & Readonly<{
   coordinateSource: Readonly<{ path: string; key: string }>;
   fact?: CatalogFact;
 }>;
+export type CheckedLandmark = LandmarkEntry & { readonly fact: CatalogFact & { readonly status: 'checked' } };
 
 export type WildlifeEntry = ChildEntry & Readonly<{
   kind: 'wildlife';
@@ -106,6 +107,12 @@ export function getCatalogEntry(id: string): CatalogEntry | undefined {
 
 export function getCatalogChildren(parentId: string): readonly CatalogEntry[] {
   return childrenByParent.get(parentId) ?? [];
+}
+
+export function getCheckedLandmarks(capitalId: string): readonly CheckedLandmark[] {
+  return getCatalogChildren(capitalId).filter(
+    (entry): entry is CheckedLandmark => entry.kind === 'landmark' && entry.fact?.status === 'checked'
+  );
 }
 
 function hasCheckedFact(entry: CatalogEntry): boolean {

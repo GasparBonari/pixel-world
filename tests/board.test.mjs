@@ -143,13 +143,13 @@ const ICON_POINTS = (Math.max(1.25, Math.min(PHONE.width, PHONE.height) / 130) *
 const COUNTRY_FULL = 5.0; // COUNTRY_ZOOM.full: the first country icons are fully visible
 const STRUCTURES = new Set(['church', 'mosque', 'house', 'oak', 'pine', 'olive', 'boat']);
 
-/** An 8-bit, non-interlaced PNG (grey or RGBA) as { width, height, channels, pixels }. */
+/** An 8-bit, non-interlaced PNG as { width, height, channels, pixels }. */
 function decodePng(path) {
   const bytes = readFileSync(new URL(path, import.meta.url));
   const width = bytes.readUInt32BE(16);
   const height = bytes.readUInt32BE(20);
-  const channels = { 0: 1, 6: 4 }[bytes[25]];
-  assert.ok(bytes[24] === 8 && channels && bytes[28] === 0, `${path}: 8-bit grey or RGBA, not interlaced`);
+  const channels = { 0: 1, 2: 3, 6: 4 }[bytes[25]];
+  assert.ok(bytes[24] === 8 && channels && bytes[28] === 0, `${path}: 8-bit grey, RGB or RGBA, not interlaced`);
   const chunks = [];
   for (let at = 8; at < bytes.length; ) {
     const length = bytes.readUInt32BE(at);
@@ -175,6 +175,34 @@ function decodePng(path) {
   }
   return { width, height, channels, pixels };
 }
+
+test('the generated country lookup reproduces every board red-channel value', () => {
+  const { width, height, channels, pixels } = decodePng('../assets/world/board.png');
+  const lookup = JSON.parse(readFileSync(new URL('../src/data/board-country-lookup.json', import.meta.url), 'utf8'));
+  assert.equal(lookup.width, width);
+  assert.equal(lookup.height, height);
+  assert.equal(lookup.countryIds[0], null);
+
+  const data = Buffer.from(lookup.rows, 'base64');
+  const runsOffset = (height + 1) * 2;
+  const red = Buffer.alloc(width * height);
+  const unpacked = Buffer.alloc(red.length);
+  for (let y = 0; y < height; y++) {
+    const offset = y * width;
+    for (let x = 0; x < width; x++) red[offset + x] = pixels[(offset + x) * channels];
+    const first = data.readUInt16LE(y * 2);
+    const end = data.readUInt16LE((y + 1) * 2);
+    assert.equal(data.readUInt16LE(runsOffset + first * 3), 0);
+    for (let run = first; run < end; run++) {
+      const at = runsOffset + run * 3;
+      const x = data.readUInt16LE(at);
+      const nextX = run + 1 === end ? width : data.readUInt16LE(at + 3);
+      assert.ok(data[at + 2] < lookup.countryIds.length);
+      unpacked.fill(data[at + 2], offset + x, offset + nextX);
+    }
+  }
+  assert.ok(unpacked.equals(red));
+});
 
 /** Each frame's opaque pixels (alpha > 128) around the drawing anchor, from the RGBA sprite sheet. */
 function solidBoxes() {

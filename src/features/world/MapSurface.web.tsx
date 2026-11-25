@@ -9,13 +9,18 @@ export function MapSurface({
   onZoom,
   onPan,
   onReset,
+  onSelectCenter,
   children,
-  label,
 }: MapSurfaceProps) {
   const element = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const node = element.current;
     if (!node) return;
+    // RNGH handles the pointer gesture. Suppress the follow-up click so it cannot hit
+    // a modal control that mounted on pointer-up, outside this map surface.
+    function preventTouchClick(event: TouchEvent) {
+      if (event.cancelable) event.preventDefault();
+    }
     function wheel(event: WheelEvent) {
       event.preventDefault();
       const bounds = node!.getBoundingClientRect();
@@ -28,7 +33,11 @@ export function MapSurface({
       );
     }
     node.addEventListener('wheel', wheel, { passive: false });
-    return () => node.removeEventListener('wheel', wheel);
+    node.addEventListener('touchend', preventTouchClick, { passive: false });
+    return () => {
+      node.removeEventListener('wheel', wheel);
+      node.removeEventListener('touchend', preventTouchClick);
+    };
   }, [onZoom]);
 
   return (
@@ -36,10 +45,7 @@ export function MapSurface({
       ref={element}
       tabIndex={0}
       role="region"
-      aria-label={
-        label ??
-        'Interactive Earth map. Use arrow keys to pan, plus or minus to zoom, and Home to reset.'
-      }
+      aria-label="Interactive Earth map. Use arrow keys to pan, plus or minus to zoom, Enter to try the point at the center, and Home to reset."
       style={{ display: 'flex', flexDirection: 'column', height: '100%', outlineOffset: 4 }}
       onKeyDown={(event) => {
         const bounds = event.currentTarget.getBoundingClientRect();
@@ -53,6 +59,7 @@ export function MapSurface({
         else if (event.key === 'ArrowRight') onPan(-48, 0);
         else if (event.key === 'ArrowUp') onPan(0, 48);
         else if (event.key === 'ArrowDown') onPan(0, -48);
+        else if (event.key === 'Enter') onSelectCenter();
         else if (event.key === 'Home') onReset();
         else return;
         event.preventDefault();

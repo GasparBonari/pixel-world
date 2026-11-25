@@ -1,5 +1,5 @@
-import { useState, type PropsWithChildren, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useEffect, useRef, useState, type ComponentRef, type PropsWithChildren, type ReactNode } from 'react';
+import { AccessibilityInfo, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 
 import { Frames, Motion, Palette, Size, Space, px } from '@/constants/theme';
@@ -43,9 +43,21 @@ export function BottomSheet({
   children,
 }: BottomSheetProps) {
   const { height } = useWindowDimensions();
+  const titleButton = useRef<ComponentRef<typeof Pressable>>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [actionHeight, setActionHeight] = useState(0);
-  const bodyMax = Math.max(px(40), height * Motion.sheetMaxShare - headerHeight - actionHeight);
+  const bodyMax = Math.max(0, height * Motion.sheetMaxShare - headerHeight - actionHeight - Space.lg);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      // Web can send a follow-up mouse event after a touch. Focus after that tap sequence.
+      let frame = requestAnimationFrame(() => {
+        frame = requestAnimationFrame(() => titleButton.current?.focus());
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+    AccessibilityInfo.announceForAccessibility(title);
+  }, [title]);
 
   const swipe = usePanGesture({
     runOnJS: true,
@@ -68,18 +80,21 @@ export function BottomSheet({
             <Pressable
               onPress={() => onExpandedChange(!expanded)}
               accessible={false}
+              aria-hidden
               importantForAccessibility="no"
+              tabIndex={-1}
               style={styles.handleRow}>
               <View style={styles.handle} />
             </Pressable>
             <View style={styles.titleRow}>
               {/* Siblings, not nested: VoiceOver merges a button's children into one element. */}
               <Pressable
+                ref={titleButton}
                 onPress={() => onExpandedChange(!expanded)}
                 accessibilityRole="button"
                 accessibilityLabel={title}
-                accessibilityHint={expanded ? 'Collapses the details' : 'Shows the details'}
-                accessibilityState={{ expanded }}
+                accessibilityHint={[subtitle, expanded ? 'Collapses the details' : 'Shows the details'].filter(Boolean).join('. ')}
+                aria-expanded={expanded}
                 style={styles.toggle}>
                 {icon && <PixelIcon name={icon} />}
                 <View style={styles.titleText}>

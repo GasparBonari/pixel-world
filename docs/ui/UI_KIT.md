@@ -6,7 +6,7 @@ Every agent (Codex, Claude) and every human building interface reads this before
 
 ![UI kit preview](ui-kit-preview.png)
 
-Live preview: run `npm run web` and open <http://localhost:8081/ui-kit>. The "Overlays" panel opens the sheet, a found collectible, an Undo notice, and a confirm dialog.
+Live preview: run `npm run web` and open <http://localhost:8081/ui-kit>. The "Overlays" panel opens the sheet, a found collectible, an Undo notice, and a confirm dialog. The "Find it" panel previews the prompt, miss feedback, and completion.
 
 ## Look we are aiming for
 
@@ -45,11 +45,12 @@ Palette hues match the map art (`scripts/art/phase3_mockups.py` `P`, `scripts/ar
 
 | Component | Use it for | Notes |
 | --- | --- | --- |
-| `Screen` | The outer layout of every screen | `header` (a `TopBar`), `footer` (the `TabBar`), `overlay` (a `BottomSheet`), `scroll`, `background` `night`/`space`/`none`. Handles safe areas and the max content width |
-| `TopBar` | The thin navy bar at the top | `onBack`, `title` or progress as children, `actions` on the right |
-| `BottomSheet` | Country and place details over the map | Controlled `expanded`/`onExpandedChange`, `onClose`, `action` (the screen's one primary button). Tap or swipe the header; never taller than half the screen. Put it in `Screen`'s `overlay` |
+| `Screen` | The outer layout of every screen | `header` (a `TopBar`), `footer` (the `TabBar`), `overlay` (a `BottomSheet`), `scroll`, `background` `night`/`space`/`none`. Use `fullBleed` with `scroll={false}` for a full-viewport scene with an overlaid header |
+| `TopBar` | The thin navy bar at the top | `onBack` with optional `backLabel`, `title` or progress as children, `actions` on the right |
+| `ChallengePrompt` | Find-it prompt in the capital `TopBar` | `title`, optional `feedback`, `misses` to replay the whole-pixel shake with `useSteps`, `complete` for the green check and completion text. Reduce motion keeps the bar still |
+| `BottomSheet` | Country and place details over the map | Controlled `expanded`/`onExpandedChange`, `onClose`, `action` (the screen's one primary button). Tap or swipe the header. Expanded details scroll within half the screen. Put it in `Screen`'s `overlay` |
 | `PixelModal` | A centred dialog over the dimmed world | `visible`, `onClose` (backdrop and Android back), `label`. Pops in with a stepped scale |
-| `CollectibleCard` | Collectible details inside a `PixelModal` | `name`, `kind` (`landmark`/`wildlife`/`landscape`), `image`, `description`, `source` (always shown), `foundOn`, `justFound` (gold "Found!" ribbon) |
+| `CollectibleCard` | Collectible details inside a `PixelModal` | `name`, `kind` (`landmark`/`wildlife`/`landscape`), `image`, `imageFit="contain"` to show the full crop, `description`, `source` (always shown), `foundOn`, `justFound` (gold "Found!" ribbon) |
 | `ConfirmDialog` | Asking before an action that loses records | Name the action on the button; `destructive` makes it red. Prefer an Undo notice when the action can be reversed |
 | `NoticeProvider` / `useNotice` | Short messages: "Visit removed." with **Undo**, save failures | Mounted once in the root layout. `useNotice()({ message, icon, action })`. One at a time, at the top, announced to screen readers |
 | `useSteps` | Stepped animations | `useSteps(frames, trigger)` returns the current frame at 12 fps; reduce motion returns the last frame |
@@ -73,13 +74,13 @@ Palette hues match the map art (`scripts/art/phase3_mockups.py` `P`, `scripts/ar
 
 ## Screen recipes
 
-- **Every screen** is a `Screen`. Background: the map (World tab, `background="none"`, `scroll={false}`) or `night` (other tabs). Content sits on `Panel`s, never directly on the map.
+- **Every screen** is a `Screen`. The map uses `background="none"`, `scroll={false}`, and `fullBleed` so overlay controls leave the map's viewport unchanged. Other screens use `night`. Content sits on `Panel`s.
 - **Top bar:** `TopBar` with a back button and one `ProgressBar tone="light"` (overall progress) or a title. No avatar, currency, or level.
 - **Sheets over the map:** `BottomSheet` in the `Screen`'s `overlay`, so the map stays mounted and the camera never resets. Collapsed: title and the one primary action. Expanded: details, at most half the screen.
 - **Finding something:** open a `PixelModal` with `CollectibleCard justFound`. The card's button is the only gold one while it is open.
 - **Undo, not "Are you sure?":** reversible actions (remove a visit, un-wishlist) happen at once and show a notice with Undo. Only irreversible ones (reset all progress) use `ConfirmDialog`.
-- **Country sheet:** title + "Continent · Capital" line, `ProgressBar`, `SegmentedTabs`, `SectionHeader` + horizontal `CollectibleTile`s, one `primary` button.
-- **Challenge:** `Ribbon skin="gold"`, `Panel` with a `heading` prompt and short `body`; "find it" happens by tapping the scene. Answer choices (`PixelButton marker`) only for map questions.
+- The **country sheet** (P5-03) shows a title, “Continent · Capital: Name” and one primary **Explore** button. Expand to see **Country progress** and a **Landmarks** row for checked catalog landmarks. Found tiles and the count read the same discovery records as the challenge. An empty released pack shows **Coming soon**. See [progress rules](../content/CATALOG.md#fact-review-and-progress).
+- At full capital zoom, **Find it** places a `ChallengePrompt` in the `TopBar`. A miss shakes the bar for a few frames and adds encouragement. After three misses the feedback names the area and the map draws pixel brackets. A correct tap opens a card and the prompt advances when the card closes. The final banner shows the number of checked landmarks found.
 - **Lists:** `QuestRow`s with `Space.md` gaps.
 - **Layout width:** `maxWidth: Size.maxContentWidth`, centred, so tablets and web don't stretch panels.
 - **Safe areas:** `SafeAreaView` from `react-native-safe-area-context`; the tab bar sits in the bottom inset.
@@ -87,6 +88,8 @@ Palette hues match the map art (`scripts/art/phase3_mockups.py` `P`, `scripts/ar
 ## Navigation
 
 Per [PROJECT_VISION.md](../../PROJECT_VISION.md): three tabs, **World** (the map), **Quests**, **Passport**. The collection lives inside Passport. Country and collectible details open as sheets over the map.
+
+At country zoom, tap a country with a capital scene to open its sheet. Tap open sea or press Close to clear the selection. Explore focuses the capital on the same map. Back restores the previous country view after Explore, and Back at country zoom opens the continent view around the current location.
 
 When P7-01 builds the tabs, use the SDK 58 custom tabs API from `expo-router/ui` (`Tabs`, `TabSlot`, `TabList`, `TabTrigger`). Render the kit's `TabBar` look inside `TabList` with each item as a `TabTrigger asChild`. The map must stay mounted between tabs. Read <https://docs.expo.dev/router/advanced/custom-tabs/> before writing it; the API is experimental and changes between SDKs.
 
@@ -100,6 +103,8 @@ When P7-01 builds the tabs, use the SDK 58 custom tabs API from `expo-router/ui`
 
 - Touch targets at least `Size.touch` (48 pt). Buttons get `accessibilityRole="button"` and a label (the kit does this).
 - Icon-only controls require `accessibilityLabel`.
+- A new `BottomSheet` title is announced on native and receives keyboard focus on web. Its title button toggles the details, and Close and Explore have separate buttons.
+- `ChallengePrompt` uses a polite live region for the prompt and feedback. With the map focused on web, arrow keys pan and Enter tries the center point.
 - Progress uses `accessibilityRole="progressbar"` with min/max/now (the kit does this).
 - Text never smaller than `caption` (12 pt). Body font for long text is an open decision (Pixelify Sans vs. a plainer companion); keep long text short until it is settled.
 
@@ -127,7 +132,6 @@ Add each when its phase starts, following "Adding a component". Do not style the
 
 | Needed for | Missing | Phase |
 | --- | --- | --- |
-| "Find it" in capital scenes | Prompt bar over the scene, wrong-tap feedback (shake or short notice), the assist highlight (map side) | P5-05 |
 | Tabs | Wiring `TabBar` to `expo-router/ui` `TabTrigger`s with the map kept mounted | P7-01 |
 | Passport and travel | `Stamp`, stamp grid, list rows (visited places), wishlist toggle, date picker for visits, search field for the home country | P7-04 to P7-06 |
 | Settings | `Toggle` (mute, reduce motion), link rows (attribution) | P6-06, P8 |

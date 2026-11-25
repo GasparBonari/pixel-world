@@ -16,6 +16,8 @@ export type ScreenProps = PropsWithChildren<{
   overlay?: ReactNode;
   /** Scroll the body (default) or let it fill the space (the map). */
   scroll?: boolean;
+  /** Let a non-scrolling scene fill the screen, with the header over it. */
+  fullBleed?: boolean;
   /**
    * night: the night-sea colour, for Quests, Passport and other non-map screens.
    * none: transparent, for content drawn over the map.
@@ -36,22 +38,27 @@ export function Screen({
   footer,
   overlay,
   scroll = true,
+  fullBleed = false,
   background = 'night',
   contentStyle,
   children,
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
   const sides = { paddingLeft: insets.left, paddingRight: insets.right };
-  const column = [styles.column, !footer && { paddingBottom: insets.bottom + Space.lg }, contentStyle];
+  const column = fullBleed && !scroll
+    ? contentStyle
+    : [styles.column, !footer && { paddingBottom: insets.bottom + Space.lg }, contentStyle];
 
   return (
     <View style={[styles.root, { backgroundColor: Backgrounds[background] }]}>
       {header ? (
-        <View style={[styles.header, sides, { paddingTop: insets.top }]}>{header}</View>
+        <View style={[styles.header, fullBleed && styles.overlaidHeader, sides, { paddingTop: insets.top }]}>
+          {header}
+        </View>
       ) : (
-        <View style={{ height: insets.top }} />
+        !fullBleed && <View style={{ height: insets.top }} />
       )}
-      <View style={[styles.body, sides]}>
+      <View style={[styles.body, !fullBleed && sides]}>
         {scroll ? (
           <ScrollView contentContainerStyle={column} keyboardShouldPersistTaps="handled">
             {children}
@@ -60,7 +67,9 @@ export function Screen({
           <View style={[styles.fill, column]}>{children}</View>
         )}
         {overlay && (
-          <View style={[StyleSheet.absoluteFill, !footer && { bottom: insets.bottom }]} pointerEvents="box-none">
+          <View
+            style={[StyleSheet.absoluteFill, fullBleed && sides, !footer && { bottom: insets.bottom }]}
+            pointerEvents="box-none">
             {overlay}
           </View>
         )}
@@ -73,6 +82,8 @@ export function Screen({
 export type TopBarProps = PropsWithChildren<{
   /** Shows a back button when given. */
   onBack?: () => void;
+  /** Name the destination when a screen has multiple levels. */
+  backLabel?: string;
   /** A screen title; omit when the bar holds progress instead. */
   title?: string;
   /** Right-side controls (an IconButton for settings or help). */
@@ -83,10 +94,10 @@ export type TopBarProps = PropsWithChildren<{
  * The thin navy bar at the top of a screen: back, title or progress (children), actions.
  * Keep it to one line; no avatars, currencies, or levels.
  */
-export function TopBar({ onBack, title, actions, children }: TopBarProps) {
+export function TopBar({ onBack, backLabel = 'Back', title, actions, children }: TopBarProps) {
   return (
     <View style={styles.bar}>
-      {onBack && <IconButton icon="back" accessibilityLabel="Back" onPress={onBack} />}
+      {onBack && <IconButton icon="back" accessibilityLabel={backLabel} onPress={onBack} />}
       <View style={styles.fill}>
         {title && (
           <PixelText variant="heading" tone="light" numberOfLines={1} accessibilityRole="header">
@@ -116,6 +127,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: px(1),
     borderBottomColor: Frames.navy.highlight,
   },
+  overlaidHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 },
   footer: { backgroundColor: Palette.navyDeep },
   bar: {
     flexDirection: 'row',

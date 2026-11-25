@@ -132,6 +132,7 @@ All scales use the globe's orthographic projection, so zooming in keeps the same
     - Rivers run along an isometric axis, so bridges cross them squarely.
     - Landmarks stay in view: tall houses never stand just in front of them (on the screen-lower side), so squares or streets are kept open there.
     - `scripts/art/build_capital_landmarks.py` uses the scene checker's landmark silhouettes to export tight bounding boxes and one-bit masks of visible painted pixels in scene coordinates.
+    - The find-it challenge projects taps into those masks using the same rounded origin and scale as the scene image. After three misses, gold corner brackets with a dark outline frame the target's bounding box. They follow the scene, snap to whole screen points, and pulse in whole scene-pixel steps on the world clock. Reduce motion holds the brackets still. The found card crops the existing scene inside the exported box with nearest-neighbour sampling.
   - **Display:** 2-point pixels at full zoom; the scene keeps the screen covered while panning. The 1.5° capital reach gates arrival; an active visit pans to the actual scene rectangle, including at northern latitudes. Screen-space anchor positioning prevents sideways drags drifting vertically at an edge, and zooming out releases the visit.
   - **Each capital has its own palette.** Lisbon: pastel walls and terracotta roofs. Madrid: cream, ochre, brick and salmon walls under grey-blue slate roofs, with granite landmarks and slate domes. Paris: uniform five- and six-storey Haussmann blocks in cream limestone under low zinc roofs, a river kept visible by open quays (tall blocks never stand just south of the water, where they would hide it).
   - **Vaduz:** two-storey Alpine plaster and stone-plinth houses in cream `#E5D9B8`, ivory `#F1E9D1`, biscuit `#CAB393`, sage `#D6D9C0`, rose `#D9BEA7` and grey-green `#C4CDC9`. Shutters, divided pane windows, framed doors, timber balconies, deep gable eaves and capped chimneys distinguish them. Roof clay uses `#A86B52` / `#704637` / `#432B25` and slate `#777873` / `#4C4C49` / `#30332E` (lit / shade / outline). Castle limestone, red Mitteldorf plaster, polished basalt, ochre clinker and cream sandstone mark the landmark districts. Pale square slabs, grey streets, muted orchard greens and teal Alpine Rhine water (`#5995A0`, with `#C2DAD1` highlights) sit below a rocky, wooded castle spur raised 49 art pixels. The west bank stays open beside the covered bridge, and vineyard rows run downhill from the Red House.
@@ -317,7 +318,7 @@ OpenStreetMap tags map to a small set of art classes. Later classes in this tabl
 
 ## 6. Screen furniture
 
-These are drawn in the mockups to show the target composition.
+The mockups below show the original target composition. The shipped country sheet and back controls follow the [Pixel UI Kit](../ui/UI_KIT.md#screen-recipes).
 
 - **Header:** a parchment back button, a centred parchment title ribbon (Pixelify Sans Bold 22), and a parchment gear. Minimal back/focus controls belong to the Phase 3–4 visual work.
 - **Bottom card:**
@@ -325,6 +326,8 @@ These are drawn in the mockups to show the target composition.
   - a title (Bold 24), a subtitle, rows with a pin icon, and a green "Explore …" button;
   - only factual content (capital, islands, ferry). Progress percentages, XP and badges appear only once saved visits exist (Phases 5–6). The development plan forbids placeholder statistics.
 - **Parchment colours:** `parchment`, `parchment_light`, `parchment_edge`, `parchment_shadow`, `ink`.
+
+P5-03 uses the sheet title to indicate country selection. A tap uses the globe projection and looks up the board's red channel separately from rendering. `scripts/geography/prepare_assets.py` packs the same 2048×1024 country raster into horizontal runs paired with Natural Earth IDs. The art and shader continue to use the original board texture.
 
 ## 7. Open questions for review
 

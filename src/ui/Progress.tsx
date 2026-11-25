@@ -25,19 +25,23 @@ export type ProgressBarProps = {
 export function ProgressBar({ value, total, title, segments, tone = 'ink' }: ProgressBarProps) {
   const ratio = total > 0 ? Math.min(1, Math.max(0, value / total)) : 0;
   const parts = segments ?? (total > 0 && total <= 10 ? total : 0);
+  const count = total > 0 ? `${value} / ${total}` : 'Coming soon';
   return (
     <View
       style={styles.wrap}
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={title}
-      accessibilityValue={{ min: 0, max: total, now: value, text: `${value} of ${total}` }}>
+      aria-valuemin={total > 0 ? 0 : undefined}
+      aria-valuemax={total > 0 ? total : undefined}
+      aria-valuenow={total > 0 ? value : undefined}
+      aria-valuetext={total > 0 ? `${value} of ${total}` : count}>
       <View style={styles.row}>
         <PixelText variant="label" tone={tone} style={styles.grow}>
           {title}
         </PixelText>
         <PixelText variant="label" tone={tone}>
-          {total > 0 ? `${value} / ${total}` : 'Coming soon'}
+          {count}
         </PixelText>
       </View>
       <PixelFrame skin="track" contentStyle={styles.track}>

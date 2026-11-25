@@ -22,6 +22,11 @@ const StateLabel: Record<CollectibleState, string> = {
   missing: 'not found yet',
   locked: 'locked',
 };
+const StateIcon: Record<CollectibleState, IconName> = {
+  found: 'star',
+  missing: 'help',
+  locked: 'lock',
+};
 
 /** A collection card: picture, name, and a check (found) or lock (locked) badge. */
 export function CollectibleTile({ name, state, image, onPress }: CollectibleTileProps) {
@@ -44,7 +49,7 @@ export function CollectibleTile({ name, state, image, onPress }: CollectibleTile
               {image && !(state === 'locked') ? (
                 <Image source={image} style={[styles.image, hidden && styles.dim]} resizeMode="cover" />
               ) : (
-                <PixelIcon name={state === 'locked' ? 'lock' : 'help'} />
+                <PixelIcon name={StateIcon[state]} />
               )}
             </View>
             <PixelText variant="caption" tone={state === 'found' ? 'ink' : 'light'} align="center" numberOfLines={2}>

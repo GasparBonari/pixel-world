@@ -1,11 +1,13 @@
 """Rebuild world textures and display labels from pinned Natural Earth inputs."""
 
+from base64 import b64encode
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
 from io import BytesIO
 import json
 import math
 from pathlib import Path
+from struct import pack
 from tempfile import TemporaryDirectory
 import urllib.request
 
@@ -97,6 +99,31 @@ def generate_globe(sources):
             'decorative': ['clouds', 'terrain colors', 'lighting', 'stars'], 'countryLabelCount': len(labels)}
 
 
+def generate_country_lookup(countries, features):
+    width, height = countries.size
+    runs = bytearray()
+    row_offsets = [0]
+    pixels = countries.tobytes()
+    for y in range(height):
+        row = pixels[y * width:(y + 1) * width]
+        for x, index in enumerate(row):
+            if x == 0 or index != row[x - 1]:
+                runs.extend(pack('<HB', x, index))
+        row_offsets.append(len(runs) // 3)
+
+    data = pack(f'<{len(row_offsets)}H', *row_offsets) + runs
+    path = 'src/data/board-country-lookup.json'
+    lookup = {
+        'generatedBy': 'scripts/geography/prepare_assets.py',
+        'width': width, 'height': height,
+        'countryIds': [None] + [feature['properties']['ADM0_A3'] for feature in features],
+        'rows': b64encode(data).decode('ascii'),
+    }
+    write_atomic(ROOT/path, (json.dumps(lookup, separators=(',', ':'))+'\n').encode())
+    return {'path': path, 'decodedBytes': len(data),
+            'source': 'countries-50m, board.png red channel', 'license': 'Natural Earth, public domain'}
+
+
 def generate_board(sources):
     """Continent-scale 'game board' data (ART_CONTRACT.md), equirectangular 2048x1024:
 
@@ -165,8 +192,10 @@ def generate_board(sources):
     encoded = BytesIO()
     Image.merge('RGB', (countries, distance, ranges)).save(encoded, format='PNG', optimize=True)
     write_atomic(texture, encoded.getvalue())
+    lookup = generate_country_lookup(countries, country_features)
     return {'width': width, 'height': height, 'bytes': texture.stat().st_size,
             'decodedBytes': width*height*4, 'projection': 'equirectangular',
+            'countryLookup': lookup,
             'channels': {'red': 'country index + 1 (ne_50m_admin_0_countries order)',
                          'green': 'water distance to land, 3 km units, capped at 255',
                          'blue': 'mountain ranges: 255 scalerank<=3, 160 scalerank 4'},

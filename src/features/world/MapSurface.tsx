@@ -7,7 +7,7 @@ export type MapSurfaceProps = PropsWithChildren<{
   onZoom: (delta: number, x: number, y: number) => void;
   onPan: (dx: number, dy: number) => void;
   onReset: () => void;
-  label?: string;
+  onSelectCenter: () => void;
 }>;
 
 export function MapSurface({ gesture, children }: MapSurfaceProps) {
