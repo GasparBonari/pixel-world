@@ -1,0 +1,55 @@
+{
+  "generatedBy": "scripts/art/build_app_icon.py",
+  "license": "MIT (repository LICENSE)",
+  "sources": {
+    "geography": {
+      "path": "assets/world/globe.png",
+      "attribution": "Natural Earth, public domain",
+      "manifest": "assets/world/manifest.json"
+    },
+    "palette": [
+      "src/constants/theme.ts",
+      "src/features/world/globe-shader.ts",
+      "scripts/art/phase3_mockups.py",
+      "scripts/art/recolor_style_study.py"
+    ]
+  },
+  "images": {
+    "icon.png": {
+      "width": 1024,
+      "height": 1024,
+      "bytes": 5771,
+      "sha256": "889a11f887ba06f716fb86bf98ec8d7e603bb9d1f7e24f4f2f1384cf9a7b641f"
+    },
+    "favicon.png": {
+      "width": 48,
+      "height": 48,
+      "bytes": 750,
+      "sha256": "360c9462a37334a69cf03b88612d22b5a7b6d5ac8d0bca06625a569a44ab13ca"
+    },
+    "android-icon-foreground.png": {
+      "width": 864,
+      "height": 864,
+      "bytes": 4678,
+      "sha256": "b3deccfc49d3056fbf111622970cfdc4a5a57aa2e561fd6666928bbbb0facf0c"
+    },
+    "android-icon-background.png": {
+      "width": 864,
+      "height": 864,
+      "bytes": 3452,
+      "sha256": "d50c98b3bb75b0d4918cd00d48fb959f807192fbc5d60d1c7dc79d6ef6b87acf"
+    },
+    "android-icon-monochrome.png": {
+      "width": 864,
+      "height": 864,
+      "bytes": 4165,
+      "sha256": "3a99d73813dbf8b082bdcc74adcd488d0af2083c323da4b0b467fd003b630b93"
+    },
+    "splash-icon.png": {
+      "width": 1024,
+      "height": 1024,
+      "bytes": 6404,
+      "sha256": "15a59ae657752fe25bd35bed12c55eb37fca54be24f4dd611acc91d593dcff71"
+    }
+  }
+}

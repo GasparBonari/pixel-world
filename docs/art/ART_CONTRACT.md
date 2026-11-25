@@ -342,6 +342,7 @@ P5-03 uses the sheet title to indicate country selection. A tap uses the globe p
 - **Natural Earth** (public domain): git revision `ca96624a`, checksums in `scripts/art/phase3-sources.lock.json`.
 - **OpenStreetMap** (ODbL 1.0): Geofabrik Malta extract `malta-261108.osm.pbf`, SHA-256 `19bdaf3a…fe13`, cached in the git-ignored `.cache/osm/`. The mockups are produced works and carry the attribution.
 - **Icons (`scripts/art/sprites.py`), clouds and parchment UI** in the mockups are original pixel art made for this project. Ninja Adventure tiles (CC0) are only used at the capital scale.
+- **App icon and splash** use a pixel globe projected from the Natural Earth texture and coloured with the daytime globe palette on night navy. `scripts/art/build_app_icon.py` scales the artwork with nearest-neighbour sampling and records the MIT license and sources in [the launch artwork manifest](../../assets/images/manifest.json).
 - **Pixelify Sans:** SIL Open Font License 1.1.
 - **Reference:** the GlobeQuest concept image guides the style. Nothing from it is copied into project assets.
 

@@ -143,6 +143,12 @@ Bulgaria and Sofia examples (web): [country](http://localhost:8081/?lon=25.4&lat
 
 For an Android emulator or iOS simulator, use `npm run android` or `npm run ios` with the appropriate platform tools installed. SDK 58 lists Skia as bundled in Expo Go; use a matching client for an initial phone check. Native rendering has not yet been exercised on a device here.
 
+## App icon and splash
+
+Run `.venv/bin/python scripts/art/build_app_icon.py` to regenerate the iOS and fallback icon, Android adaptive layers, web favicon, and splash PNG. The generator uses the existing Natural Earth globe texture and game palette. Source and license details are in [the launch artwork manifest](./assets/images/manifest.json).
+
+The splash uses `Palette.night` in both system appearances. Web can show the favicon. Check the native home-screen icon and splash in an installed build, using a preview or production build to verify the splash.
+
 ## Globe assets
 
 The active game artwork is:
@@ -154,7 +160,7 @@ The active game artwork is:
 
 Clouds, terrain/forest-like colors, lighting, stars, moon, and satellite are decorative and render in Skia shaders. Source URLs/checksums and license terms are retained in [the pack manifest](./assets/world/manifest.json) and [license](./assets/world/LICENSE.txt).
 
-The unused atlas tiles, Tiny Town/Tiny City sprites, and Expo demo images have been removed. The configured app icons and favicon remain. Candidate city/nature art sources are listed in the technical plan; import them when a feature uses them.
+The unused atlas tiles, Tiny Town/Tiny City sprites, and Expo demo images have been removed. Candidate city/nature art sources are listed in the technical plan; import them when a feature uses them.
 
 A development-only style study at `/style-study` (open `http://localhost:8081/style-study` on web) draws a small seaside street from a 188 KB subset of the CC0 [Ninja Adventure](https://pixel-boy.itch.io/ninja-adventure-asset-pack) pack, alongside Pixelify Sans text and a globe/pack palette comparison. Its files, source paths and SHA-256 hashes are in `assets/style-study/ninja-adventure/manifest.json`. It is input for the P2-06 art contract, not adopted art. The page defaults to a globe-palette version of the grass, foliage, and water tiles; regenerate it with `python3 scripts/art/recolor_style_study.py` (Pillow 12.1.1, as pinned for the geography script). Its colour table and output hashes are in `assets/style-study/globe-palette/manifest.json`.
 
