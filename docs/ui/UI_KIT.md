@@ -52,12 +52,12 @@ The native splash and Android adaptive icon background use `Palette.night`. Expo
 | `TopBar` | The thin navy bar at the top | `onBack` with optional `backLabel`, `title` or progress as children, `actions` on the right |
 | `ChallengePrompt` | Find-it prompt in the capital `TopBar` | `title`, optional `feedback`, `misses` to replay the whole-pixel shake with `useSteps`, `complete` for the green check and completion text. Reduce motion keeps the bar still |
 | `BottomSheet` | Country and place details over the map | Controlled `expanded`/`onExpandedChange`, `onClose`, `action` (the screen's one primary button). Tap or swipe the header. Expanded details scroll within half the screen. Put it in `Screen`'s `overlay` |
-| `PixelModal` | A centred dialog over the dimmed world | `visible`, `onClose` (backdrop and Android back), `label`. Pops in with a stepped scale |
+| `PixelModal` | A centred dialog over the dimmed world | `visible`, `onClose` (backdrop and Android back), `label`. Pops in with a stepped scale. The dialog fits inside the safe area and its contents scroll when tall |
 | `CollectibleCard` | Collectible details inside a `PixelModal` | `name`, `kind` (`landmark`/`wildlife`/`landscape`), `image`, `imageFit="contain"` to show the full crop, `description`, `source` (always shown), `foundOn`, `justFound` (gold "Found!" ribbon) |
 | `ConfirmDialog` | Asking before an action that loses records | Name the action on the button; `destructive` makes it red. Prefer an Undo notice when the action can be reversed |
 | `NoticeProvider` / `useNotice` | Short messages: "Visit removed." with **Undo**, save failures | Mounted once in the root layout. `useNotice()({ message, icon, action })`. One at a time, at the top, announced to screen readers |
 | `useSteps` | Stepped animations | `useSteps(frames, trigger)` returns the current frame at 12 fps; reduce motion returns the last frame |
-| `PixelFrame` | The primitive behind everything: outline, notched corners, fill, highlight, shade, lip | `skin`, `depth` (UI px), `pressed`. Use directly only inside `src/ui/` |
+| `PixelFrame` | The primitive behind everything: outline, notched corners, fill, highlight, shade, lip | `skin`, `depth` (UI px), `pressed`. The frame takes its height from its content on native and web. Use directly only inside `src/ui/` |
 | `PixelText` | All text | `variant` from `Type`, `tone`: `ink`/`inkSoft` on parchment, `light`/`lightSoft` on navy, `outlined` over the map |
 | `PixelIcon` | 12×12 pixel icons, 24 pt | `name` from `IconName`. Decorative; label the control around it |
 | `PixelButton` | Actions | `variant` `primary`/`secondary`/`success`/`navy`/`danger` (destructive confirm only), `icon`, `marker` (A/B/C), `block`, `disabled`. Sinks 2 U when pressed |

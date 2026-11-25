@@ -1,7 +1,8 @@
 import type { PropsWithChildren } from 'react';
-import { Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Palette, Size, Space } from '@/constants/theme';
+import { Palette, Size, Space, px } from '@/constants/theme';
 
 import { Panel } from './Panel';
 import { PixelButton } from './PixelButton';
@@ -26,9 +27,16 @@ export type PixelModalProps = PropsWithChildren<{
 export function PixelModal({ visible, onClose, label, children }: PixelModalProps) {
   const frame = useSteps(POP.length, visible);
   const { height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const paddingTop = Math.max(insets.top, Space.lg);
+  const paddingBottom = Math.max(insets.bottom, Space.lg);
+  const maxContentHeight = Math.max(
+    0,
+    Math.min(height * 0.85, height - paddingTop - paddingBottom) - 2 * Space.lg - px(Size.panelDepth)
+  );
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
+      <View style={[styles.backdrop, { paddingTop, paddingBottom }]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={onClose}
@@ -36,10 +44,14 @@ export function PixelModal({ visible, onClose, label, children }: PixelModalProp
           accessibilityLabel="Close"
         />
         <View
-          style={[styles.dialog, { maxHeight: height * 0.85, transform: [{ scale: POP[frame] }] }]}
+          style={[styles.dialog, { transform: [{ scale: POP[frame] }] }]}
           accessibilityViewIsModal
           accessibilityLabel={label}>
-          <Panel>{children}</Panel>
+          <Panel>
+            <ScrollView style={[styles.scroll, { maxHeight: maxContentHeight }]} contentContainerStyle={styles.dialogContent}>
+              {children}
+            </ScrollView>
+          </Panel>
         </View>
       </View>
     </Modal>
@@ -103,6 +115,8 @@ const styles = StyleSheet.create({
     backgroundColor: Palette.scrim,
   },
   dialog: { width: '100%', maxWidth: Size.maxContentWidth },
+  scroll: { flexGrow: 0 },
+  dialogContent: { gap: Space.md },
   buttons: { flexDirection: 'row', flexWrap: 'wrap', gap: Space.sm, paddingTop: Space.sm },
   button: { flexGrow: 1, flexBasis: '40%' },
 });

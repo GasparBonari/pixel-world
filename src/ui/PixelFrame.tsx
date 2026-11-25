@@ -41,7 +41,7 @@ export function PixelFrame({ skin, depth = 0, pressed = false, style, contentSty
           <Silhouette color={f.lip} />
         </View>
       )}
-      <View style={[styles.body, pressed && { transform: [{ translateY: lip }] }]}>
+      <View style={pressed ? { transform: [{ translateY: lip }] } : undefined}>
         <Silhouette color={f.outline} />
         <View style={[styles.abs, { top: px(1), bottom: px(1), left: px(1), right: px(1), backgroundColor: f.fill }]} />
         <View style={[styles.abs, { top: px(1), height: px(1), left: px(2), right: px(2), backgroundColor: f.highlight }]} />
@@ -54,7 +54,7 @@ export function PixelFrame({ skin, depth = 0, pressed = false, style, contentSty
 
 const styles = StyleSheet.create({
   abs: { position: 'absolute' },
-  body: { flexGrow: 1 },
   // Outline + highlight/shade rows take 2 UI pixels on each side; content starts inside them.
-  content: { padding: px(2), flexGrow: 1 },
+  // Keep the frame sized to its content. Native Yoga can stretch an auto-height frame with flexGrow.
+  content: { padding: px(2) },
 });
