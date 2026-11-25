@@ -6,6 +6,7 @@ import { Frames, Palette, Size, Space, px } from '@/constants/theme';
 
 import { IconButton } from './PixelButton';
 import { PixelText } from './PixelText';
+import { Ribbon } from './Ribbon';
 
 export type ScreenProps = PropsWithChildren<{
   /** Fixed at the top, under the status bar: usually a `TopBar`. */
@@ -96,6 +97,8 @@ export type TopBarProps = PropsWithChildren<{
   backLabel?: string;
   /** A screen title; omit when the bar holds progress instead. */
   title?: string;
+  /** Centre a parchment title and use a cream back button over the map. */
+  ribbon?: boolean;
   /** Use the height of the content for a one-line label or count. */
   compact?: boolean;
   /** Right-side controls (an IconButton for settings or help). */
@@ -106,7 +109,21 @@ export type TopBarProps = PropsWithChildren<{
  * The thin navy bar at the top of a screen: back, title or progress (children), actions.
  * Keep it to one line; no avatars, currencies, or levels.
  */
-export function TopBar({ onBack, backLabel = 'Back', title, compact, actions, children }: TopBarProps) {
+export function TopBar({ onBack, backLabel = 'Back', title, ribbon, compact, actions, children }: TopBarProps) {
+  if (ribbon) {
+    return (
+      <View style={styles.ribbonBar} pointerEvents="box-none">
+        {onBack && <IconButton icon="back" skin="cream" accessibilityLabel={backLabel} onPress={onBack} />}
+        {title && (
+          <View style={styles.fill} pointerEvents="none">
+            <Ribbon label={title} />
+          </View>
+        )}
+        {actions ?? <View style={styles.ribbonEnd} pointerEvents="none" />}
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.bar, !compact && styles.barHeight]}>
       {onBack && <IconButton icon="back" accessibilityLabel={backLabel} onPress={onBack} />}
@@ -150,4 +167,6 @@ const styles = StyleSheet.create({
     paddingVertical: Space.sm,
   },
   barHeight: { minHeight: Size.touch + Space.lg },
+  ribbonBar: { minHeight: Size.touch, flexDirection: 'row', alignItems: 'center', gap: Space.sm },
+  ribbonEnd: { width: Size.touch },
 });

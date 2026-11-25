@@ -88,14 +88,17 @@ export function UiKitView() {
             title="Portugal"
             subtitle="Europe · Capital: Lisbon"
             icon="pin"
+            artwork={CAPITAL_IMAGES.lisbon}
             expanded={sheet === 'expanded'}
             onExpandedChange={(open) => setSheet(open ? 'expanded' : 'collapsed')}
             onClose={() => setSheet('closed')}
             action={<PixelButton variant="primary" label="Explore Lisbon" icon="globe" block />}>
-            <ProgressBar title="Country progress" value={3} total={7} tone="light" />
+            <Panel contentStyle={styles.sheetProgress}>
+              <ProgressBar title="Country progress" value={3} total={7} />
+            </Panel>
             <SectionHeader title="Landmarks" icon="landmark" count="3 / 5 found" tone="light" />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tiles}>
-              <CollectibleTile name="Belém Tower" state="found" image={CAPITAL_IMAGES.lisbon} />
+              <CollectibleTile name="Belém Tower" state="found" image={CAPITAL_IMAGES.lisbon} imageFit="contain" compact />
               <CollectibleTile name="Jerónimos" state="found" image={CAPITAL_IMAGES.lisbon} />
               <CollectibleTile name="Tram 28" state="found" image={CAPITAL_IMAGES.lisbon} />
               <CollectibleTile name="São Jorge Castle" state="missing" image={CAPITAL_IMAGES.lisbon} />
@@ -110,6 +113,8 @@ export function UiKitView() {
         <Panel skin="navy">
           <ProgressBar title="Countries completed" value={1} total={3} tone="light" icon="globe" />
           <Chip label="Europe" skin="navy" compact />
+          <TopBar ribbon title="Europe" onBack={() => {}} backLabel="Back to Earth" />
+          <Chip label="Portugal" skin="gold" icon="pin" compact />
         </Panel>
 
         {/* Overlays: sheet, dialogs, notices. */}
@@ -282,6 +287,7 @@ export function UiKitView() {
 }
 
 const styles = StyleSheet.create({
+  sheetProgress: { padding: Space.xs },
   row: { flexDirection: 'row', alignItems: 'center', gap: Space.md },
   grow: { flex: 1 },
   tiles: { gap: Space.md, paddingTop: Space.sm, paddingRight: Space.sm },

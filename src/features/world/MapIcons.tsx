@@ -72,15 +72,42 @@ function band(icons: Icon[], fadeIn: Fade, fadeOut?: Fade): Band {
   };
 }
 
+function sceneryPriority([frame]: Icon) {
+  const motion = animations[frame]?.[0];
+  if (motion === 'animal' || motion === 'herd' || motion === 'surface') return 0;
+  const kind = iconData.names[frame];
+  return ['mountain', 'glacier', 'volcano', 'dune', 'red-rock'].includes(kind) ? 1 : 2;
+}
+
+/** Give the first continent view room for coastlines and labels, while keeping each icon on its site. */
+function wideScenery(icons: Icon[]) {
+  const kept: Icon[] = [];
+  for (const icon of [...icons].sort((a, b) => sceneryPriority(a) - sceneryPriority(b))) {
+    const [frame, longitude, latitude] = icon;
+    const longitudeScale = Math.cos(latitude * Math.PI / 180);
+    const crowded = kept.some(([otherFrame, x, y]) => {
+      const dx = Math.min(Math.abs(longitude - x), 360 - Math.abs(longitude - x)) * longitudeScale;
+      const spacing = iconData.names[frame] === iconData.names[otherFrame] ? 9 : 6;
+      return dx ** 2 + (latitude - y) ** 2 < spacing ** 2;
+    });
+    if (!crowded) kept.push(icon);
+  }
+  return new Set(kept);
+}
+
 /** Icons drawn together because they fade in (and out) at the same zooms. */
 function bandsOf(tier: 0 | 1): Band[] {
   const icons = allIcons.filter((icon) => icon[5] === tier);
   if (tier === 0) {
-    const board = { start: BOARD_ZOOM_START, end: BOARD_ZOOM_END };
-    return [
-      band(icons.filter((icon) => icon[6] !== 1), board),
-      band(icons.filter((icon) => icon[6] === 1), board, countryFade(COUNTRY_ZOOM.full)),
-    ].filter((b) => b.icons.length > 0);
+    const wide = wideScenery(icons);
+    const board = { start: BOARD_ZOOM_START, end: BOARD_ZOOM_END - 0.4 };
+    const close = { start: BOARD_ZOOM_END, end: 3.5 };
+    const out = countryFade(COUNTRY_ZOOM.full);
+    return [true, false].flatMap((overview) => {
+      const group = icons.filter((icon) => wide.has(icon) === overview);
+      const fade = overview ? board : close;
+      return [band(group.filter((icon) => icon[6] !== 1), fade), band(group.filter((icon) => icon[6] === 1), fade, out)];
+    }).filter((b) => b.icons.length > 0);
   }
   const byZoom = new Map<number, Icon[]>();
   for (const icon of icons) {

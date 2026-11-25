@@ -1,8 +1,10 @@
+import { COUNTRY_ZOOM } from './globe-camera';
 import { spaceShader } from './space-shader';
 
 /** Zoom range over which the globe becomes the night-sea game board (ART_CONTRACT.md). */
 export const BOARD_ZOOM_START = 1.5;
 export const BOARD_ZOOM_END = 2.5;
+export const CONTINENT_ZOOM_START = 2;
 /** Terrain pixel size in points: 3 on a 390-point-wide phone. */
 export const CELLS_ACROSS = 130;
 
@@ -19,6 +21,7 @@ uniform float2 viewport;
 uniform float2 angles;
 uniform float radius;
 uniform float zoom;
+uniform float selectedCountry;
 // Seconds in whole animation frames (motion.ts); 0 keeps the scene still (reduce motion).
 uniform float time;
 uniform float3 sun;
@@ -32,7 +35,7 @@ const float3 SEA_BAND = float3(0.145,0.341,0.604);
 const float3 NIGHT_BAND = float3(0.114,0.259,0.447);
 const float3 NIGHT = float3(0.086,0.196,0.353);
 const float3 NIGHT_DEEP = float3(0.067,0.161,0.302);
-const float3 WAVE = float3(0.137,0.310,0.545);
+const float3 WAVE = float3(0.157,0.376,0.651);
 // Shallow coasts by climate (ART_CONTRACT.md section 2): teal in temperate seas, turquoise in the
 // tropics, for the coastal ring's inner (coast) and outer (sea) band and for open shelf water.
 const float3 COAST_TEAL = float3(0.165,0.525,0.659);
@@ -57,6 +60,7 @@ const float3 DUNE = float3(0.749,0.604,0.314);
 const float3 SNOW = float3(0.957,0.965,0.933);
 const float3 BORDER = float3(0.933,0.961,0.784);
 const float3 RELIEF = float3(0.651,0.659,0.384);
+const float3 SELECTION_EDGE = float3(1.0,0.81,0.32);
 
 // Arithmetic hash ("hash without sine", after Dave Hoskins). A sin-based hash loses precision on
 // large inputs, by a different amount on each GPU: at country zoom, world cells number in the
@@ -193,18 +197,39 @@ float3 boardColor(float2 point, float cell, float3 here, float lon, float lat, f
   if (lon > -10.0+wobble && lon < 42.0+wobble && lat > 33.0 && lat < 40.5+(terrain-0.5)*4.0+wobble*0.6) c = DRY;
   bool sandy = desertWeight+(terrain-0.5)*0.25+(detail-0.5)*0.35 > 0.5;
   if (sandy) c = fract(lon*0.8+lat*1.7+terrain*2.0) < 0.12 ? DUNE : SAND;
-  // Puzzle-map tone: each country slightly lighter or darker.
-  c = tone(c,(hash(float2(id,7.0))-0.5)*0.16);
   bool green = band <= 67.0 && !sandy;
   float speck = hash(worldCell+17.0);
-  if (green && terrain > 0.62) c = FOREST;
+  if (green && terrain > 0.56) c = mix(c,FOREST,terrain > 0.68 ? 0.82 : 0.48);
   else if (green && speck < 0.0125) c = GRASS_LIGHT;
   else if (green && speck < 0.025) c = GRASS_DARK;
+  // Step the ground tones before applying the shared tint, so forests also belong to their country.
+  c = tone(c,(floor(detail*4.0)/3.0-0.5)*0.10+(hash(float2(id,7.0))-0.5)*0.22);
   float ranges = board.eval(here.xy*boardSize).b;
-  if (ranges > 0.1) c = mix(c,RELIEF,ranges > 0.8 ? 0.4 : 0.25);
+  if (ranges > 0.1) c = mix(c,RELIEF,(ranges > 0.8 ? 0.45 : 0.25)+step(0.56,detail)*0.15);
+
+  // Close-up fields are decorative. Grid variation stays in world coordinates as the camera pans.
+  float countryDetail = smoothstep(${COUNTRY_ZOOM.in},${COUNTRY_ZOOM.full},zoom);
+  if (countryDetail > 0.0 && green) {
+    float2 field = float2(lon*cos(radians(lat)),lat)*7.0;
+    float2 plot = floor(field+(detail-0.5)*0.45);
+    float crop = hash(plot+53.0);
+    float hedge = step(0.86,fract(field.x))*step(0.55,crop);
+    float shade = crop < 0.34 ? -0.13 : crop > 0.70 ? 0.12 : 0.0;
+    c = tone(c,(shade-hedge*0.07)*countryDetail*(1.0-ranges*0.7));
+  }
+
+  bool selected = selectedCountry > 0.0 && id == selectedCountry && zoom < ${COUNTRY_ZOOM.max};
+  float rightId = landRight > 0.5 ? countryAt(right) : 0.0;
+  float downId = landDown > 0.5 ? countryAt(down) : 0.0;
+  if (selected) {
+    // Use the same board index as tap hit testing. Keep the accent on land, including islands.
+    if (min(min(landUp,landDown),min(landLeft,landRight)) < 0.5 ||
+        countryAt(up) != id || countryAt(left) != id || rightId != id || downId != id)
+      return SELECTION_EDGE;
+    c = mix(c,SELECTION_EDGE,0.13);
+  }
   // Pale 1-pixel borders between countries, never on a coast.
-  if (id > 0.5 && landRight > 0.5 && countryAt(right) > 0.5 && countryAt(right) != id) c = BORDER;
-  if (id > 0.5 && landDown > 0.5 && countryAt(down) > 0.5 && countryAt(down) != id) c = BORDER;
+  if (id > 0.5 && ((rightId > 0.5 && rightId != id) || (downId > 0.5 && downId != id))) c = BORDER;
   // Lit top and left coasts.
   if (landUp < 0.5 || landLeft < 0.5) c = LAND_HI;
   return c;
@@ -316,6 +341,7 @@ half4 main(float2 position) {
 
   // Zooming in: the sea darkens into the night sea and the land becomes the game board.
   float boardMix = smoothstep(${BOARD_ZOOM_START.toFixed(2)},${BOARD_ZOOM_END.toFixed(2)},zoom);
+  boardMix *= 2.0-boardMix;
   if (boardMix > 0.001)
     color = mix(color,boardColor(point,cell,here,lonDegrees,degrees,terrain,desert),boardMix);
 

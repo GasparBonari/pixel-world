@@ -1,15 +1,8 @@
 # Earthia — Art Contract (draft 2.1)
 
-Status: **draft for review, 10 November 2026.** Draft 2.1 replaces the simple icons with detailed, shaded ones drawn at a finer icon pixel. This covers task P2-06 for the continent and country scales that Phase 3 builds. Draft 2 moves the look much closer to the GlobeQuest concept image: night sea, raised game-board land, puzzle-piece countries, fewer and bigger icons, chunkier pixels, and parchment screen furniture. The capital scale is outlined here and gets its full rules in Phase 4. No app renderer implements these rules yet.
+The continent and country views use the reference's night sea, raised land, shaded sprites and parchment titles. The app renders both scales on the same globe. Compare the [screen set](../ui/reference/screen-set.webp) and the [country detail](../ui/reference/country-detail.webp).
 
-| Continent: Europe | Country: Malta |
-| --- | --- |
-| ![Europe mockup](phase3/europe-continent.png) | ![Malta mockup](phase3/malta-country.png) |
-| [Close-up](phase3/europe-continent-detail.png) | [Close-up](phase3/malta-country-detail.png) |
-
-Icon sheet (enlarged). Rows: landmarks and buildings, then each continent's flora and landforms, then its animals. ![Map icons](phase3/sprites.png)
-
-Regenerate the mockups with `.venv/bin/python scripts/art/phase3_mockups.py` (set up in the [README](../../README.md#phase-3-design-mockups)). That script is the reference implementation for every rule below. Its `P` table holds the palette tokens. Map icons come from `scripts/art/sprites.py`, which also writes the icon sheet (`.venv/bin/python scripts/art/sprites.py`).
+The early Europe and Malta mockups can be generated with `.venv/bin/python scripts/art/phase3_mockups.py`. See the [README](../../README.md#phase-3-design-mockups). App map icons come from `scripts/art/sprites.py`.
 
 ## 1. Rules for every scale
 
@@ -49,7 +42,7 @@ Regenerate the mockups with `.venv/bin/python scripts/art/phase3_mockups.py` (se
 
   Flora and landforms: oak, pine, olive, acacia, baobab, palm, bamboo, eucalyptus, tree fern, tall grass, saguaro, dune, red rock, volcano, glacier, iceberg. Animals, all in profile facing left: deer, fox, brown bear, wild boar, elephant, zebra, lion, giraffe, rhinoceros, panda, tiger, Bactrian camel, orangutan, snow leopard, bison, moose, gray wolf, alligator, jaguar, capybara, guanaco, toucan, kangaroo, kiwi, koala, emu, penguin, seal, orca. Fine grass blades are the one material without outlines, since outlines would fill the gaps between blades.
 - **Stable decoration.** Noise, sparkles, clouds, boats and tree positions are seeded from longitude and latitude, never from screen position, so nothing shimmers while panning. Decoration is illustrative: it never adds named places.
-- **Text and chips** are normal text in screen space, not baked into the art. Use Pixelify Sans. The selected place gets a red pin and a white name chip with an ink outline; selection never relies on colour alone.
+- **Text and chips** use Pixelify Sans in screen space. A selected country gets a pin and a gold name chip where its capital is in view.
 - **Attribution.** OSM-derived scales show `© OpenStreetMap contributors` in the system font, because Pixelify Sans has no © glyph.
 
 ## 2. Sea and coasts (all scales)
@@ -78,7 +71,7 @@ The teal and turquoise apply only where the coast is shallow (on the continental
 So the shallow North Sea, Adriatic, Baltic and Sunda Shelf read lighter, and the Atlantic, Ionian and Norwegian basins dark. From space the globe shows the same shelves a step lighter (turquoise over tropical banks) and the abyss a step darker.
 
 - **Loose, dithered edges.** The ring's edges and the depth contours wander a little along the coast (world-anchored noise), and a world-anchored checkerboard dithers them, so neighbouring tones blend instead of stepping.
-- **Wave crests.** Beyond 11 art pixels from land, a fifth of the blocks of 9×6 wave cells hold one small crest: two pixels on top, one either side below, in `wave` (`#234F8B`), or `sea_band` over shelf water so it still shows. A wave cell scales longitude by latitude, so its pixels are never narrower than a screen pixel and the crest never breaks up. Crests roll a pixel east and back, and now and then their top glints (§9).
+- **Wave crests.** Beyond 11 art pixels from land, a fifth of the blocks of 9×6 wave cells hold one small crest. Two pixels on top and one either side below use `wave` (`#2860A6`), or `sea_band` over shelf water. A wave cell scales longitude by latitude, so its pixels are never narrower than a screen pixel and the crest never breaks up. Crests roll a pixel east and back, and now and then their top glints (§9).
 - **Random patterns** (glints, crests, specks) use an arithmetic hash with no `sin()`. A sine-based hash loses precision on large inputs by a different amount on each GPU; at country zoom it drew dense vertical streaks on real GPUs.
 - **Raised land.** Land pixels on a top or left coast use `land_hi` (`#B9DD63`). Under every south-facing coast, the two water pixels below become a cliff face: `cliff_top` (`#5F8A2C`), then `cliff` (`#41662A`).
 - **Sparkles.** In open water (distance 6 or more), a single `sparkle` dot on about 0.2% of pixels; with motion on they twinkle (§9). The mockups' 5×5 sparkles are not in the app; the wave crests' glints take their place.
@@ -91,12 +84,12 @@ So the shallow North Sea, Adriatic, Baltic and Sunda Shelf read lighter, and the
 | Scale | Approx. ground per art pixel | Data | New at this scale |
 | --- | --- | --- | --- |
 | Earth (built) | varies over the sphere | Natural Earth 1:10m land and lakes, 1:50m borders, selected ranges from the continent atlas | Daylit Atlantic opening, deep blue ocean, turquoise coasts, layered clouds, a cyan atmosphere, and sparse terrain sprites |
-| Continent | ~20 km | + Natural Earth mountain ranges (scalerank ≤ 4) | Night sea, raised coasts, puzzle-piece countries, mountain and tree icons, selection glow |
-| Country | ~0.3 km (Malta) | OpenStreetMap extract: coastline, land use, towns, ferries | Field patchwork, woods, houses and castles, sailboats |
+| Continent | ~20 km | + Natural Earth mountain ranges (scalerank ≤ 4) and continent outlines | Night sea, raised coasts, puzzle-piece countries, country labels and spaced scenery |
+| Country (early Malta mockup) | ~0.3 km | OpenStreetMap extract: coastline, land use, towns, ferries | Field patchwork, woods, houses and castles, sailboats |
 | Country (Portugal) | ~1–3 km | Natural Earth populated places | One building per real city: a walled capital crowned with a gold star, churches (or mosques) and houses at towns in the country's building family, plus trees and boats, revealed in zoom steps |
 | Capital (Lisbon, Madrid, Paris, Berlin, Amsterdam, Brussels, London, Dublin, Rome, Copenhagen, Stockholm, Oslo, Helsinki, Reykjavík, Bern, Vienna, Valletta, Prague, Warsaw, Luxembourg City, Bratislava, Budapest, Tallinn, Riga, Vilnius, Ljubljana, Zagreb, Sarajevo, Belgrade, Podgorica, Tirane, Skopje, Athens, Bucharest, Ankara, Andorra la Vella, Sofia, Chișinău, Minsk, Pristina, Kyiv, Moscow, Nicosia, Vaduz) | illustrated, not to scale | Curated real landmarks in their real relative positions | Isometric diorama in the concept image's style; see §3a |
 
-All scales use the globe's orthographic projection, so zooming in keeps the same sphere and its curvature fades on its own. There is never a switch to a separate flat map. **Decided:** the globe's daytime ocean darkens gradually into the night sea while zooming in. In the app, one shader blends the globe into the board between zoom 1.5 and 2.5. Terrain pixels are 3 points at every zoom, so the pixel grid never changes size. Icons fade in over the second half of the blend.
+All scales use the globe's orthographic projection, so zooming in keeps the same sphere and its curvature fades on its own. The globe's daytime ocean darkens gradually into the night sea while zooming in. One shader blends the globe into the board between zoom 1.5 and 2.5. Terrain pixels are 3 points at every zoom. The wide scenery appears during the blend and denser placements appear on closer views.
 
 The Earth overview takes its brighter cyan rim, ochre desert and navy star field from the [Earth UI reference](../ui/reference/world-globe.webp). The opening globe uses up to 90% of the viewport width and 68% of its height, easing into the standard map scale by zoom 0.6. Clouds and their shadows stay within the globe's silhouette. A small draw from the existing map atlas uses sourced locations for mountain and dune sprites. On phones these sprites use one screen point per source pixel. They fade away by zoom 0.6. Continent names are screen-space chips, projected from interior label positions on the Natural Earth land mask.
 
@@ -270,7 +263,7 @@ The Earth overview takes its brighter cyan rim, ochre desert and navy star field
   - 40–57°N: `grass`;
   - 33.5–40°N: `dry`;
   - below 33.5°N: `sand` with diagonal `dune` ridges.
-- **Puzzle-piece countries.** Each country's land is lightened or darkened by up to 8%, chosen by a hash of the country. 1-pixel pale `border` lines (`#EEF5C8`) separate countries, never drawn on coasts.
+- **Puzzle-piece countries.** A seeded light or dark tint distinguishes each country across grass and forest. Layered forest tones and relief shading use the existing terrain noise and Natural Earth range mask. Pale `border` lines (`#EEF5C8`) separate countries inland.
 - **Forest patches** (40–67°N): `forest` blobs from seeded noise. About 2.5% of other land pixels are `grass_light` or `grass_dark` specks.
 - **Mountains.** Natural Earth ranges with scalerank ≤ 4 get 1–3 icons each (about one per 140 art pixels of range), at least 14 px apart. Major ranges (scalerank ≤ 3) use the snow-capped `mountain`; scalerank 4 uses `hill`.
 - **Each continent's own flora and fauna.** Placements come from the curated habitat regions and sourced animal anchors in `scripts/geography/scenery.json`. They are representative illustrations, not wildlife observations or exact ranges.
@@ -291,15 +284,13 @@ The Earth overview takes its brighter cyan rim, ochre desert and navy star field
   - Trees stand in pairs and grass in threes, offset in icon pixels.
   - Each region gets about 45% of its curated count, with trees at least 300 km apart and landforms at least 420 km apart.
 - **Mountains.** 1–4 per range (about one per 220,000 km²). Peaks stay at least 550 km apart, across neighbouring ranges too, and 200 km from animals. Antarctic ranges use the `glacier` icon.
-- **No capital icons and no country-name labels.** These were dropped in draft 2 to match the concept image's clean map. Names appear on the selection chip and in the card.
-- **Selected country:**
-  - fill `select_fill`, then a glow 1–3 pixels wide around it: `glow_in`, then `glow_out`, then lightened terrain;
-  - countries under 40 pixels (Malta) also get a 2-pixel glowing ring of radius 7;
-  - a red pin above the capital, with the name chip beside it.
+- **Wide board.** A spaced subset of the existing placements favours wildlife and major terrain. The remaining sprites fade in with zoom. Compact navy country labels use Natural Earth label anchors, with at most eight visible. Capital buildings arrive at country scale.
 
 ## 5. Country rules
 
-OpenStreetMap tags map to a small set of art classes. Later classes in this table draw over earlier ones. Land starts as a bright patchwork (`grass` and `grass_light` fields, seeded per world cell), and the classes adjust it:
+The live country view adds world-anchored field patches and hedgerow accents on grassland as it zooms in. These are illustrative, and the underlying land, water and ranges still use Natural Earth. Real settlement and landmark sprites keep their sourced positions. Tapping a country with a capital scene warms its land and outlines it in gold using the board's country index. Its capital gets a pin and name chip when in view.
+
+In the early Malta mockup, OpenStreetMap tags map to a small set of art classes. Later classes in this table draw over earlier ones. Land starts as a bright patchwork (`grass` and `grass_light` fields, seeded per world cell), and the classes adjust it:
 
 | Class | OSM tags | Treatment |
 | --- | --- | --- |
@@ -320,16 +311,9 @@ OpenStreetMap tags map to a small set of art classes. Later classes in this tabl
 
 ## 6. Screen furniture
 
-The mockups below show the original target composition. The shipped country sheet and back controls follow the [Pixel UI Kit](../ui/UI_KIT.md#screen-recipes).
-
-- **Header:** a parchment back button, a centred parchment title ribbon (Pixelify Sans Bold 22), and a parchment gear. Minimal back/focus controls belong to the Phase 3–4 visual work.
-- **Bottom card:**
-  - a parchment card from 612 points down;
-  - a title (Bold 24), a subtitle, rows with a pin icon, and a green "Explore …" button;
-  - only factual content (capital, islands, ferry). Progress percentages, XP and badges appear only once saved visits exist (Phases 5–6). The development plan forbids placeholder statistics.
-- **Parchment colours:** `parchment`, `parchment_light`, `parchment_edge`, `parchment_shadow`, `ink`.
-
-P5-03 uses the sheet title to indicate country selection. A tap uses the globe projection and looks up the board's red channel separately from rendering. `scripts/geography/prepare_assets.py` packs the same 2048×1024 country raster into horizontal runs paired with Natural Earth IDs. The art and shader continue to use the original board texture.
+- **Header.** A cream Back button and a centred parchment title float over the continent and country maps. The name at the camera centre comes from Natural Earth continent outlines or country boundaries. The sheet supplies the title for a selected country.
+- **Country sheet.** An expandable navy frame holds the existing capital art, parchment progress and landmark crops. A single gold Explore button enters the capital. See the [Pixel UI Kit](../ui/UI_KIT.md#screen-recipes).
+- **Selection.** A tap uses the globe projection and looks up the board's red channel. `scripts/geography/prepare_assets.py` packs the same 2048×1024 country raster into horizontal runs paired with Natural Earth IDs and uses the same format for the continent name lookup.
 
 ## 7. Open questions for review
 

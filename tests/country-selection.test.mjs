@@ -25,7 +25,7 @@ function loadLogic(path) {
 const { getSelectableCountry, getCountryProgress, selectCountryAtTap } = loadLogic(
   new URL('../src/features/country-sheet/country-selection.ts', import.meta.url)
 );
-const { boardCountryAt } = loadLogic(new URL('../src/features/world/board-country-lookup.ts', import.meta.url));
+const { boardContinentAt, boardCountryAt, boardCountryIndex } = loadLogic(new URL('../src/features/world/board-country-lookup.ts', import.meta.url));
 const { globeLocation, globePoint, COUNTRY_ZOOM, CAPITAL_ZOOM } = loadLogic(
   new URL('../src/features/world/globe-camera.ts', import.meta.url)
 );
@@ -91,4 +91,20 @@ test('projected screen positions find the board country, including borders, isla
   assert.equal(boardCountryAt(179, 66), 'RUS');
   assert.equal(boardCountryAt(-181, 66), 'RUS');
   assert.equal(boardCountryAt(0, -90), 'ATA');
+});
+
+test('the country highlight uses the board index associated with a tapped country', () => {
+  const { countryIds } = JSON.parse(readFileSync(new URL('../src/data/board-country-lookup.json', import.meta.url), 'utf8'));
+  for (const [longitude, latitude, id] of [[-8.5, 39.5, 'PRT'], [14.5146, 35.8989, 'MLT']]) {
+    assert.equal(countryIds[boardCountryIndex(boardCountryAt(longitude, latitude))], id);
+  }
+  assert.equal(boardCountryIndex('unmapped'), 0);
+});
+
+test('continent names follow geographic outlines through a transcontinental country', () => {
+  assert.equal(boardCountryAt(105, 60), 'RUS');
+  assert.equal(boardContinentAt(105, 60), 'Asia');
+  assert.equal(boardContinentAt(37.6173, 55.7558), 'Europe');
+  assert.equal(boardContinentAt(-55, -10), 'South America');
+  assert.equal(boardContinentAt(-39, 39), null);
 });

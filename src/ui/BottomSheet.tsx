@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ComponentRef, type PropsWithChildren, type ReactNode } from 'react';
-import { AccessibilityInfo, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { AccessibilityInfo, Image, Platform, Pressable, ScrollView, StyleSheet, View, useWindowDimensions, type ImageSourcePropType } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 
 import { Frames, Motion, Palette, Size, Space, px } from '@/constants/theme';
@@ -13,6 +13,8 @@ export type BottomSheetProps = PropsWithChildren<{
   title: string;
   subtitle?: string;
   icon?: IconName;
+  /** A wide scene illustration at the top of the expanded scrolling body. */
+  artwork?: ImageSourcePropType;
   /** Controlled: the screen owns whether the sheet is open, so it survives re-renders. */
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
@@ -36,6 +38,7 @@ export function BottomSheet({
   title,
   subtitle,
   icon,
+  artwork,
   expanded,
   onExpandedChange,
   onClose,
@@ -113,7 +116,12 @@ export function BottomSheet({
           </View>
         </GestureDetector>
         {expanded && (
-          <ScrollView style={{ maxHeight: bodyMax }} contentContainerStyle={styles.body}>
+          <ScrollView style={{ maxHeight: bodyMax }} contentContainerStyle={[styles.body, !!artwork && styles.illustratedBody]}>
+            {!!artwork && (
+              <PixelFrame skin="navy" contentStyle={styles.artworkFrame}>
+                <Image source={artwork} style={styles.artwork} resizeMode="cover" accessible={false} />
+              </PixelFrame>
+            )}
             {children}
           </ScrollView>
         )}
@@ -137,6 +145,9 @@ const styles = StyleSheet.create({
   toggle: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Space.md, minHeight: Size.touch },
   titleText: { flex: 1 },
   action: { paddingTop: Space.md },
+  artworkFrame: { overflow: 'hidden' },
+  artwork: { width: '100%', height: px(36), ...Platform.select({ web: { imageRendering: 'pixelated' } }) },
+  illustratedBody: { gap: Space.sm, paddingVertical: Space.sm },
   body: {
     gap: Space.md,
     paddingVertical: Space.md,

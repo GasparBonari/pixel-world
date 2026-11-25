@@ -1,3 +1,4 @@
+import type { SkImage } from '@shopify/react-native-skia';
 import { useSyncExternalStore, type PropsWithChildren, type ReactNode } from 'react';
 
 import { landmarkProgress } from '@/features/find-it/landmark-progress';
@@ -11,29 +12,33 @@ import type { SelectableCountry } from './country-selection';
 type Props = PropsWithChildren<{
   earthOverview: boolean;
   selection?: SelectableCountry;
+  selectedScene?: SkImage;
+  regionalTitle?: string;
   capitalName?: string;
   prompt?: ReactNode;
   onEnterWorld?: () => void;
   onBack?: () => void;
+  backLabel: string;
   onClose: () => void;
   onExplore: () => void;
 }>;
 
 export function WorldMapScreen({
-  earthOverview, selection, capitalName, prompt, onEnterWorld, onBack, onClose, onExplore, children,
+  earthOverview, selection, selectedScene, regionalTitle, capitalName, prompt, onEnterWorld, onBack, backLabel, onClose, onExplore, children,
 }: Props) {
   return (
     <Screen
       background="none"
       scroll={false}
       fullBleed
-      floatingHeader={earthOverview}
+      floatingHeader={earthOverview || !!regionalTitle}
       bottomInset={!!onEnterWorld}
       header={!onEnterWorld && (
         onBack ? (
           <TopBar
-            title={prompt ? undefined : capitalName ?? 'World'}
-            backLabel={capitalName ? 'Back to country' : 'Back to continent'}
+            title={prompt || selection ? undefined : capitalName ?? regionalTitle}
+            ribbon={!!regionalTitle}
+            backLabel={backLabel}
             onBack={onBack}>
             {prompt}
           </TopBar>
@@ -46,6 +51,7 @@ export function WorldMapScreen({
           <CountrySheet
             key={selection.country.id}
             selection={selection}
+            sceneImage={selectedScene}
             onClose={onClose}
             onExplore={onExplore}
           />

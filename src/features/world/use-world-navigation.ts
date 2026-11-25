@@ -7,7 +7,8 @@ import {
   getWorldTier,
   selectCountryAtTap,
 } from '../country-sheet/country-selection';
-import { boardCountryAt } from './board-country-lookup';
+import { boardContinentAt, boardCountryAt } from './board-country-lookup';
+import labels from '../../data/country-labels.json';
 import {
   activeCapital,
   CAPITAL_ZOOM,
@@ -16,8 +17,10 @@ import {
   type GlobeCamera,
   type GlobeViewport,
 } from './globe-camera';
-import { BOARD_ZOOM_END } from './globe-shader';
+import { BOARD_ZOOM_END, CONTINENT_ZOOM_START } from './globe-shader';
 import capitals from '../../data/capitals.json';
+
+const labelsById = new Map(labels.map((label) => [label.id, label]));
 
 export function useWorldNavigation(
   camera: SharedValue<GlobeCamera>,
@@ -40,7 +43,11 @@ export function useWorldNavigation(
     () => {
       const current = camera.get();
       const capitalId = activeCapital(current)?.id;
-      const key = `${Math.floor(current.longitude / 5)}:${Math.floor(current.latitude / 5)}:${Math.floor(current.zoom * 10)}:${capitalId ?? ''}`;
+      // A country-scale viewport can be narrower than five degrees. Sample it more closely so
+      // panning across a border also updates the title.
+      const regional = !capitalId && current.zoom >= CONTINENT_ZOOM_START;
+      const degrees = regional ? (current.zoom >= COUNTRY_ZOOM.in ? 0.25 : 1) : 5;
+      const key = `${Math.floor(current.longitude / degrees)}:${Math.floor(current.latitude / degrees)}:${Math.floor(current.zoom * 10)}:${capitalId ?? ''}`;
       return { key, capitalId };
     },
     (next, previous) => {
@@ -68,6 +75,15 @@ export function useWorldNavigation(
   const selection = tier === 'country' && selectedId ? getSelectableCountry(selectedId) : undefined;
   const active = activeCapital(snapshot);
   const capitalName = active && capitals.find((scene) => scene.id === active.id)?.name;
+  const regional = !active && snapshot.zoom >= CONTINENT_ZOOM_START;
+  const centerId = regional ? boardCountryAt(snapshot.longitude, snapshot.latitude) : null;
+  const center = centerId ? labelsById.get(centerId) : undefined;
+  let regionalTitle: string | undefined;
+  if (regional && tier === 'country') regionalTitle = center?.name ?? 'Country map';
+  else if (regional) {
+    const continent = boardContinentAt(snapshot.longitude, snapshot.latitude) ?? center?.continent;
+    regionalTitle = continent === 'Australia' ? 'Oceania' : continent ?? 'Continent map';
+  }
 
   function explore() {
     if (!selection) return;
@@ -93,11 +109,14 @@ export function useWorldNavigation(
     } else if (getWorldTier(current) === 'country') {
       clearSelection();
       camera.set({ longitude: current.longitude, latitude: current.latitude, zoom: BOARD_ZOOM_END });
+    } else if (current.zoom >= CONTINENT_ZOOM_START) {
+      camera.set({ longitude: current.longitude, latitude: current.latitude, zoom: 0 });
     }
   }
 
   return {
-    snapshot, selection, capitalName, clearSelection, selectAt, reset, explore,
-    back: tier !== 'overview' ? back : undefined,
+    snapshot, selection, capitalName, regionalTitle, clearSelection, selectAt, reset, explore,
+    back: tier !== 'overview' || regional ? back : undefined,
+    backLabel: active ? 'Back to country' : tier === 'country' ? 'Back to continent' : 'Back to Earth',
   };
 }

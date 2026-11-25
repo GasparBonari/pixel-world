@@ -14,6 +14,9 @@ export type CollectibleTileProps = {
   state: CollectibleState;
   /** A crop of the capital scene or its 4× study. Pixel art: keep whole-number scales. */
   image?: ImageSourcePropType;
+  imageFit?: 'cover' | 'contain';
+  /** Shorter artwork area for a row inside a sheet. */
+  compact?: boolean;
   onPress?: () => void;
 };
 
@@ -29,7 +32,7 @@ const StateIcon: Record<CollectibleState, IconName> = {
 };
 
 /** A collection card: picture, name, and a check (found) or lock (locked) badge. */
-export function CollectibleTile({ name, state, image, onPress }: CollectibleTileProps) {
+export function CollectibleTile({ name, state, image, imageFit = 'cover', compact, onPress }: CollectibleTileProps) {
   const hidden = state !== 'found';
   return (
     <Pressable
@@ -45,9 +48,9 @@ export function CollectibleTile({ name, state, image, onPress }: CollectibleTile
             depth={1}
             pressed={pressed}
             contentStyle={styles.content}>
-            <View style={styles.picture}>
+            <View style={[styles.picture, compact && styles.compactPicture]}>
               {image && !(state === 'locked') ? (
-                <Image source={image} style={[styles.image, hidden && styles.dim]} resizeMode="cover" />
+                <Image source={image} style={[styles.image, hidden && styles.dim]} resizeMode={imageFit} />
               ) : (
                 <PixelIcon name={StateIcon[state]} />
               )}
@@ -133,6 +136,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   image: { width: '100%', height: '100%' },
+  compactPicture: { height: px(23) },
   dim: { opacity: 0.35 },
   badge: { position: 'absolute', top: -px(3), right: -px(3) },
   badgeContent: { padding: 0 },

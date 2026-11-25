@@ -1,75 +1,96 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 
-import { Palette, PixelFonts, WorldColors } from '@/constants/theme';
+import { Size, Space, U, px } from '@/constants/theme';
 import labels from '@/data/country-labels.json';
-import { globePoint, type GlobeCamera, type GlobeViewport } from './globe-camera';
-import { BOARD_ZOOM_START } from './globe-shader';
+import type { SelectableCountry } from '@/features/country-sheet/country-selection';
+import { Chip } from '@/ui';
+
+import { COUNTRY_ZOOM, globePoint, type GlobeCamera, type GlobeViewport } from './globe-camera';
+import { CONTINENT_ZOOM_START } from './globe-shader';
 
 type Props = {
   viewport: GlobeViewport;
   camera: SharedValue<GlobeCamera>;
   snapshot: GlobeCamera;
+  selection?: SelectableCountry;
 };
+type PlaceLabel = { name: string; longitude: number; latitude: number };
 
-export function CountryLabels(props: Props) {
-  const { snapshot, viewport } = props;
-  const occupied: { x: number; y: number }[] = [];
-  const visible =
-    // Names show on the zoomed globe, then hand over to the board, which has no name labels.
-    snapshot.zoom < 1.3 || snapshot.zoom >= BOARD_ZOOM_START + 0.4
-      ? []
-      : labels.filter((label) => {
-          const p = globePoint(label.longitude, label.latitude, snapshot, viewport);
-          if (
-            p.depth < 0.25 ||
-            p.x < 60 ||
-            p.x > viewport.width - 60 ||
-            p.y < 20 ||
-            p.y > viewport.height - 20 ||
-            occupied.length >= 16 ||
-            occupied.some((other) => Math.abs(other.x - p.x) < 115 && Math.abs(other.y - p.y) < 34)
-          )
-            return false;
-          occupied.push(p);
-          return true;
-        });
+const HALF_WIDTH = px(34);
+const HALF_HEIGHT = px(6);
+const HEADER_SPACE = Size.touch + 2 * Space.md;
+const SHEET_SPACE = px(78);
+const LABEL_LIMIT = 8;
+const RIM_DEPTH = 0.25;
+
+export function CountryLabels({ snapshot, camera, viewport, selection }: Props) {
+  if (selection) {
+    return (
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <CountryLabel
+          place={{ ...selection.capital, name: selection.country.name }}
+          camera={camera}
+          viewport={viewport}
+          selected
+        />
+      </View>
+    );
+  }
+  if (snapshot.zoom < CONTINENT_ZOOM_START || snapshot.zoom >= COUNTRY_ZOOM.in) return null;
+
+  const visible: (typeof labels)[number][] = [];
+  const occupied: { x: number; y: number; halfWidth: number }[] = [];
+  for (const label of labels) {
+    const { x, y, depth } = globePoint(label.longitude, label.latitude, snapshot, viewport);
+    const halfWidth = Math.min(HALF_WIDTH, Space.sm + label.name.length * px(2));
+    if (depth < RIM_DEPTH || x < halfWidth || x > viewport.width - halfWidth ||
+        y < HEADER_SPACE + HALF_HEIGHT || y > viewport.height - 2 * HALF_HEIGHT ||
+        occupied.some((other) => Math.abs(other.x - x) < other.halfWidth + halfWidth &&
+          Math.abs(other.y - y) < 3 * HALF_HEIGHT)) continue;
+
+    visible.push(label);
+    occupied.push({ x, y, halfWidth });
+    if (visible.length === LABEL_LIMIT) break;
+  }
+
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      {visible.map((label) => (
-        <CountryLabel key={label.id} {...props} label={label} />
-      ))}
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      {visible.map((place) => <CountryLabel key={place.id} place={place} camera={camera} viewport={viewport} />)}
     </View>
   );
 }
 
-function CountryLabel({ camera, viewport, label }: Props & { label: (typeof labels)[number] }) {
-  const style = useAnimatedStyle(() => {
-    const p = globePoint(label.longitude, label.latitude, camera.get(), viewport);
+function CountryLabel({ camera, viewport, place, selected = false }: {
+  camera: SharedValue<GlobeCamera>;
+  viewport: GlobeViewport;
+  place: PlaceLabel;
+  selected?: boolean;
+}) {
+  const { longitude, latitude, name } = place;
+  const position = useAnimatedStyle(() => {
+    const current = camera.get();
+    const { x, y, depth } = globePoint(longitude, latitude, current, viewport);
+    const atTier = selected
+      ? current.zoom >= COUNTRY_ZOOM.in && current.zoom < COUNTRY_ZOOM.max
+      : current.zoom >= CONTINENT_ZOOM_START && current.zoom < COUNTRY_ZOOM.in;
+    const visible = atTier && depth >= RIM_DEPTH && y >= HEADER_SPACE &&
+      y < viewport.height - (selected ? SHEET_SPACE : HALF_HEIGHT) && x >= 0 && x <= viewport.width;
     return {
-      transform: [{ translateX: p.x - 75 }, { translateY: p.y - 10 }],
-      opacity: p.depth > 0.2 ? 1 : 0,
+      opacity: visible ? 1 : 0,
+      transform: [
+        { translateX: Math.min(viewport.width - 2 * HALF_WIDTH, Math.max(0, Math.round(x / U) * U - HALF_WIDTH)) },
+        { translateY: Math.round(y / U) * U - (selected ? Size.icon + Space.sm : HALF_HEIGHT) },
+      ],
     };
   });
   return (
-    <Animated.View style={[styles.label, style]}>
-      <Text numberOfLines={1} style={styles.text}>
-        {label.name}
-      </Text>
+    <Animated.View style={[styles.label, position]}>
+      <Chip skin={selected ? 'gold' : 'navy'} label={name} icon={selected ? 'pin' : undefined} compact />
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  label: { position: 'absolute', width: 150, alignItems: 'center' },
-  text: {
-    fontFamily: PixelFonts.bold,
-    fontSize: 13,
-    lineHeight: 18,
-    color: Palette.snow,
-    // A hard, unblurred drop shadow reads as a pixel outline over land and sea.
-    textShadowColor: WorldColors.space,
-    textShadowRadius: 0,
-    textShadowOffset: { width: 1, height: 1 },
-  },
+  label: { position: 'absolute', left: 0, top: 0, width: 2 * HALF_WIDTH, alignItems: 'center' },
 });

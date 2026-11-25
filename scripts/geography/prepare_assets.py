@@ -83,7 +83,7 @@ def generate_globe(sources):
         for polygon in polygons:
             draw.line([point(p) for p in polygon[0]], fill=255, width=1)
         properties = feature['properties']
-        labels.append({'id': properties['ADM0_A3'], 'name': properties['NAME'],
+        labels.append({'id': properties['ADM0_A3'], 'name': properties['NAME'], 'continent': properties['CONTINENT'],
                        'longitude': properties['LABEL_X'], 'latitude': properties['LABEL_Y'],
                        'rank': properties['LABELRANK'], 'population': properties['POP_EST']})
     labels.sort(key=lambda label: (label['rank'], -label['population'], label['id']))
@@ -99,11 +99,11 @@ def generate_globe(sources):
             'decorative': ['clouds', 'terrain colors', 'lighting', 'stars'], 'countryLabelCount': len(labels)}
 
 
-def generate_country_lookup(countries, features):
-    width, height = countries.size
+def encode_lookup_rows(image):
+    width, height = image.size
     runs = bytearray()
     row_offsets = [0]
-    pixels = countries.tobytes()
+    pixels = image.tobytes()
     for y in range(height):
         row = pixels[y * width:(y + 1) * width]
         for x, index in enumerate(row):
@@ -111,17 +111,26 @@ def generate_country_lookup(countries, features):
                 runs.extend(pack('<HB', x, index))
         row_offsets.append(len(runs) // 3)
 
-    data = pack(f'<{len(row_offsets)}H', *row_offsets) + runs
+    return pack(f'<{len(row_offsets)}H', *row_offsets) + runs
+
+
+def generate_country_lookup(countries, features, continents, continent_features):
+    width, height = countries.size
+    data = encode_lookup_rows(countries)
+    continent_data = encode_lookup_rows(continents)
     path = 'src/data/board-country-lookup.json'
     lookup = {
         'generatedBy': 'scripts/geography/prepare_assets.py',
         'width': width, 'height': height,
         'countryIds': [None] + [feature['properties']['ADM0_A3'] for feature in features],
         'rows': b64encode(data).decode('ascii'),
+        'continentNames': [None] + [feature['properties']['NAME_EN'] for feature in continent_features],
+        'continentRows': b64encode(continent_data).decode('ascii'),
     }
     write_atomic(ROOT/path, (json.dumps(lookup, separators=(',', ':'))+'\n').encode())
     return {'path': path, 'decodedBytes': len(data),
-            'source': 'countries-50m, board.png red channel', 'license': 'Natural Earth, public domain'}
+            'source': 'countries-50m, board.png red channel', 'license': 'Natural Earth, public domain',
+            'continentLookup': {'decodedBytes': len(continent_data), 'source': 'regions-10m, Continent features'}}
 
 
 def generate_board(sources):
@@ -154,9 +163,13 @@ def generate_board(sources):
     country_features = json.loads(sources['countries-50m'])['features']
     fill(countries, [(f, i + 1) for i, f in enumerate(country_features)], lambda index: index)
     ranges = Image.new('L', (width, height))
-    regions = [f for f in json.loads(sources['regions-10m'])['features']
+    geographic_features = json.loads(sources['regions-10m'])['features']
+    regions = [f for f in geographic_features
                if f['properties']['FEATURECLA'] == 'Range/mtn' and f['properties']['SCALERANK'] <= 4]
     fill(ranges, [(f, f['properties']['SCALERANK']) for f in regions], lambda rank: 255 if rank <= 3 else 160)
+    continents = Image.new('L', (width, height))
+    continent_features = [f for f in geographic_features if f['properties']['FEATURECLA'] == 'Continent']
+    fill(continents, [(f, i + 1) for i, f in enumerate(continent_features)], lambda index: index)
 
     # Chamfer distance in kilometres. East-west steps shrink with cos(latitude), so bands keep
     # their true shape at high latitudes instead of stretching like a plain pixel distance.
@@ -192,7 +205,7 @@ def generate_board(sources):
     encoded = BytesIO()
     Image.merge('RGB', (countries, distance, ranges)).save(encoded, format='PNG', optimize=True)
     write_atomic(texture, encoded.getvalue())
-    lookup = generate_country_lookup(countries, country_features)
+    lookup = generate_country_lookup(countries, country_features, continents, continent_features)
     return {'width': width, 'height': height, 'bytes': texture.stat().st_size,
             'decodedBytes': width*height*4, 'projection': 'equirectangular',
             'countryLookup': lookup,

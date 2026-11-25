@@ -24,7 +24,7 @@ export function Ribbon({ label, icon, skin = 'parchment', variant = 'title' }: R
       <View style={[styles.tail, styles.right, { backgroundColor: f.shade, borderColor: f.outline }]} />
       <PixelFrame skin={skin} depth={1} contentStyle={styles.content}>
         {icon && <PixelIcon name={icon} />}
-        <PixelText variant={variant} numberOfLines={1}>
+        <PixelText variant={variant} numberOfLines={1} style={styles.label}>
           {label}
         </PixelText>
       </PixelFrame>
@@ -37,6 +37,7 @@ const styles = StyleSheet.create({
   tail: { position: 'absolute', top: px(4), bottom: 0, width: px(10), borderWidth: px(1) },
   left: { left: 0 },
   right: { right: 0 },
+  label: { flexShrink: 1 },
   content: {
     flexDirection: 'row',
     alignItems: 'center',

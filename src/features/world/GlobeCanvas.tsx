@@ -28,6 +28,7 @@ import { FoundLandmarkDialog } from '@/features/find-it/FoundLandmarkDialog';
 import { useFindIt } from '@/features/find-it/use-find-it';
 import { WorldReadyContext } from '@/features/navigation/GameTabs';
 import { ChallengePrompt } from '@/ui';
+import { boardCountryIndex } from './board-country-lookup';
 import { Birds } from './Birds';
 import { ContinentLabels } from './ContinentLabels';
 import { CountryFerry } from './CountryFerry';
@@ -215,6 +216,7 @@ function GlobeScene({
   const gesture = useSimultaneousGestures(pan, pinch, tap);
   // Only the capital being visited runs its scene animation (snapshot follows the camera in steps).
   const visiting = activeCapital(snapshot)?.id;
+  const selectedCountry = navigation.selection ? boardCountryIndex(navigation.selection.country.id) : 0;
   const uniforms = useDerivedValue(() => {
     const c = camera.get();
     const sceneTime = time.get();
@@ -223,6 +225,7 @@ function GlobeScene({
       angles: [(c.longitude * Math.PI) / 180, (c.latitude * Math.PI) / 180],
       radius: globeRadius(viewport, c.zoom),
       zoom: c.zoom,
+      selectedCountry,
       time: sceneTime,
       sun: sunDirection(c.longitude, c.latitude, sceneTime),
       textureSize: [4096, 2048],
@@ -237,10 +240,13 @@ function GlobeScene({
     <WorldMapScreen
       earthOverview={earthOverview}
       selection={navigation.selection}
+      selectedScene={navigation.selection && images[navigation.selection.capital.id as keyof typeof CAPITAL_IMAGES]}
+      regionalTitle={navigation.regionalTitle}
       capitalName={navigation.capitalName}
       prompt={banner && <ChallengePrompt {...banner} />}
       onEnterWorld={showTitle ? enterWorld : undefined}
       onBack={navigation.back}
+      backLabel={navigation.backLabel}
       onClose={navigation.clearSelection}
       onExplore={navigation.explore}>
       <View
@@ -288,7 +294,7 @@ function GlobeScene({
           </Canvas>
         </MapSurface>
         {!showTitle && earthOverview && <ContinentLabels viewport={viewport} camera={camera} snapshot={snapshot} />}
-        <CountryLabels viewport={viewport} camera={camera} snapshot={snapshot} />
+        <CountryLabels viewport={viewport} camera={camera} snapshot={snapshot} selection={navigation.selection} />
       </View>
       {focused && recentFind && (
         <FoundLandmarkDialog

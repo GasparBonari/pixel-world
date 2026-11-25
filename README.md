@@ -4,16 +4,16 @@ A mobile-first pixel-art travel exploration game built with Expo, React Native, 
 
 Earthia opens with its title over an idle-spinning pixel Earth with bright coasts and drifting surface clouds, set against a navy star field. **Explore** clears the title, eases the globe to its daylit Atlantic view, and reveals continent labels and tabs. Drag to spin, or pinch or scroll to zoom. Web also supports arrow keys, +/−, and Home reset. Camera links such as `/?lon=-9.14&lat=38.72&zoom=7` open directly on the map. With reduced motion, the globe stays still while idle and the title cuts away immediately.
 
-**World** keeps its camera, country sheet and find-it challenge when you switch to **Quests** or **Passport**. The Earth overview shows completed countries out of countries with released content in a floating navy panel. The continent view shows the same count in a thin top bar. Quests previews upcoming challenges, and Passport shows landmarks found during the current session.
+**World** keeps its camera, country sheet and find-it challenge when you switch to **Quests** or **Passport**. The Earth overview shows completed countries out of countries with released content in a floating navy panel. At continent and country zoom, a parchment title and a Back button float above the map. Quests previews upcoming challenges, and Passport shows landmarks found during the current session.
 
 Zooming in (1×–32×) turns the globe into the continent **game board** from the [art contract](./docs/art/ART_CONTRACT.md):
 
 - The daytime ocean darkens into a night sea with stepped coast bands and sparkles.
 - The land becomes raised, with lit coasts and green cliff edges.
-- Countries take slightly different greens, with pale borders.
+- Countries take slightly different greens, with pale borders and compact name chips.
 - Each continent's own plants, landforms and animals fade in as icons: oaks, bears, boars, deer and foxes in Europe; acacias, baobabs, lions, giraffes, rhinos, elephants and zebras in Africa; bamboo, pandas, tigers, camels, orangutans and snow leopards in Asia; and so on, with 29 species in all. Snow-capped mountains sit on real ranges.
 
-It is the same sphere throughout, with no switch to a flat map.
+The first continent view spreads its sprites out so the geography stays readable. Zooming in brings in more scenery and a patchwork of fields. Tap a covered country for a gold outline and a sheet with its capital panorama, progress, and landmark pictures. Back steps out through the tiers on the same map.
 
 Zooming further into **Portugal** brings in a few buildings at its real cities (a walled capital crowned with a gold star at Lisbon, churches and houses in the regional building style), plus trees and boats. Zooming into **Lisbon** grows an isometric city scene out of its location: the castle on its hill, the Sé, the Rua Augusta arch over Praça do Comércio, pastel houses, a tram street, Belém Tower in the Tagus. You can pan around it. The same works for **France** and **Paris** (the Seine, Notre-Dame, the Louvre, the Arc de Triomphe, the Eiffel Tower and Sacré-Cœur; Mont-Saint-Michel and Saint-Émilion at country zoom: `/?lon=1&lat=47&zoom=5` and `/?lon=2.3522&lat=48.8566&zoom=7`), and for **Spain** and **Madrid**: the Palacio Real, Almudena, Plaza Mayor, Sol, Gran Vía, Cibeles, Puerta de Alcalá and the Retiro, plus La Mancha's windmills at country zoom. Try `/?lon=-8.3&lat=39.6&zoom=5.6` (Portugal), `/?lon=-9.1365&lat=38.71&zoom=7` (Lisbon), `/?lon=-3.8&lat=40.2&zoom=5.2` (Spain) or `/?lon=-3.7038&lat=40.4168&zoom=7` (Madrid). Deep zoom is only allowed where such detail exists. Rebuild the city scenes with `.venv/bin/python scripts/art/build_capitals.py`. On web, a view can be opened directly, e.g. `/?lon=10&lat=47&zoom=2.6`.
 

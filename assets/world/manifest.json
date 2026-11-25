@@ -66,7 +66,11 @@
       "path": "src/data/board-country-lookup.json",
       "decodedBytes": 75628,
       "source": "countries-50m, board.png red channel",
-      "license": "Natural Earth, public domain"
+      "license": "Natural Earth, public domain",
+      "continentLookup": {
+        "decodedBytes": 42739,
+        "source": "regions-10m, Continent features"
+      }
     },
     "channels": {
       "red": "country index + 1 (ne_50m_admin_0_countries order)",
