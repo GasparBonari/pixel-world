@@ -1,0 +1,88 @@
+[
+  {
+    "kind": "country",
+    "id": "KOS",
+    "name": "Kosovo",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "pristina",
+    "name": "Pristina",
+    "parentId": "KOS",
+    "longitude": 21.1622,
+    "latitude": 42.6629
+  },
+  {
+    "kind": "landmark",
+    "id": "emin-gjiku",
+    "name": "Emin Gjiku",
+    "parentId": "pristina",
+    "longitude": 21.16819,
+    "latitude": 42.66869,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_kosovo.py",
+      "key": "emin-gjiku"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "imperial-mosque",
+    "name": "Imperial Mosque",
+    "parentId": "pristina",
+    "longitude": 21.167,
+    "latitude": 42.667,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_kosovo.py",
+      "key": "imperial-mosque"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "mother-teresa-cathedral",
+    "name": "Mother Teresa Cathedral",
+    "parentId": "pristina",
+    "longitude": 21.15944,
+    "latitude": 42.65639,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_kosovo.py",
+      "key": "mother-teresa"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "national-library-of-kosovo",
+    "name": "National Library of Kosovo",
+    "parentId": "pristina",
+    "longitude": 21.16222,
+    "latitude": 42.65722,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_kosovo.py",
+      "key": "national-library"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "newborn",
+    "name": "NEWBORN",
+    "parentId": "pristina",
+    "longitude": 21.158209,
+    "latitude": 42.660539,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_kosovo.py",
+      "key": "newborn"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "pristina-clock-tower",
+    "name": "Pristina Clock Tower",
+    "parentId": "pristina",
+    "longitude": 21.16726,
+    "latitude": 42.66674,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_kosovo.py",
+      "key": "clock-tower"
+    }
+  }
+]

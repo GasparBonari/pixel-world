@@ -1,0 +1,124 @@
+[
+  {
+    "kind": "country",
+    "id": "DNK",
+    "name": "Denmark",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "copenhagen",
+    "name": "Copenhagen",
+    "parentId": "DNK",
+    "longitude": 12.5683,
+    "latitude": 55.6761
+  },
+  {
+    "kind": "landmark",
+    "id": "amalienborg",
+    "name": "Amalienborg",
+    "parentId": "copenhagen",
+    "longitude": 12.5925,
+    "latitude": 55.6844,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "copenhagen.amalienborg"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "christiansborg-palace",
+    "name": "Christiansborg Palace",
+    "parentId": "copenhagen",
+    "longitude": 12.579,
+    "latitude": 55.6757,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "copenhagen.christiansborg"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "church-of-our-saviour",
+    "name": "Church of Our Saviour",
+    "parentId": "copenhagen",
+    "longitude": 12.5938,
+    "latitude": 55.6726,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "copenhagen.our_saviour"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "copenhagen-city-hall",
+    "name": "Copenhagen City Hall",
+    "parentId": "copenhagen",
+    "longitude": 12.5701,
+    "latitude": 55.6753,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "copenhagen.city_hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "little-mermaid",
+    "name": "Little Mermaid",
+    "parentId": "copenhagen",
+    "longitude": 12.599,
+    "latitude": 55.6928,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "copenhagen.little_mermaid"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "marble-church",
+    "name": "Marble Church",
+    "parentId": "copenhagen",
+    "longitude": 12.5894,
+    "latitude": 55.6847,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "copenhagen.marble_church"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "nyhavn",
+    "name": "Nyhavn",
+    "parentId": "copenhagen",
+    "longitude": 12.590556,
+    "latitude": 55.679722,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "copenhagen.nyhavn"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "rosenborg-castle",
+    "name": "Rosenborg Castle",
+    "parentId": "copenhagen",
+    "longitude": 12.5774,
+    "latitude": 55.6858,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "copenhagen.rosenborg"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "round-tower",
+    "name": "Round Tower",
+    "parentId": "copenhagen",
+    "longitude": 12.5757,
+    "latitude": 55.6813,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "copenhagen.round_tower"
+    }
+  }
+]

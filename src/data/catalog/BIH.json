@@ -1,0 +1,100 @@
+[
+  {
+    "kind": "country",
+    "id": "BIH",
+    "name": "Bosnia and Herz.",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "sarajevo",
+    "name": "Sarajevo",
+    "parentId": "BIH",
+    "longitude": 18.4131,
+    "latitude": 43.8564
+  },
+  {
+    "kind": "landmark",
+    "id": "avaz-twist-tower",
+    "name": "Avaz Twist Tower",
+    "parentId": "sarajevo",
+    "longitude": 18.402111,
+    "latitude": 43.86075,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bosnia.py",
+      "key": "avaz"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "gazi-husrev-beg-mosque",
+    "name": "Gazi Husrev-beg Mosque",
+    "parentId": "sarajevo",
+    "longitude": 18.429028,
+    "latitude": 43.85917,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bosnia.py",
+      "key": "mosque"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "latin-bridge",
+    "name": "Latin Bridge",
+    "parentId": "sarajevo",
+    "longitude": 18.42896,
+    "latitude": 43.85763,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bosnia.py",
+      "key": "latin-bridge"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "national-museum-of-bosnia-and-herzegovina",
+    "name": "National Museum of Bosnia and Herzegovina",
+    "parentId": "sarajevo",
+    "longitude": 18.40271,
+    "latitude": 43.85448,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bosnia.py",
+      "key": "museum"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "sacred-heart-cathedral",
+    "name": "Sacred Heart Cathedral",
+    "parentId": "sarajevo",
+    "longitude": 18.4254,
+    "latitude": 43.8594,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bosnia.py",
+      "key": "cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "sarajevo-city-hall",
+    "name": "Sarajevo City Hall",
+    "parentId": "sarajevo",
+    "longitude": 18.43333,
+    "latitude": 43.85917,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bosnia.py",
+      "key": "city-hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "sebilj",
+    "name": "Sebilj",
+    "parentId": "sarajevo",
+    "longitude": 18.43126,
+    "latitude": 43.85972,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bosnia.py",
+      "key": "sebilj"
+    }
+  }
+]

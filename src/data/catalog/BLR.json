@@ -1,0 +1,88 @@
+[
+  {
+    "kind": "country",
+    "id": "BLR",
+    "name": "Belarus",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "minsk",
+    "name": "Minsk",
+    "parentId": "BLR",
+    "longitude": 27.5667,
+    "latitude": 53.9
+  },
+  {
+    "kind": "landmark",
+    "id": "holy-spirit-cathedral",
+    "name": "Holy Spirit Cathedral",
+    "parentId": "minsk",
+    "longitude": 27.5561848,
+    "latitude": 53.90502955,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_belarus.py",
+      "key": "holy-spirit"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "minsk-city-hall",
+    "name": "Minsk City Hall",
+    "parentId": "minsk",
+    "longitude": 27.5561119,
+    "latitude": 53.90356085,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_belarus.py",
+      "key": "city-hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "minsk-opera-house",
+    "name": "Minsk Opera House",
+    "parentId": "minsk",
+    "longitude": 27.561761,
+    "latitude": 53.9105266,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_belarus.py",
+      "key": "opera"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "national-library-of-belarus",
+    "name": "National Library of Belarus",
+    "parentId": "minsk",
+    "longitude": 27.6462283,
+    "latitude": 53.93122865,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_belarus.py",
+      "key": "library"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "red-church",
+    "name": "Red Church",
+    "parentId": "minsk",
+    "longitude": 27.5476028,
+    "latitude": 53.89647835,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_belarus.py",
+      "key": "red-church"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "victory-monument",
+    "name": "Victory Monument",
+    "parentId": "minsk",
+    "longitude": 27.57508705,
+    "latitude": 53.90867375,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_belarus.py",
+      "key": "victory"
+    }
+  }
+]

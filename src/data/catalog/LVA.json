@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "LVA",
+    "name": "Latvia",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "riga",
+    "name": "Riga",
+    "parentId": "LVA",
+    "longitude": 24.1052,
+    "latitude": 56.9496
+  },
+  {
+    "kind": "landmark",
+    "id": "freedom-monument",
+    "name": "Freedom Monument",
+    "parentId": "riga",
+    "longitude": 24.11338,
+    "latitude": 56.95143,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_latvia.py",
+      "key": "freedom"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "house-of-the-blackheads",
+    "name": "House of the Blackheads",
+    "parentId": "riga",
+    "longitude": 24.10685,
+    "latitude": 56.94726,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_latvia.py",
+      "key": "blackheads"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "latvian-national-opera",
+    "name": "Latvian National Opera",
+    "parentId": "riga",
+    "longitude": 24.11439,
+    "latitude": 56.94929,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_latvia.py",
+      "key": "opera"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "riga-castle",
+    "name": "Riga Castle",
+    "parentId": "riga",
+    "longitude": 24.100636,
+    "latitude": 56.95095,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_latvia.py",
+      "key": "castle"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "riga-cathedral",
+    "name": "Riga Cathedral",
+    "parentId": "riga",
+    "longitude": 24.104444,
+    "latitude": 56.949167,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_latvia.py",
+      "key": "cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "riga-central-market",
+    "name": "Riga Central Market",
+    "parentId": "riga",
+    "longitude": 24.115,
+    "latitude": 56.94386,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_latvia.py",
+      "key": "central-market"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-peters-church",
+    "name": "St Peter’s Church",
+    "parentId": "riga",
+    "longitude": 24.1087,
+    "latitude": 56.947499,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_latvia.py",
+      "key": "st-peter"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "three-brothers",
+    "name": "Three Brothers",
+    "parentId": "riga",
+    "longitude": 24.10429,
+    "latitude": 56.95031,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_latvia.py",
+      "key": "three-brothers"
+    }
+  }
+]

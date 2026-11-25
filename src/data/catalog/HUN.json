@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "HUN",
+    "name": "Hungary",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "budapest",
+    "name": "Budapest",
+    "parentId": "HUN",
+    "longitude": 19.0402,
+    "latitude": 47.4979
+  },
+  {
+    "kind": "landmark",
+    "id": "buda-castle",
+    "name": "Buda Castle",
+    "parentId": "budapest",
+    "longitude": 19.039722,
+    "latitude": 47.496111,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "budapest.buda_castle"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "chain-bridge",
+    "name": "Chain Bridge",
+    "parentId": "budapest",
+    "longitude": 19.043611,
+    "latitude": 47.498889,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "budapest.chain_bridge"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "fishermans-bastion",
+    "name": "Fisherman’s Bastion",
+    "parentId": "budapest",
+    "longitude": 19.034444,
+    "latitude": 47.502778,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "budapest.fishermans_bastion"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "heroes-square",
+    "name": "Heroes’ Square",
+    "parentId": "budapest",
+    "longitude": 19.077778,
+    "latitude": 47.515,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "budapest.heroes_square"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "hungarian-parliament-building",
+    "name": "Hungarian Parliament Building",
+    "parentId": "budapest",
+    "longitude": 19.045556,
+    "latitude": 47.506944,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "budapest.parliament"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "matthias-church",
+    "name": "Matthias Church",
+    "parentId": "budapest",
+    "longitude": 19.034167,
+    "latitude": 47.501944,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "budapest.matthias_church"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-stephens-basilica",
+    "name": "St Stephen’s Basilica",
+    "parentId": "budapest",
+    "longitude": 19.053889,
+    "latitude": 47.500833,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "budapest.st_stephen"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "szechenyi-baths",
+    "name": "Széchenyi Baths",
+    "parentId": "budapest",
+    "longitude": 19.081944,
+    "latitude": 47.518611,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "budapest.szechenyi_baths"
+    }
+  }
+]

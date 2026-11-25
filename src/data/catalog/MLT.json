@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "MLT",
+    "name": "Malta",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "valletta",
+    "name": "Valletta",
+    "parentId": "MLT",
+    "longitude": 14.5146,
+    "latitude": 35.8992
+  },
+  {
+    "kind": "landmark",
+    "id": "auberge-de-castille",
+    "name": "Auberge de Castille",
+    "parentId": "valletta",
+    "longitude": 14.51139,
+    "latitude": 35.89583,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "valletta.castille"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "carmelite-basilica",
+    "name": "Carmelite Basilica",
+    "parentId": "valletta",
+    "longitude": 14.512278,
+    "latitude": 35.900194,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "valletta.carmelite"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "fort-st-elmo",
+    "name": "Fort St Elmo",
+    "parentId": "valletta",
+    "longitude": 14.5188,
+    "latitude": 35.902,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "valletta.fort_st_elmo"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "grandmasters-palace",
+    "name": "Grandmaster’s Palace",
+    "parentId": "valletta",
+    "longitude": 14.51417,
+    "latitude": 35.89861,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "valletta.grandmaster"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-johns-co-cathedral",
+    "name": "St John’s Co-Cathedral",
+    "parentId": "valletta",
+    "longitude": 14.51278,
+    "latitude": 35.89778,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "valletta.st_john"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-pauls-pro-cathedral",
+    "name": "St Paul’s Pro-Cathedral",
+    "parentId": "valletta",
+    "longitude": 14.511528,
+    "latitude": 35.900333,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "valletta.st_paul"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "upper-barrakka-gardens",
+    "name": "Upper Barrakka Gardens",
+    "parentId": "valletta",
+    "longitude": 14.51222,
+    "latitude": 35.89472,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "valletta.upper_barrakka"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "valletta-parliament-house",
+    "name": "Parliament House",
+    "parentId": "valletta",
+    "longitude": 14.50972,
+    "latitude": 35.89611,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "valletta.parliament"
+    }
+  }
+]

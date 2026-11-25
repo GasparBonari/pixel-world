@@ -1,0 +1,124 @@
+[
+  {
+    "kind": "country",
+    "id": "ESP",
+    "name": "Spain",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "madrid",
+    "name": "Madrid",
+    "parentId": "ESP",
+    "longitude": -3.7038,
+    "latitude": 40.4168
+  },
+  {
+    "kind": "landmark",
+    "id": "almudena-cathedral",
+    "name": "Almudena Cathedral",
+    "parentId": "madrid",
+    "longitude": -3.714573,
+    "latitude": 40.415648,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "madrid.almudena"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "cibeles-fountain",
+    "name": "Cibeles Fountain",
+    "parentId": "madrid",
+    "longitude": -3.693149,
+    "latitude": 40.419251,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "madrid.cibeles"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "crystal-palace",
+    "name": "Crystal Palace",
+    "parentId": "madrid",
+    "longitude": -3.68206,
+    "latitude": 40.413577,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "madrid.palacio_cristal"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "metropolis-building",
+    "name": "Metrópolis Building",
+    "parentId": "madrid",
+    "longitude": -3.697386,
+    "latitude": 40.418766,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "madrid.metropolis"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "monument-to-alfonso-xii",
+    "name": "Monument to Alfonso XII",
+    "parentId": "madrid",
+    "longitude": -3.683063,
+    "latitude": 40.417322,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "madrid.alfonso_xii"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "plaza-mayor",
+    "name": "Plaza Mayor",
+    "parentId": "madrid",
+    "longitude": -3.707194,
+    "latitude": 40.415379,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "madrid.plaza_mayor"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "puerta-de-alcala",
+    "name": "Puerta de Alcalá",
+    "parentId": "madrid",
+    "longitude": -3.688808,
+    "latitude": 40.419992,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "madrid.puerta_alcala"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "royal-house-of-the-post-office",
+    "name": "Royal House of the Post Office",
+    "parentId": "madrid",
+    "longitude": -3.703619,
+    "latitude": 40.41637,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "madrid.casa_correos"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "royal-palace-of-madrid",
+    "name": "Royal Palace of Madrid",
+    "parentId": "madrid",
+    "longitude": -3.713894,
+    "latitude": 40.417398,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "madrid.palacio_real"
+    }
+  }
+]

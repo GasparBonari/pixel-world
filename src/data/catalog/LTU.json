@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "LTU",
+    "name": "Lithuania",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "vilnius",
+    "name": "Vilnius",
+    "parentId": "LTU",
+    "longitude": 25.2797,
+    "latitude": 54.6872
+  },
+  {
+    "kind": "landmark",
+    "id": "gate-of-dawn",
+    "name": "Gate of Dawn",
+    "parentId": "vilnius",
+    "longitude": 25.28954,
+    "latitude": 54.67432,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_lithuania.py",
+      "key": "gate-of-dawn"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "gediminas-tower",
+    "name": "Gediminas Tower",
+    "parentId": "vilnius",
+    "longitude": 25.29069,
+    "latitude": 54.68676,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_lithuania.py",
+      "key": "gediminas"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "palace-of-the-grand-dukes",
+    "name": "Palace of the Grand Dukes",
+    "parentId": "vilnius",
+    "longitude": 25.28889,
+    "latitude": 54.68611,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_lithuania.py",
+      "key": "palace"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-annes-church",
+    "name": "St Anne’s Church",
+    "parentId": "vilnius",
+    "longitude": 25.29326,
+    "latitude": 54.68304,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_lithuania.py",
+      "key": "st-anne"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-johns-church",
+    "name": "St Johns’ Church",
+    "parentId": "vilnius",
+    "longitude": 25.28833,
+    "latitude": 54.6825,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_lithuania.py",
+      "key": "st-johns"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "three-crosses",
+    "name": "Three Crosses",
+    "parentId": "vilnius",
+    "longitude": 25.2975,
+    "latitude": 54.68639,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_lithuania.py",
+      "key": "three-crosses"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "vilnius-cathedral",
+    "name": "Vilnius Cathedral",
+    "parentId": "vilnius",
+    "longitude": 25.28778,
+    "latitude": 54.68583,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_lithuania.py",
+      "key": "cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "vilnius-town-hall",
+    "name": "Vilnius Town Hall",
+    "parentId": "vilnius",
+    "longitude": 25.28694,
+    "latitude": 54.67806,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_lithuania.py",
+      "key": "town-hall"
+    }
+  }
+]

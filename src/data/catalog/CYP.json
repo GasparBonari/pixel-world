@@ -1,0 +1,88 @@
+[
+  {
+    "kind": "country",
+    "id": "CYP",
+    "name": "Cyprus",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "nicosia",
+    "name": "Nicosia",
+    "parentId": "CYP",
+    "longitude": 33.366635,
+    "latitude": 35.166677
+  },
+  {
+    "kind": "landmark",
+    "id": "buyuk-han",
+    "name": "Büyük Han",
+    "parentId": "nicosia",
+    "longitude": 33.36257,
+    "latitude": 35.17626,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_cyprus.py",
+      "key": "Büyük Han"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "cyprus-museum",
+    "name": "Cyprus Museum",
+    "parentId": "nicosia",
+    "longitude": 33.35575,
+    "latitude": 35.17173,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_cyprus.py",
+      "key": "Cyprus Museum"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "eleftheria-square",
+    "name": "Eleftheria Square",
+    "parentId": "nicosia",
+    "longitude": 33.36017,
+    "latitude": 35.16953,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_cyprus.py",
+      "key": "Eleftheria Square"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "famagusta-gate",
+    "name": "Famagusta Gate",
+    "parentId": "nicosia",
+    "longitude": 33.37119,
+    "latitude": 35.17424,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_cyprus.py",
+      "key": "Famagusta Gate"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "paphos-gate",
+    "name": "Paphos Gate",
+    "parentId": "nicosia",
+    "longitude": 33.35673,
+    "latitude": 35.17373,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_cyprus.py",
+      "key": "Paphos Gate"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "selimiye-mosque",
+    "name": "Selimiye Mosque",
+    "parentId": "nicosia",
+    "longitude": 33.36455,
+    "latitude": 35.17652,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_cyprus.py",
+      "key": "Selimiye Mosque"
+    }
+  }
+]

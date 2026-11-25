@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "SVK",
+    "name": "Slovakia",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "bratislava",
+    "name": "Bratislava",
+    "parentId": "SVK",
+    "longitude": 17.1077,
+    "latitude": 48.1486
+  },
+  {
+    "kind": "landmark",
+    "id": "blue-church",
+    "name": "Blue Church",
+    "parentId": "bratislava",
+    "longitude": 17.116833,
+    "latitude": 48.143389,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bratislava.blue_church"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "bratislava-castle",
+    "name": "Bratislava Castle",
+    "parentId": "bratislava",
+    "longitude": 17.1,
+    "latitude": 48.142222,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bratislava.castle"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "bratislava-old-town-hall",
+    "name": "Old Town Hall",
+    "parentId": "bratislava",
+    "longitude": 17.109111,
+    "latitude": 48.143889,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bratislava.town_hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "grassalkovich-palace",
+    "name": "Grassalkovich Palace",
+    "parentId": "bratislava",
+    "longitude": 17.107778,
+    "latitude": 48.149167,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bratislava.grassalkovich"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "michaels-gate",
+    "name": "Michael’s Gate",
+    "parentId": "bratislava",
+    "longitude": 17.10667,
+    "latitude": 48.145147,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bratislava.michael_gate"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "primatial-palace",
+    "name": "Primatial Palace",
+    "parentId": "bratislava",
+    "longitude": 17.10944,
+    "latitude": 48.14417,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bratislava.primatial_palace"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "snp-bridge",
+    "name": "SNP Bridge",
+    "parentId": "bratislava",
+    "longitude": 17.104581,
+    "latitude": 48.1384,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bratislava.snp_bridge"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-martins-cathedral",
+    "name": "St Martin’s Cathedral",
+    "parentId": "bratislava",
+    "longitude": 17.104778,
+    "latitude": 48.142139,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bratislava.cathedral"
+    }
+  }
+]

@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "HRV",
+    "name": "Croatia",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "zagreb",
+    "name": "Zagreb",
+    "parentId": "HRV",
+    "longitude": 15.9819,
+    "latitude": 45.815
+  },
+  {
+    "kind": "landmark",
+    "id": "art-pavilion",
+    "name": "Art Pavilion",
+    "parentId": "zagreb",
+    "longitude": 15.97861,
+    "latitude": 45.80722,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_croatia.py",
+      "key": "pavilion"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "ban-jelacic-square",
+    "name": "Ban Jelačić Square",
+    "parentId": "zagreb",
+    "longitude": 15.97722,
+    "latitude": 45.81306,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_croatia.py",
+      "key": "jelacic"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "croatian-national-theatre",
+    "name": "Croatian National Theatre",
+    "parentId": "zagreb",
+    "longitude": 15.97,
+    "latitude": 45.80944,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_croatia.py",
+      "key": "theatre"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "dolac-market",
+    "name": "Dolac Market",
+    "parentId": "zagreb",
+    "longitude": 15.9775,
+    "latitude": 45.81417,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_croatia.py",
+      "key": "dolac"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "lotrscak-tower",
+    "name": "Lotrščak Tower",
+    "parentId": "zagreb",
+    "longitude": 15.97306,
+    "latitude": 45.81472,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_croatia.py",
+      "key": "lotrscak"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-marks-church",
+    "name": "St Mark’s Church",
+    "parentId": "zagreb",
+    "longitude": 15.97389,
+    "latitude": 45.81639,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_croatia.py",
+      "key": "st-mark"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "stone-gate",
+    "name": "Stone Gate",
+    "parentId": "zagreb",
+    "longitude": 15.9753,
+    "latitude": 45.8158,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_croatia.py",
+      "key": "stone-gate"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "zagreb-cathedral",
+    "name": "Zagreb Cathedral",
+    "parentId": "zagreb",
+    "longitude": 15.97972,
+    "latitude": 45.81444,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_croatia.py",
+      "key": "cathedral"
+    }
+  }
+]

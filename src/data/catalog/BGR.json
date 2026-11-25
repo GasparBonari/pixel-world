@@ -1,0 +1,100 @@
+[
+  {
+    "kind": "country",
+    "id": "BGR",
+    "name": "Bulgaria",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "sofia",
+    "name": "Sofia",
+    "parentId": "BGR",
+    "longitude": 23.3219,
+    "latitude": 42.6977
+  },
+  {
+    "kind": "landmark",
+    "id": "banya-bashi-mosque",
+    "name": "Banya Bashi Mosque",
+    "parentId": "sofia",
+    "longitude": 23.3225614,
+    "latitude": 42.6995055,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bulgaria.py",
+      "key": "mosque"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "central-mineral-baths",
+    "name": "Central Mineral Baths",
+    "parentId": "sofia",
+    "longitude": 23.3238787,
+    "latitude": 42.6992879,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bulgaria.py",
+      "key": "baths"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "ivan-vazov-national-theatre",
+    "name": "Ivan Vazov National Theatre",
+    "parentId": "sofia",
+    "longitude": 23.3265503,
+    "latitude": 42.6941792,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bulgaria.py",
+      "key": "theatre"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "russian-church",
+    "name": "Russian Church",
+    "parentId": "sofia",
+    "longitude": 23.3289372,
+    "latitude": 42.6956956,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bulgaria.py",
+      "key": "russian"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "sofia-alexander-nevsky-cathedral",
+    "name": "Alexander Nevsky Cathedral",
+    "parentId": "sofia",
+    "longitude": 23.3327954,
+    "latitude": 42.6958183,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bulgaria.py",
+      "key": "nevsky"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-george-rotunda",
+    "name": "St George Rotunda",
+    "parentId": "sofia",
+    "longitude": 23.322856,
+    "latitude": 42.6969088,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bulgaria.py",
+      "key": "rotunda"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-sophia-church",
+    "name": "St Sophia Church",
+    "parentId": "sofia",
+    "longitude": 23.3314339,
+    "latitude": 42.6965492,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_bulgaria.py",
+      "key": "sophia"
+    }
+  }
+]

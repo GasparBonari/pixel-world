@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "NOR",
+    "name": "Norway",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "oslo",
+    "name": "Oslo",
+    "parentId": "NOR",
+    "longitude": 10.7522,
+    "latitude": 59.9139
+  },
+  {
+    "kind": "landmark",
+    "id": "akershus-castle",
+    "name": "Akershus Castle",
+    "parentId": "oslo",
+    "longitude": 10.7361,
+    "latitude": 59.9067,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "oslo.akershus"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "munch",
+    "name": "MUNCH",
+    "parentId": "oslo",
+    "longitude": 10.7553,
+    "latitude": 59.9058,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "oslo.munch"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "oslo-cathedral",
+    "name": "Oslo Cathedral",
+    "parentId": "oslo",
+    "longitude": 10.7465,
+    "latitude": 59.9127,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "oslo.cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "oslo-city-hall",
+    "name": "Oslo City Hall",
+    "parentId": "oslo",
+    "longitude": 10.7336,
+    "latitude": 59.9118,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "oslo.city_hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "oslo-national-theatre",
+    "name": "National Theatre",
+    "parentId": "oslo",
+    "longitude": 10.7344,
+    "latitude": 59.9145,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "oslo.national_theatre"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "oslo-opera-house",
+    "name": "Oslo Opera House",
+    "parentId": "oslo",
+    "longitude": 10.7536,
+    "latitude": 59.9069,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "oslo.opera_house"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "royal-palace-of-oslo",
+    "name": "Royal Palace of Oslo",
+    "parentId": "oslo",
+    "longitude": 10.7275,
+    "latitude": 59.9172,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "oslo.royal_palace"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "storting",
+    "name": "Storting",
+    "parentId": "oslo",
+    "longitude": 10.74,
+    "latitude": 59.9131,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "oslo.storting"
+    }
+  }
+]

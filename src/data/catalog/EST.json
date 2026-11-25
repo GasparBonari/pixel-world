@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "EST",
+    "name": "Estonia",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "tallinn",
+    "name": "Tallinn",
+    "parentId": "EST",
+    "longitude": 24.7536,
+    "latitude": 59.437
+  },
+  {
+    "kind": "landmark",
+    "id": "fat-margaret",
+    "name": "Fat Margaret",
+    "parentId": "tallinn",
+    "longitude": 24.74955,
+    "latitude": 59.44253,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_estonia.py",
+      "key": "fat-margaret"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "kadriorg-palace",
+    "name": "Kadriorg Palace",
+    "parentId": "tallinn",
+    "longitude": 24.79084,
+    "latitude": 59.43851,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_estonia.py",
+      "key": "kadriorg"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-olafs-church",
+    "name": "St Olaf’s Church",
+    "parentId": "tallinn",
+    "longitude": 24.747806,
+    "latitude": 59.441417,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_estonia.py",
+      "key": "st-olaf"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "tallinn-alexander-nevsky-cathedral",
+    "name": "Alexander Nevsky Cathedral",
+    "parentId": "tallinn",
+    "longitude": 24.739361,
+    "latitude": 59.435833,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_estonia.py",
+      "key": "nevsky"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "tallinn-st-nicholas-church",
+    "name": "St Nicholas’ Church",
+    "parentId": "tallinn",
+    "longitude": 24.74263,
+    "latitude": 59.43598,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_estonia.py",
+      "key": "st-nicholas"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "tallinn-town-hall",
+    "name": "Tallinn Town Hall",
+    "parentId": "tallinn",
+    "longitude": 24.7454694,
+    "latitude": 59.4370917,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_estonia.py",
+      "key": "town-hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "toompea-castle",
+    "name": "Toompea Castle",
+    "parentId": "tallinn",
+    "longitude": 24.7372,
+    "latitude": 59.4356,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_estonia.py",
+      "key": "toompea"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "viru-gate",
+    "name": "Viru Gate",
+    "parentId": "tallinn",
+    "longitude": 24.7503639,
+    "latitude": 59.4366306,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_estonia.py",
+      "key": "viru-gate"
+    }
+  }
+]

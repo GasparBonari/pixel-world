@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "MDA",
+    "name": "Moldova",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "chisinau",
+    "name": "Chișinău",
+    "parentId": "MDA",
+    "longitude": 28.8353,
+    "latitude": 47.0228
+  },
+  {
+    "kind": "landmark",
+    "id": "chisinau-city-hall",
+    "name": "Chișinău City Hall",
+    "parentId": "chisinau",
+    "longitude": 28.83440715,
+    "latitude": 47.0226975,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_moldova.py",
+      "key": "city-hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "chisinau-water-tower",
+    "name": "Chișinău Water Tower",
+    "parentId": "chisinau",
+    "longitude": 28.82242625,
+    "latitude": 47.0193307,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_moldova.py",
+      "key": "water-tower"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "national-museum-of-ethnography-and-natural-history",
+    "name": "National Museum of Ethnography and Natural History",
+    "parentId": "chisinau",
+    "longitude": 28.82001575,
+    "latitude": 47.02339345,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_moldova.py",
+      "key": "ethnography"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "national-museum-of-history-of-moldova",
+    "name": "National Museum of History of Moldova",
+    "parentId": "chisinau",
+    "longitude": 28.8280886,
+    "latitude": 47.0225926,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_moldova.py",
+      "key": "history"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "nativity-cathedral",
+    "name": "Nativity Cathedral",
+    "parentId": "chisinau",
+    "longitude": 28.8345281,
+    "latitude": 47.0260628,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_moldova.py",
+      "key": "cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "nativity-cathedral-belfry",
+    "name": "Nativity Cathedral Belfry",
+    "parentId": "chisinau",
+    "longitude": 28.833824,
+    "latitude": 47.025575,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_moldova.py",
+      "key": "belfry"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "stephen-the-great-monument",
+    "name": "Stephen the Great Monument",
+    "parentId": "chisinau",
+    "longitude": 28.8303111,
+    "latitude": 47.02550915,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_moldova.py",
+      "key": "stephen"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "triumphal-arch",
+    "name": "Triumphal Arch",
+    "parentId": "chisinau",
+    "longitude": 28.83259695,
+    "latitude": 47.02473035,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_moldova.py",
+      "key": "arch"
+    }
+  }
+]

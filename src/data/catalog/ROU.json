@@ -1,0 +1,100 @@
+[
+  {
+    "kind": "country",
+    "id": "ROU",
+    "name": "Romania",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "bucharest",
+    "name": "Bucharest",
+    "parentId": "ROU",
+    "longitude": 26.1025,
+    "latitude": 44.4268
+  },
+  {
+    "kind": "landmark",
+    "id": "arcul-de-triumf",
+    "name": "Arcul de Triumf",
+    "parentId": "bucharest",
+    "longitude": 26.0781528,
+    "latitude": 44.4671639,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_romania.py",
+      "key": "triumph"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "cec-palace",
+    "name": "CEC Palace",
+    "parentId": "bucharest",
+    "longitude": 26.0965,
+    "latitude": 44.432,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_romania.py",
+      "key": "cec-palace"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "palace-of-parliament",
+    "name": "Palace of Parliament",
+    "parentId": "bucharest",
+    "longitude": 26.0875,
+    "latitude": 44.4275,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_romania.py",
+      "key": "parliament"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "patriarchal-cathedral",
+    "name": "Patriarchal Cathedral",
+    "parentId": "bucharest",
+    "longitude": 26.0978222,
+    "latitude": 44.4245944,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_romania.py",
+      "key": "patriarchal-cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "romanian-athenaeum",
+    "name": "Romanian Athenaeum",
+    "parentId": "bucharest",
+    "longitude": 26.0973,
+    "latitude": 44.4413,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_romania.py",
+      "key": "athenaeum"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "royal-palace-of-bucharest",
+    "name": "Royal Palace of Bucharest",
+    "parentId": "bucharest",
+    "longitude": 26.095943,
+    "latitude": 44.439362,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_romania.py",
+      "key": "royal-palace"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "stavropoleos-church",
+    "name": "Stavropoleos Church",
+    "parentId": "bucharest",
+    "longitude": 26.0987944,
+    "latitude": 44.4318222,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_romania.py",
+      "key": "stavropoleos"
+    }
+  }
+]

@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "SWE",
+    "name": "Sweden",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "stockholm",
+    "name": "Stockholm",
+    "parentId": "SWE",
+    "longitude": 18.0686,
+    "latitude": 59.3293
+  },
+  {
+    "kind": "landmark",
+    "id": "german-church",
+    "name": "German Church",
+    "parentId": "stockholm",
+    "longitude": 18.0717,
+    "latitude": 59.3242,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "stockholm.german_church"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "nationalmuseum",
+    "name": "Nationalmuseum",
+    "parentId": "stockholm",
+    "longitude": 18.0781,
+    "latitude": 59.3286,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "stockholm.nationalmuseum"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "nordiska-museet",
+    "name": "Nordiska museet",
+    "parentId": "stockholm",
+    "longitude": 18.0933,
+    "latitude": 59.3292,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "stockholm.nordiska"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "riddarholmen-church",
+    "name": "Riddarholmen Church",
+    "parentId": "stockholm",
+    "longitude": 18.0647,
+    "latitude": 59.3247,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "stockholm.riddarholmen"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "stockholm-city-hall",
+    "name": "Stockholm City Hall",
+    "parentId": "stockholm",
+    "longitude": 18.055,
+    "latitude": 59.3275,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "stockholm.city_hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "stockholm-royal-palace",
+    "name": "Stockholm Royal Palace",
+    "parentId": "stockholm",
+    "longitude": 18.0717,
+    "latitude": 59.3269,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "stockholm.royal_palace"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "storkyrkan",
+    "name": "Storkyrkan",
+    "parentId": "stockholm",
+    "longitude": 18.0706,
+    "latitude": 59.3258,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "stockholm.storkyrkan"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "vasa-museum",
+    "name": "Vasa Museum",
+    "parentId": "stockholm",
+    "longitude": 18.0914,
+    "latitude": 59.3279,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "stockholm.vasa_museum"
+    }
+  }
+]

@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "NLD",
+    "name": "Netherlands",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "amsterdam",
+    "name": "Amsterdam",
+    "parentId": "NLD",
+    "longitude": 4.8952,
+    "latitude": 52.3702
+  },
+  {
+    "kind": "landmark",
+    "id": "anne-frank-house",
+    "name": "Anne Frank House",
+    "parentId": "amsterdam",
+    "longitude": 4.8843,
+    "latitude": 52.3752,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "amsterdam.anne_frank_house"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "centraal-station",
+    "name": "Centraal Station",
+    "parentId": "amsterdam",
+    "longitude": 4.9,
+    "latitude": 52.3783,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "amsterdam.centraal_station"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "magere-brug",
+    "name": "Magere Brug",
+    "parentId": "amsterdam",
+    "longitude": 4.9025,
+    "latitude": 52.3636,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "amsterdam.magere_brug"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "nemo",
+    "name": "NEMO",
+    "parentId": "amsterdam",
+    "longitude": 4.9124,
+    "latitude": 52.3741,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "amsterdam.nemo"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "oude-kerk",
+    "name": "Oude Kerk",
+    "parentId": "amsterdam",
+    "longitude": 4.898,
+    "latitude": 52.3744,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "amsterdam.oude_kerk"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "rijksmuseum",
+    "name": "Rijksmuseum",
+    "parentId": "amsterdam",
+    "longitude": 4.8853,
+    "latitude": 52.36,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "amsterdam.rijksmuseum"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "royal-palace-of-amsterdam",
+    "name": "Royal Palace of Amsterdam",
+    "parentId": "amsterdam",
+    "longitude": 4.8914,
+    "latitude": 52.3732,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "amsterdam.royal_palace"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "westerkerk",
+    "name": "Westerkerk",
+    "parentId": "amsterdam",
+    "longitude": 4.8836,
+    "latitude": 52.3744,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "amsterdam.westerkerk"
+    }
+  }
+]

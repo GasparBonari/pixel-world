@@ -1,0 +1,88 @@
+[
+  {
+    "kind": "country",
+    "id": "SRB",
+    "name": "Serbia",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "belgrade",
+    "name": "Belgrade",
+    "parentId": "SRB",
+    "longitude": 20.46,
+    "latitude": 44.8125
+  },
+  {
+    "kind": "landmark",
+    "id": "church-of-saint-sava",
+    "name": "Church of Saint Sava",
+    "parentId": "belgrade",
+    "longitude": 20.4685389,
+    "latitude": 44.79806,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_serbia.py",
+      "key": "saint-sava"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "kalemegdan-and-the-victor",
+    "name": "Kalemegdan and the Victor",
+    "parentId": "belgrade",
+    "longitude": 20.447694,
+    "latitude": 44.823028,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_serbia.py",
+      "key": "victor"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "national-assembly",
+    "name": "National Assembly",
+    "parentId": "belgrade",
+    "longitude": 20.46583,
+    "latitude": 44.81167,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_serbia.py",
+      "key": "assembly"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "national-museum-of-serbia",
+    "name": "National Museum of Serbia",
+    "parentId": "belgrade",
+    "longitude": 20.4594,
+    "latitude": 44.8167,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_serbia.py",
+      "key": "museum"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "princess-ljubicas-residence",
+    "name": "Princess Ljubica’s Residence",
+    "parentId": "belgrade",
+    "longitude": 20.45227,
+    "latitude": 44.81712,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_serbia.py",
+      "key": "residence"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-michaels-cathedral",
+    "name": "St Michael’s Cathedral",
+    "parentId": "belgrade",
+    "longitude": 20.45216,
+    "latitude": 44.81806,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_serbia.py",
+      "key": "cathedral"
+    }
+  }
+]

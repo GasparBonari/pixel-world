@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "IRL",
+    "name": "Ireland",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "dublin",
+    "name": "Dublin",
+    "parentId": "IRL",
+    "longitude": -6.2603,
+    "latitude": 53.3498
+  },
+  {
+    "kind": "landmark",
+    "id": "christ-church-cathedral",
+    "name": "Christ Church Cathedral",
+    "parentId": "dublin",
+    "longitude": -6.2714,
+    "latitude": 53.3431,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "dublin.christ_church"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "custom-house",
+    "name": "Custom House",
+    "parentId": "dublin",
+    "longitude": -6.2531,
+    "latitude": 53.3485,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "dublin.custom_house"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "dublin-castle",
+    "name": "Dublin Castle",
+    "parentId": "dublin",
+    "longitude": -6.2675,
+    "latitude": 53.3429,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "dublin.dublin_castle"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "four-courts",
+    "name": "Four Courts",
+    "parentId": "dublin",
+    "longitude": -6.2737,
+    "latitude": 53.3457,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "dublin.four_courts"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "general-post-office",
+    "name": "General Post Office",
+    "parentId": "dublin",
+    "longitude": -6.2613,
+    "latitude": 53.3494,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "dublin.gpo"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "hapenny-bridge",
+    "name": "Ha’penny Bridge",
+    "parentId": "dublin",
+    "longitude": -6.2633,
+    "latitude": 53.3462,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "dublin.hapenny_bridge"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-patricks-cathedral",
+    "name": "St Patrick’s Cathedral",
+    "parentId": "dublin",
+    "longitude": -6.2715,
+    "latitude": 53.3394,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "dublin.st_patricks"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "trinity-college-campanile",
+    "name": "Trinity College Campanile",
+    "parentId": "dublin",
+    "longitude": -6.2573,
+    "latitude": 53.3439,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "dublin.trinity"
+    }
+  }
+]

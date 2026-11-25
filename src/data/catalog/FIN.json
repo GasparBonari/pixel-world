@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "FIN",
+    "name": "Finland",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "helsinki",
+    "name": "Helsinki",
+    "parentId": "FIN",
+    "longitude": 24.9384,
+    "latitude": 60.1699
+  },
+  {
+    "kind": "landmark",
+    "id": "finlandia-hall",
+    "name": "Finlandia Hall",
+    "parentId": "helsinki",
+    "longitude": 24.9331,
+    "latitude": 60.1758,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "helsinki.finlandia"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "helsinki-cathedral",
+    "name": "Helsinki Cathedral",
+    "parentId": "helsinki",
+    "longitude": 24.9522,
+    "latitude": 60.1703,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "helsinki.cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "helsinki-central-railway-station",
+    "name": "Helsinki Central Railway Station",
+    "parentId": "helsinki",
+    "longitude": 24.9414,
+    "latitude": 60.1719,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "helsinki.railway_station"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "helsinki-parliament-house",
+    "name": "Parliament House",
+    "parentId": "helsinki",
+    "longitude": 24.9333,
+    "latitude": 60.1725,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "helsinki.parliament"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "national-museum-of-finland",
+    "name": "National Museum of Finland",
+    "parentId": "helsinki",
+    "longitude": 24.9294,
+    "latitude": 60.175,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "helsinki.national_museum"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "old-market-hall",
+    "name": "Old Market Hall",
+    "parentId": "helsinki",
+    "longitude": 24.9528,
+    "latitude": 60.1661,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "helsinki.market_hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "suomenlinna",
+    "name": "Suomenlinna",
+    "parentId": "helsinki",
+    "longitude": 24.99,
+    "latitude": 60.14,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "helsinki.suomenlinna"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "uspenski-cathedral",
+    "name": "Uspenski Cathedral",
+    "parentId": "helsinki",
+    "longitude": 24.96,
+    "latitude": 60.1683,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "helsinki.uspenski"
+    }
+  }
+]

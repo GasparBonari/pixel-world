@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "BEL",
+    "name": "Belgium",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "brussels",
+    "name": "Brussels",
+    "parentId": "BEL",
+    "longitude": 4.3517,
+    "latitude": 50.8503
+  },
+  {
+    "kind": "landmark",
+    "id": "atomium",
+    "name": "Atomium",
+    "parentId": "brussels",
+    "longitude": 4.34111,
+    "latitude": 50.89472,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "brussels.atomium"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "brussels-town-hall",
+    "name": "Brussels Town Hall",
+    "parentId": "brussels",
+    "longitude": 4.35167,
+    "latitude": 50.84639,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "brussels.town_hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "cathedral-of-st-michael-and-st-gudula",
+    "name": "Cathedral of St Michael and St Gudula",
+    "parentId": "brussels",
+    "longitude": 4.36028,
+    "latitude": 50.84778,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "brussels.cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "cinquantenaire",
+    "name": "Cinquantenaire",
+    "parentId": "brussels",
+    "longitude": 4.39278,
+    "latitude": 50.84028,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "brussels.cinquantenaire"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "kings-house",
+    "name": "King’s House",
+    "parentId": "brussels",
+    "longitude": 4.35278,
+    "latitude": 50.84694,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "brussels.kings_house"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "koekelberg-basilica",
+    "name": "Koekelberg Basilica",
+    "parentId": "brussels",
+    "longitude": 4.31722,
+    "latitude": 50.86667,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "brussels.basilica"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "palace-of-justice",
+    "name": "Palace of Justice",
+    "parentId": "brussels",
+    "longitude": 4.35167,
+    "latitude": 50.83667,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "brussels.palace_of_justice"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "royal-palace-of-brussels",
+    "name": "Royal Palace of Brussels",
+    "parentId": "brussels",
+    "longitude": 4.36222,
+    "latitude": 50.84167,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "brussels.royal_palace"
+    }
+  }
+]

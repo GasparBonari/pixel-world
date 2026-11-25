@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "POL",
+    "name": "Poland",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "warsaw",
+    "name": "Warsaw",
+    "parentId": "POL",
+    "longitude": 21.0122,
+    "latitude": 52.2297
+  },
+  {
+    "kind": "landmark",
+    "id": "chopin-monument",
+    "name": "Chopin Monument",
+    "parentId": "warsaw",
+    "longitude": 21.02806,
+    "latitude": 52.21472,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "warsaw.chopin_monument"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "old-town-market-square",
+    "name": "Old Town Market Square",
+    "parentId": "warsaw",
+    "longitude": 21.0122,
+    "latitude": 52.2497,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "warsaw.old_town_square"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "palace-of-culture-and-science",
+    "name": "Palace of Culture and Science",
+    "parentId": "warsaw",
+    "longitude": 21.00639,
+    "latitude": 52.23167,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "warsaw.culture_palace"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "palace-on-the-isle",
+    "name": "Palace on the Isle",
+    "parentId": "warsaw",
+    "longitude": 21.03582,
+    "latitude": 52.21512,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "warsaw.palace_isle"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "royal-castle",
+    "name": "Royal Castle",
+    "parentId": "warsaw",
+    "longitude": 21.0142,
+    "latitude": 52.2478,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "warsaw.royal_castle"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-johns-cathedral",
+    "name": "St John’s Cathedral",
+    "parentId": "warsaw",
+    "longitude": 21.01361,
+    "latitude": 52.24889,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "warsaw.st_john"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "warsaw-barbican",
+    "name": "Warsaw Barbican",
+    "parentId": "warsaw",
+    "longitude": 21.01,
+    "latitude": 52.25056,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "warsaw.barbican"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "wilanow-palace",
+    "name": "Wilanów Palace",
+    "parentId": "warsaw",
+    "longitude": 21.09028,
+    "latitude": 52.16528,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "warsaw.wilanow"
+    }
+  }
+]

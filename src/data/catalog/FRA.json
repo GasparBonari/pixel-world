@@ -1,0 +1,156 @@
+[
+  {
+    "kind": "country",
+    "id": "FRA",
+    "name": "France",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "paris",
+    "name": "Paris",
+    "parentId": "FRA",
+    "longitude": 2.3522,
+    "latitude": 48.8566
+  },
+  {
+    "kind": "landmark",
+    "id": "arc-de-triomphe",
+    "name": "Arc de Triomphe",
+    "parentId": "paris",
+    "longitude": 2.295032,
+    "latitude": 48.873778,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "paris.arc_de_triomphe"
+    },
+    "fact": {
+      "text": "Napoleon ordered the arch built in 1806 to honour his army. Its first stone was laid on his birthday that year.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Centre des monuments nationaux",
+          "url": "https://www.paris-arc-de-triomphe.fr/decouvrir/genese-et-premiere-pierre"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "eiffel-tower",
+    "name": "Eiffel Tower",
+    "parentId": "paris",
+    "longitude": 2.2945,
+    "latitude": 48.858241,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "paris.eiffel_tower"
+    },
+    "fact": {
+      "text": "The tower was built for the 1889 World’s Fair in Paris. People climbed its stairs during the first week, before the lifts opened.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Eiffel Tower",
+          "url": "https://www.toureiffel.paris/en/the-monument/universal-exhibition"
+        },
+        {
+          "label": "City of Paris",
+          "url": "https://www.paris.fr/pages/la-tour-eiffel-fete-ses-130-ans-6554"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "louvre",
+    "name": "Louvre",
+    "parentId": "paris",
+    "longitude": 2.336914,
+    "latitude": 48.861124,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "paris.louvre"
+    },
+    "fact": {
+      "text": "The glass pyramid opened in 1989. It leads into an underground hall that connects all three wings of the museum.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Musée du Louvre",
+          "url": "https://musee.louvre.fr/en/explore/the-palace/a-pyramid-for-a-symbol"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "luxor-obelisk",
+    "name": "Luxor Obelisk",
+    "parentId": "paris",
+    "longitude": 2.321121,
+    "latitude": 48.865516,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "paris.obelisk"
+    },
+    "fact": {
+      "text": "This obelisk came from the temple of Luxor in Egypt. It has stood in the Place de la Concorde since 1836.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Paris 8th arrondissement",
+          "url": "https://cdn.paris.fr/paris/2022/09/19/8e8d8e699cb3fc6dbac780de81cb18aa.pdf"
+        },
+        {
+          "label": "City of Paris",
+          "url": "https://www.paris.fr/pages/la-concorde-une-place-aux-multiples-facettes-22106"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "notre-dame",
+    "name": "Notre-Dame",
+    "parentId": "paris",
+    "longitude": 2.350025,
+    "latitude": 48.852996,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "paris.notre_dame"
+    },
+    "fact": {
+      "text": "A round rose window sits below two square towers. The row of statues beneath the window represents 28 generations of the kings of Judah.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Paris Musées",
+          "url": "https://parismuseescollections.paris.fr/ru/node/1025441"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "sacre-coeur",
+    "name": "Sacré-Cœur",
+    "parentId": "paris",
+    "longitude": 2.343015,
+    "latitude": 48.886806,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "paris.sacre_coeur"
+    },
+    "fact": {
+      "text": "Four domes on the basilica represent the four Gospel writers. The large central dome represents Jesus.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Basilique du Sacré-Cœur de Montmartre",
+          "url": "https://www.sacre-coeur-montmartre.com/decouvrir/patrimoine-et-art-sacre/la-coupole/"
+        }
+      ]
+    }
+  }
+]

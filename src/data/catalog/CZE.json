@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "CZE",
+    "name": "Czechia",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "prague",
+    "name": "Prague",
+    "parentId": "CZE",
+    "longitude": 14.4378,
+    "latitude": 50.0755
+  },
+  {
+    "kind": "landmark",
+    "id": "charles-bridge",
+    "name": "Charles Bridge",
+    "parentId": "prague",
+    "longitude": 14.41194,
+    "latitude": 50.08639,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "prague.charles_bridge"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "dancing-house",
+    "name": "Dancing House",
+    "parentId": "prague",
+    "longitude": 14.41417,
+    "latitude": 50.07556,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "prague.dancing_house"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "powder-gate",
+    "name": "Powder Gate",
+    "parentId": "prague",
+    "longitude": 14.4278,
+    "latitude": 50.0872,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "prague.powder_gate"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "prague-castle",
+    "name": "Prague Castle",
+    "parentId": "prague",
+    "longitude": 14.40056,
+    "latitude": 50.09083,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "prague.prague_castle"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "prague-national-theatre",
+    "name": "National Theatre",
+    "parentId": "prague",
+    "longitude": 14.41361,
+    "latitude": 50.08111,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "prague.national_theatre"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "prague-old-town-hall",
+    "name": "Old Town Hall",
+    "parentId": "prague",
+    "longitude": 14.4207,
+    "latitude": 50.0871,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "prague.old_town_hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "prague-st-nicholas-church",
+    "name": "St Nicholas Church",
+    "parentId": "prague",
+    "longitude": 14.4032,
+    "latitude": 50.088,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "prague.st_nicholas"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "tyn-church",
+    "name": "Týn Church",
+    "parentId": "prague",
+    "longitude": 14.4227,
+    "latitude": 50.0876,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "prague.tyn_church"
+    }
+  }
+]

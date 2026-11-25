@@ -1,0 +1,100 @@
+[
+  {
+    "kind": "country",
+    "id": "DEU",
+    "name": "Germany",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "berlin",
+    "name": "Berlin",
+    "parentId": "DEU",
+    "longitude": 13.405,
+    "latitude": 52.52
+  },
+  {
+    "kind": "landmark",
+    "id": "berlin-cathedral",
+    "name": "Berlin Cathedral",
+    "parentId": "berlin",
+    "longitude": 13.401,
+    "latitude": 52.5191,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "berlin.berlin_cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "berlin-tv-tower",
+    "name": "Berlin TV Tower",
+    "parentId": "berlin",
+    "longitude": 13.4094,
+    "latitude": 52.5208,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "berlin.tv_tower"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "brandenburg-gate",
+    "name": "Brandenburg Gate",
+    "parentId": "berlin",
+    "longitude": 13.3777,
+    "latitude": 52.5163,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "berlin.brandenburg_gate"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "konzerthaus",
+    "name": "Konzerthaus",
+    "parentId": "berlin",
+    "longitude": 13.3927,
+    "latitude": 52.5136,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "berlin.konzerthaus"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "reichstag",
+    "name": "Reichstag",
+    "parentId": "berlin",
+    "longitude": 13.3762,
+    "latitude": 52.5186,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "berlin.reichstag"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "rotes-rathaus",
+    "name": "Rotes Rathaus",
+    "parentId": "berlin",
+    "longitude": 13.4083,
+    "latitude": 52.5186,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "berlin.rotes_rathaus"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "victory-column",
+    "name": "Victory Column",
+    "parentId": "berlin",
+    "longitude": 13.3501,
+    "latitude": 52.5145,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "berlin.victory_column"
+    }
+  }
+]

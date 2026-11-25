@@ -1,0 +1,88 @@
+[
+  {
+    "kind": "country",
+    "id": "MNE",
+    "name": "Montenegro",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "podgorica",
+    "name": "Podgorica",
+    "parentId": "MNE",
+    "longitude": 19.2628,
+    "latitude": 42.4414
+  },
+  {
+    "kind": "landmark",
+    "id": "cathedral-of-the-resurrection",
+    "name": "Cathedral of the Resurrection",
+    "parentId": "podgorica",
+    "longitude": 19.24825,
+    "latitude": 42.445694,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_montenegro.py",
+      "key": "cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "millennium-bridge",
+    "name": "Millennium Bridge",
+    "parentId": "podgorica",
+    "longitude": 19.2581,
+    "latitude": 42.4452,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_montenegro.py",
+      "key": "millennium"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "old-ribnica-bridge",
+    "name": "Old Ribnica Bridge",
+    "parentId": "podgorica",
+    "longitude": 19.258785,
+    "latitude": 42.439474,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_montenegro.py",
+      "key": "ribnica"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "petrovic-palace",
+    "name": "Petrović Palace",
+    "parentId": "podgorica",
+    "longitude": 19.25028,
+    "latitude": 42.43778,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_montenegro.py",
+      "key": "palace"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "podgorica-clock-tower",
+    "name": "Podgorica Clock Tower",
+    "parentId": "podgorica",
+    "longitude": 19.260014,
+    "latitude": 42.435557,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_montenegro.py",
+      "key": "clock-tower"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-georges-church",
+    "name": "St George’s Church",
+    "parentId": "podgorica",
+    "longitude": 19.267143,
+    "latitude": 42.445424,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_montenegro.py",
+      "key": "st-george"
+    }
+  }
+]

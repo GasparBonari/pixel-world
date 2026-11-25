@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "GBR",
+    "name": "United Kingdom",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "london",
+    "name": "London",
+    "parentId": "GBR",
+    "longitude": -0.1276,
+    "latitude": 51.5072
+  },
+  {
+    "kind": "landmark",
+    "id": "buckingham-palace",
+    "name": "Buckingham Palace",
+    "parentId": "london",
+    "longitude": -0.1419,
+    "latitude": 51.5014,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "london.buckingham_palace"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "london-eye",
+    "name": "London Eye",
+    "parentId": "london",
+    "longitude": -0.1194,
+    "latitude": 51.5033,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "london.london_eye"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "palace-of-westminster",
+    "name": "Palace of Westminster",
+    "parentId": "london",
+    "longitude": -0.1247,
+    "latitude": 51.4992,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "london.parliament"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-pauls-cathedral",
+    "name": "St Paul’s Cathedral",
+    "parentId": "london",
+    "longitude": -0.0983,
+    "latitude": 51.5138,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "london.st_pauls"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "tower-bridge",
+    "name": "Tower Bridge",
+    "parentId": "london",
+    "longitude": -0.0753,
+    "latitude": 51.5056,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "london.tower_bridge"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "tower-of-london",
+    "name": "Tower of London",
+    "parentId": "london",
+    "longitude": -0.0761,
+    "latitude": 51.5081,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "london.tower_of_london"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "trafalgar-square",
+    "name": "Trafalgar Square",
+    "parentId": "london",
+    "longitude": -0.1281,
+    "latitude": 51.5081,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "london.trafalgar"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "westminster-abbey",
+    "name": "Westminster Abbey",
+    "parentId": "london",
+    "longitude": -0.1275,
+    "latitude": 51.4994,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "london.westminster_abbey"
+    }
+  }
+]

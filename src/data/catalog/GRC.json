@@ -1,0 +1,174 @@
+[
+  {
+    "kind": "country",
+    "id": "GRC",
+    "name": "Greece",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "athens",
+    "name": "Athens",
+    "parentId": "GRC",
+    "longitude": 23.7275,
+    "latitude": 37.9838
+  },
+  {
+    "kind": "landmark",
+    "id": "academy-of-athens",
+    "name": "Academy of Athens",
+    "parentId": "athens",
+    "longitude": 23.73417,
+    "latitude": 37.98,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_greece.py",
+      "key": "academy"
+    },
+    "fact": {
+      "text": "Theophil Hansen looked to the ancient buildings of the Acropolis for inspiration when designing the Academy.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "The Official Athens Guide",
+          "url": "https://www.thisisathens.org/attractions/academy-athens"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "erechtheion",
+    "name": "Erechtheion",
+    "parentId": "athens",
+    "longitude": 23.7265,
+    "latitude": 37.9721,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_greece.py",
+      "key": "erechtheion"
+    },
+    "fact": {
+      "text": "Six statues of women once held up the roof of the south porch. Five of those original statues are now in the Acropolis Museum.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Acropolis Museum",
+          "url": "https://www.theacropolismuseum.gr/en/other-monuments-periklean-building-programme/erechtheion"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "hellenic-parliament",
+    "name": "Hellenic Parliament",
+    "parentId": "athens",
+    "longitude": 23.73694,
+    "latitude": 37.97528,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_greece.py",
+      "key": "parliament"
+    },
+    "fact": {
+      "text": "This building once housed King Otto and Queen Amalia. Greece’s parliament held its first session here in 1935.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Hellenic Parliament",
+          "url": "https://www.hellenicparliament.gr/en/Vouli-ton-Ellinon/ToKtirio/Istoria-Ktiriou/"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "panathenaic-stadium",
+    "name": "Panathenaic Stadium",
+    "parentId": "athens",
+    "longitude": 23.74111,
+    "latitude": 37.96833,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_greece.py",
+      "key": "stadium"
+    },
+    "fact": {
+      "text": "The stadium was restored for the first modern Olympic Games, held in Athens in 1896.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Panathenaic Stadium",
+          "url": "https://www.panathenaicstadium.gr/en/sigxrono-stadio-2/"
+        },
+        {
+          "label": "The Olympic Museum",
+          "url": "https://stillmed.olympics.com/media/Document%20Library/Museum/Visit/TOM-Schools/Teaching-Resources/Information-Kit-on-the-Olympic-Games/Information-Kit-on-the-Olympic-Games-EN.pdf"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "parthenon",
+    "name": "Parthenon",
+    "parentId": "athens",
+    "longitude": 23.7266,
+    "latitude": 37.9715,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_greece.py",
+      "key": "parthenon"
+    },
+    "fact": {
+      "text": "The Athenians dedicated the temple to Athena, the goddess who protected their city. It had eight columns at each end and seventeen along each side.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Acropolis Restoration Service",
+          "url": "https://www.ysma.gr/en/monuments/parthenon/"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "temple-of-hephaestus",
+    "name": "Temple of Hephaestus",
+    "parentId": "athens",
+    "longitude": 23.7213917,
+    "latitude": 37.9756167,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_greece.py",
+      "key": "hephaestus"
+    },
+    "fact": {
+      "text": "The temple stands on a hill above the Ancient Agora. It was turned into a church in the seventh century.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Perseus Art and Archaeology Browser",
+          "url": "https://perseus-aa.github.io/items/aa_82.html"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "tower-of-the-winds",
+    "name": "Tower of the Winds",
+    "parentId": "athens",
+    "longitude": 23.7270701,
+    "latitude": 37.974256,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_greece.py",
+      "key": "winds"
+    },
+    "fact": {
+      "text": "Eight carvings show the winds facing the directions they blow from. Sundials told time on the outside walls, and a water clock worked inside.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "The Official Athens Guide",
+          "url": "https://www.thisisathens.org/antiquities/tower-winds"
+        }
+      ]
+    }
+  }
+]

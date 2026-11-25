@@ -1,0 +1,124 @@
+[
+  {
+    "kind": "country",
+    "id": "CHE",
+    "name": "Switzerland",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "bern",
+    "name": "Bern",
+    "parentId": "CHE",
+    "longitude": 7.4474,
+    "latitude": 46.948
+  },
+  {
+    "kind": "landmark",
+    "id": "bern-historical-museum",
+    "name": "Bern Historical Museum",
+    "parentId": "bern",
+    "longitude": 7.44917,
+    "latitude": 46.94306,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bern.historical_museum"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "bern-minster",
+    "name": "Bern Minster",
+    "parentId": "bern",
+    "longitude": 7.45139,
+    "latitude": 46.94722,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bern.minster"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "bern-town-hall",
+    "name": "Bern Town Hall",
+    "parentId": "bern",
+    "longitude": 7.45239,
+    "latitude": 46.94875,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bern.rathaus"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "federal-palace",
+    "name": "Federal Palace",
+    "parentId": "bern",
+    "longitude": 7.44417,
+    "latitude": 46.94667,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bern.federal_palace"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "kafigturm",
+    "name": "Käfigturm",
+    "parentId": "bern",
+    "longitude": 7.44394,
+    "latitude": 46.94816,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bern.kafigturm"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "kirchenfeld-bridge",
+    "name": "Kirchenfeld Bridge",
+    "parentId": "bern",
+    "longitude": 7.44866,
+    "latitude": 46.9454,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bern.kirchenfeld_bridge"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "nydeggkirche",
+    "name": "Nydeggkirche",
+    "parentId": "bern",
+    "longitude": 7.45736,
+    "latitude": 46.94881,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bern.nydeggkirche"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "zentrum-paul-klee",
+    "name": "Zentrum Paul Klee",
+    "parentId": "bern",
+    "longitude": 7.47389,
+    "latitude": 46.94917,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bern.paul_klee"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "zytglogge",
+    "name": "Zytglogge",
+    "parentId": "bern",
+    "longitude": 7.44778,
+    "latitude": 46.94806,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "bern.zytglogge"
+    }
+  }
+]

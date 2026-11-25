@@ -1,0 +1,88 @@
+[
+  {
+    "kind": "country",
+    "id": "RUS",
+    "name": "Russia",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "moscow",
+    "name": "Moscow",
+    "parentId": "RUS",
+    "longitude": 37.6173,
+    "latitude": 55.7558
+  },
+  {
+    "kind": "landmark",
+    "id": "bolshoi-theatre",
+    "name": "Bolshoi Theatre",
+    "parentId": "moscow",
+    "longitude": 37.61861,
+    "latitude": 55.76028,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_russia.py",
+      "key": "bolshoi"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "cathedral-of-christ-the-saviour",
+    "name": "Cathedral of Christ the Saviour",
+    "parentId": "moscow",
+    "longitude": 37.60556,
+    "latitude": 55.74444,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_russia.py",
+      "key": "christ-saviour"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "ivan-the-great-bell-tower",
+    "name": "Ivan the Great Bell Tower",
+    "parentId": "moscow",
+    "longitude": 37.6182122,
+    "latitude": 55.7507148,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_russia.py",
+      "key": "ivan-belltower"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "spasskaya-tower",
+    "name": "Spasskaya Tower",
+    "parentId": "moscow",
+    "longitude": 37.621425,
+    "latitude": 55.752544,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_russia.py",
+      "key": "spasskaya"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-basils-cathedral",
+    "name": "St Basil’s Cathedral",
+    "parentId": "moscow",
+    "longitude": 37.62306,
+    "latitude": 55.7525,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_russia.py",
+      "key": "st-basil"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "state-historical-museum",
+    "name": "State Historical Museum",
+    "parentId": "moscow",
+    "longitude": 37.6177437,
+    "latitude": 55.7553192,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_russia.py",
+      "key": "historical-museum"
+    }
+  }
+]

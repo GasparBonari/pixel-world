@@ -1,0 +1,100 @@
+[
+  {
+    "kind": "country",
+    "id": "LIE",
+    "name": "Liechtenstein",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "vaduz",
+    "name": "Vaduz",
+    "parentId": "LIE",
+    "longitude": 9.522423,
+    "latitude": 47.138451
+  },
+  {
+    "kind": "landmark",
+    "id": "cathedral-of-st-florin",
+    "name": "Cathedral of St Florin",
+    "parentId": "vaduz",
+    "longitude": 9.52276,
+    "latitude": 47.13622,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_liechtenstein.py",
+      "key": "Cathedral of St Florin"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "government-building",
+    "name": "Government Building",
+    "parentId": "vaduz",
+    "longitude": 9.52274,
+    "latitude": 47.13711,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_liechtenstein.py",
+      "key": "Government Building"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "kunstmuseum-liechtenstein",
+    "name": "Kunstmuseum Liechtenstein",
+    "parentId": "vaduz",
+    "longitude": 9.52211,
+    "latitude": 47.1395,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_liechtenstein.py",
+      "key": "Kunstmuseum"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "landtag",
+    "name": "Landtag",
+    "parentId": "vaduz",
+    "longitude": 9.52286,
+    "latitude": 47.13766,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_liechtenstein.py",
+      "key": "Landtag"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "old-rhine-bridge",
+    "name": "Old Rhine Bridge",
+    "parentId": "vaduz",
+    "longitude": 9.51168,
+    "latitude": 47.13246,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_liechtenstein.py",
+      "key": "Old Rhine Bridge"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "red-house",
+    "name": "Red House",
+    "parentId": "vaduz",
+    "longitude": 9.52182,
+    "latitude": 47.1448,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_liechtenstein.py",
+      "key": "Red House"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "vaduz-castle",
+    "name": "Vaduz Castle",
+    "parentId": "vaduz",
+    "longitude": 9.52434,
+    "latitude": 47.13951,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_liechtenstein.py",
+      "key": "Vaduz Castle"
+    }
+  }
+]

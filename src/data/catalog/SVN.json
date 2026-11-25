@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "SVN",
+    "name": "Slovenia",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "ljubljana",
+    "name": "Ljubljana",
+    "parentId": "SVN",
+    "longitude": 14.5061,
+    "latitude": 46.0514
+  },
+  {
+    "kind": "landmark",
+    "id": "dragon-bridge",
+    "name": "Dragon Bridge",
+    "parentId": "ljubljana",
+    "longitude": 14.510241,
+    "latitude": 46.051947,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_slovenia.py",
+      "key": "dragon-bridge"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "franciscan-church",
+    "name": "Franciscan Church",
+    "parentId": "ljubljana",
+    "longitude": 14.5060028,
+    "latitude": 46.0518389,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_slovenia.py",
+      "key": "franciscan"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "ljubljana-castle",
+    "name": "Ljubljana Castle",
+    "parentId": "ljubljana",
+    "longitude": 14.50833,
+    "latitude": 46.04889,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_slovenia.py",
+      "key": "castle"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "ljubljana-cathedral",
+    "name": "Ljubljana Cathedral",
+    "parentId": "ljubljana",
+    "longitude": 14.50778,
+    "latitude": 46.05056,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_slovenia.py",
+      "key": "cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "ljubljana-town-hall",
+    "name": "Ljubljana Town Hall",
+    "parentId": "ljubljana",
+    "longitude": 14.50694,
+    "latitude": 46.049861,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_slovenia.py",
+      "key": "town-hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "plecniks-market",
+    "name": "Plečnik’s Market",
+    "parentId": "ljubljana",
+    "longitude": 14.50972,
+    "latitude": 46.05167,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_slovenia.py",
+      "key": "market"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "preseren-monument",
+    "name": "Prešeren Monument",
+    "parentId": "ljubljana",
+    "longitude": 14.5063083,
+    "latitude": 46.0514083,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_slovenia.py",
+      "key": "preseren"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "triple-bridge",
+    "name": "Triple Bridge",
+    "parentId": "ljubljana",
+    "longitude": 14.50611,
+    "latitude": 46.05111,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_slovenia.py",
+      "key": "triple-bridge"
+    }
+  }
+]

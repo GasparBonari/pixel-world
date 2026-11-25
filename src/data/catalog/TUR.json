@@ -1,0 +1,88 @@
+[
+  {
+    "kind": "country",
+    "id": "TUR",
+    "name": "Turkey",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "ankara",
+    "name": "Ankara",
+    "parentId": "TUR",
+    "longitude": 32.8597,
+    "latitude": 39.9334
+  },
+  {
+    "kind": "landmark",
+    "id": "anitkabir",
+    "name": "Anıtkabir",
+    "parentId": "ankara",
+    "longitude": 32.83778,
+    "latitude": 39.92556,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_ankara.py",
+      "key": "anitkabir"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "ankara-castle",
+    "name": "Ankara Castle",
+    "parentId": "ankara",
+    "longitude": 32.865,
+    "latitude": 39.94167,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_ankara.py",
+      "key": "citadel"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "ethnography-museum-of-ankara",
+    "name": "Ethnography Museum of Ankara",
+    "parentId": "ankara",
+    "longitude": 32.854894,
+    "latitude": 39.932668,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_ankara.py",
+      "key": "ethnography"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "haci-bayram-mosque",
+    "name": "Hacı Bayram Mosque",
+    "parentId": "ankara",
+    "longitude": 32.85778,
+    "latitude": 39.94417,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_ankara.py",
+      "key": "bayram"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "kocatepe-mosque",
+    "name": "Kocatepe Mosque",
+    "parentId": "ankara",
+    "longitude": 32.86083,
+    "latitude": 39.91667,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_ankara.py",
+      "key": "kocatepe"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "museum-of-anatolian-civilizations",
+    "name": "Museum of Anatolian Civilizations",
+    "parentId": "ankara",
+    "longitude": 32.86194,
+    "latitude": 39.93833,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_ankara.py",
+      "key": "bedesten"
+    }
+  }
+]

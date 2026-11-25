@@ -1,0 +1,88 @@
+[
+  {
+    "kind": "country",
+    "id": "AND",
+    "name": "Andorra",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "andorra",
+    "name": "Andorra la Vella",
+    "parentId": "AND",
+    "longitude": 1.5218,
+    "latitude": 42.5078
+  },
+  {
+    "kind": "landmark",
+    "id": "caldea",
+    "name": "Caldea",
+    "parentId": "andorra",
+    "longitude": 1.536783,
+    "latitude": 42.511694,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_andorra.py",
+      "key": "Caldea"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "casa-de-la-vall",
+    "name": "Casa de la Vall",
+    "parentId": "andorra",
+    "longitude": 1.520556,
+    "latitude": 42.506667,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_andorra.py",
+      "key": "Casa de la Vall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "pont-de-paris",
+    "name": "Pont de Paris",
+    "parentId": "andorra",
+    "longitude": 1.530667,
+    "latitude": 42.509222,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_andorra.py",
+      "key": "Pont de Paris"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "sant-esteve",
+    "name": "Sant Esteve",
+    "parentId": "andorra",
+    "longitude": 1.521657,
+    "latitude": 42.507215,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_andorra.py",
+      "key": "Sant Esteve"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "sant-pere-martir",
+    "name": "Sant Pere Màrtir",
+    "parentId": "andorra",
+    "longitude": 1.54165,
+    "latitude": 42.50888,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_andorra.py",
+      "key": "Sant Pere Martir"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "santa-coloma",
+    "name": "Santa Coloma",
+    "parentId": "andorra",
+    "longitude": 1.49755,
+    "latitude": 42.494174,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_andorra.py",
+      "key": "Santa Coloma"
+    }
+  }
+]

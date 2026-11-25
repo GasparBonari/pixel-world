@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "LUX",
+    "name": "Luxembourg",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "luxembourg",
+    "name": "Luxembourg City",
+    "parentId": "LUX",
+    "longitude": 6.1319,
+    "latitude": 49.6117
+  },
+  {
+    "kind": "landmark",
+    "id": "adolphe-bridge",
+    "name": "Adolphe Bridge",
+    "parentId": "luxembourg",
+    "longitude": 6.126944,
+    "latitude": 49.608333,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "luxembourg.adolphe_bridge"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "bock-casemates",
+    "name": "Bock Casemates",
+    "parentId": "luxembourg",
+    "longitude": 6.136944,
+    "latitude": 49.611667,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "luxembourg.bock"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "gelle-fra",
+    "name": "Gëlle Fra",
+    "parentId": "luxembourg",
+    "longitude": 6.128889,
+    "latitude": 49.609444,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "luxembourg.gelle_fra"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "grand-ducal-palace",
+    "name": "Grand Ducal Palace",
+    "parentId": "luxembourg",
+    "longitude": 6.132833,
+    "latitude": 49.610889,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "luxembourg.palace"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "mudam",
+    "name": "Mudam",
+    "parentId": "luxembourg",
+    "longitude": 6.139722,
+    "latitude": 49.617086,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "luxembourg.mudam"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "neumunster-abbey",
+    "name": "Neumünster Abbey",
+    "parentId": "luxembourg",
+    "longitude": 6.136389,
+    "latitude": 49.610278,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "luxembourg.abbey"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "notre-dame-cathedral",
+    "name": "Notre-Dame Cathedral",
+    "parentId": "luxembourg",
+    "longitude": 6.131556,
+    "latitude": 49.609667,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "luxembourg.cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "philharmonie-luxembourg",
+    "name": "Philharmonie Luxembourg",
+    "parentId": "luxembourg",
+    "longitude": 6.142222,
+    "latitude": 49.618333,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "luxembourg.philharmonie"
+    }
+  }
+]

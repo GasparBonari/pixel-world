@@ -1,0 +1,100 @@
+[
+  {
+    "kind": "country",
+    "id": "MKD",
+    "name": "North Macedonia",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "skopje",
+    "name": "Skopje",
+    "parentId": "MKD",
+    "longitude": 21.433462,
+    "latitude": 42.000006
+  },
+  {
+    "kind": "landmark",
+    "id": "archaeological-museum",
+    "name": "Archaeological Museum",
+    "parentId": "skopje",
+    "longitude": 21.4344487,
+    "latitude": 41.996804,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_macedonia.py",
+      "key": "museum"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "daut-pasha-hamam",
+    "name": "Daut Pasha Hamam",
+    "parentId": "skopje",
+    "longitude": 21.4357236,
+    "latitude": 41.9987239,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_macedonia.py",
+      "key": "hammam"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "mustafa-pasha-mosque",
+    "name": "Mustafa Pasha Mosque",
+    "parentId": "skopje",
+    "longitude": 21.4354104,
+    "latitude": 42.0020253,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_macedonia.py",
+      "key": "mustafa"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "porta-macedonia",
+    "name": "Porta Macedonia",
+    "parentId": "skopje",
+    "longitude": 21.4324328,
+    "latitude": 41.9944512,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_macedonia.py",
+      "key": "porta"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "skopje-fortress",
+    "name": "Skopje Fortress",
+    "parentId": "skopje",
+    "longitude": 21.4335243,
+    "latitude": 42.0008134,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_macedonia.py",
+      "key": "kale"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "skopje-stone-bridge",
+    "name": "Skopje Stone Bridge",
+    "parentId": "skopje",
+    "longitude": 21.4332409,
+    "latitude": 41.997117,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_macedonia.py",
+      "key": "stone-bridge"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-clement-cathedral",
+    "name": "St Clement Cathedral",
+    "parentId": "skopje",
+    "longitude": 21.4264089,
+    "latitude": 41.9985276,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_macedonia.py",
+      "key": "clement"
+    }
+  }
+]

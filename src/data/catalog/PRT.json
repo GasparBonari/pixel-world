@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "PRT",
+    "name": "Portugal",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "lisbon",
+    "name": "Lisbon",
+    "parentId": "PRT",
+    "longitude": -9.1365,
+    "latitude": 38.71
+  },
+  {
+    "kind": "landmark",
+    "id": "arco-rua-augusta",
+    "name": "Rua Augusta Arch",
+    "parentId": "lisbon",
+    "longitude": -9.136808,
+    "latitude": 38.708422,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "lisbon.arco_rua_augusta"
+    },
+    "fact": {
+      "text": "The statues at the top of the arch show Glory crowning Genius and Valour.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Visit Lisboa",
+          "url": "https://www.visitlisboa.com/en/places/arco-da-rua-augusta"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "belem-tower",
+    "name": "Belém Tower",
+    "parentId": "lisbon",
+    "longitude": -9.21602,
+    "latitude": 38.691626,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "lisbon.torre_belem"
+    },
+    "fact": {
+      "text": "Belém Tower was built in the early 1500s to guard the entrance to the Tagus. Its many-sided bastion was built to withstand fire from ships.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Cultura Portugal",
+          "url": "https://www.culturaportugal.gov.pt/pt/conhecer/local/mmp-locais/torre-de-belem/"
+        },
+        {
+          "label": "Visit Portugal",
+          "url": "https://www.visitportugal.com/en/content/torre-de-belem"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "castelo-sao-jorge",
+    "name": "Castelo de São Jorge",
+    "parentId": "lisbon",
+    "longitude": -9.133547,
+    "latitude": 38.713907,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "lisbon.castelo_sao_jorge"
+    },
+    "fact": {
+      "text": "Eleven towers surround two courtyards at the castle. Steps beside the walls lead up to the ramparts.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Castelo de São Jorge",
+          "url": "https://castelodesaojorge.pt/en/castle/national-monument/the-castelo-de-sao-jorge/"
+        },
+        {
+          "label": "Visit Lisboa",
+          "url": "https://www.visitlisboa.com/en/places/castelo-de-sao-jorge"
+        }
+      ]
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "se-lisboa",
+    "name": "Sé de Lisboa",
+    "parentId": "lisbon",
+    "longitude": -9.132928,
+    "latitude": 38.70977,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "lisbon.se_lisboa"
+    },
+    "fact": {
+      "text": "Work on Lisbon's cathedral began in 1147, in the reign of Portugal's first king, Afonso Henriques.",
+      "status": "checked",
+      "sources": [
+        {
+          "label": "Sé de Lisboa",
+          "url": "https://www.sedelisboa.pt/history/?lang=en"
+        }
+      ]
+    }
+  }
+]

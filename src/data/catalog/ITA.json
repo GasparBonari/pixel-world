@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "ITA",
+    "name": "Italy",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "rome",
+    "name": "Rome",
+    "parentId": "ITA",
+    "longitude": 12.4964,
+    "latitude": 41.9028
+  },
+  {
+    "kind": "landmark",
+    "id": "castel-santangelo",
+    "name": "Castel Sant’Angelo",
+    "parentId": "rome",
+    "longitude": 12.4663,
+    "latitude": 41.9031,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "rome.castel_santangelo"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "colosseum",
+    "name": "Colosseum",
+    "parentId": "rome",
+    "longitude": 12.4922,
+    "latitude": 41.8902,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "rome.colosseum"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "pantheon",
+    "name": "Pantheon",
+    "parentId": "rome",
+    "longitude": 12.4769,
+    "latitude": 41.8986,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "rome.pantheon"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "piazza-navona",
+    "name": "Piazza Navona",
+    "parentId": "rome",
+    "longitude": 12.4731,
+    "latitude": 41.8992,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "rome.navona"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "spanish-steps",
+    "name": "Spanish Steps",
+    "parentId": "rome",
+    "longitude": 12.4823,
+    "latitude": 41.9058,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "rome.spanish_steps"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-peters-basilica",
+    "name": "St Peter’s Basilica",
+    "parentId": "rome",
+    "longitude": 12.4534,
+    "latitude": 41.9022,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "rome.st_peters"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "trevi-fountain",
+    "name": "Trevi Fountain",
+    "parentId": "rome",
+    "longitude": 12.4833,
+    "latitude": 41.9009,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "rome.trevi"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "vittoriano",
+    "name": "Vittoriano",
+    "parentId": "rome",
+    "longitude": 12.4827,
+    "latitude": 41.8946,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "rome.vittoriano"
+    }
+  }
+]

@@ -188,6 +188,10 @@ Regenerate the hit shapes in `src/data/capital-landmarks/` with the project virt
 The exporter checks its render against each existing scene PNG and writes only the landmark JSON. The files use the shared geometry from `scripts/art/check_capital.py`. See the exporter docstring for the bounding box and mask format, and `scripts/art/capital_landmark_names.py` for stable IDs and display names.
 The shapes come from the project's original capital art scripts and are distributed under the [repository's MIT license](./LICENSE).
 
+## Content catalog
+
+Gameplay content lives in `src/data/catalog/`. The catalog links countries, capitals, and collectibles, and records reviewed facts and their sources. See the [catalog guide](./docs/content/CATALOG.md) for the schema, progress eligibility, and how to add a content pack.
+
 ## Phase 3 design mockups
 
 `scripts/art/phase3_mockups.py` renders the continent (Europe) and country (Malta) design targets in `docs/art/phase3/` from real data, following the [art contract](./docs/art/ART_CONTRACT.md). The app does not load them. The Malta view reads an OpenStreetMap extract, which needs pyosmium, so use the project virtual environment:

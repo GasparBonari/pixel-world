@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "ALB",
+    "name": "Albania",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "tirane",
+    "name": "Tirane",
+    "parentId": "ALB",
+    "longitude": 19.8189,
+    "latitude": 41.3275
+  },
+  {
+    "kind": "landmark",
+    "id": "ethem-bey-mosque",
+    "name": "Et’hem Bey Mosque",
+    "parentId": "tirane",
+    "longitude": 19.819329,
+    "latitude": 41.327802,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_albania.py",
+      "key": "mosque"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "national-history-museum",
+    "name": "National History Museum",
+    "parentId": "tirane",
+    "longitude": 19.817101,
+    "latitude": 41.329418,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_albania.py",
+      "key": "museum"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "palace-of-culture",
+    "name": "Palace of Culture",
+    "parentId": "tirane",
+    "longitude": 19.819638,
+    "latitude": 41.328812,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_albania.py",
+      "key": "culture"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "pyramid-of-tirana",
+    "name": "Pyramid of Tirana",
+    "parentId": "tirane",
+    "longitude": 19.821536,
+    "latitude": 41.32304,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_albania.py",
+      "key": "pyramid"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "resurrection-cathedral",
+    "name": "Resurrection Cathedral",
+    "parentId": "tirane",
+    "longitude": 19.817597,
+    "latitude": 41.326551,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_albania.py",
+      "key": "cathedral"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "skanderbeg-monument",
+    "name": "Skanderbeg Monument",
+    "parentId": "tirane",
+    "longitude": 19.818557,
+    "latitude": 41.327753,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_albania.py",
+      "key": "skanderbeg"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "tanners-bridge",
+    "name": "Tanners’ Bridge",
+    "parentId": "tirane",
+    "longitude": 19.82605,
+    "latitude": 41.326424,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_albania.py",
+      "key": "tanners"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "tirana-clock-tower",
+    "name": "Tirana Clock Tower",
+    "parentId": "tirane",
+    "longitude": 19.819683,
+    "latitude": 41.327703,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_albania.py",
+      "key": "clock-tower"
+    }
+  }
+]

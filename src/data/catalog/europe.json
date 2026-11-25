@@ -1,0 +1,55 @@
+[
+  {
+    "kind": "continent",
+    "id": "europe",
+    "name": "Europe"
+  },
+  {
+    "kind": "wildlife",
+    "id": "brown-bear",
+    "name": "Brown bear",
+    "parentId": "europe",
+    "sources": [
+      {
+        "label": "San Diego Zoo Wildlife Alliance",
+        "url": "https://animals.sandiegozoo.org/animals/brown-bear"
+      }
+    ]
+  },
+  {
+    "kind": "wildlife",
+    "id": "deer",
+    "name": "Red deer",
+    "parentId": "europe",
+    "sources": [
+      {
+        "label": "Woodland Trust",
+        "url": "https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/animals/mammals/red-deer/"
+      }
+    ]
+  },
+  {
+    "kind": "wildlife",
+    "id": "fox",
+    "name": "Red fox",
+    "parentId": "europe",
+    "sources": [
+      {
+        "label": "Woodland Trust",
+        "url": "https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/animals/mammals/fox/"
+      }
+    ]
+  },
+  {
+    "kind": "wildlife",
+    "id": "wild-boar",
+    "name": "Wild boar",
+    "parentId": "europe",
+    "sources": [
+      {
+        "label": "Woodland Trust",
+        "url": "https://www.woodlandtrust.org.uk/trees-woods-and-wildlife/animals/mammals/wild-boar/"
+      }
+    ]
+  }
+]

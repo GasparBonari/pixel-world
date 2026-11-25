@@ -1,0 +1,112 @@
+[
+  {
+    "kind": "country",
+    "id": "AUT",
+    "name": "Austria",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "vienna",
+    "name": "Vienna",
+    "parentId": "AUT",
+    "longitude": 16.3738,
+    "latitude": 48.2082
+  },
+  {
+    "kind": "landmark",
+    "id": "hofburg",
+    "name": "Hofburg",
+    "parentId": "vienna",
+    "longitude": 16.3651,
+    "latitude": 48.2055,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "vienna.hofburg"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "karlskirche",
+    "name": "Karlskirche",
+    "parentId": "vienna",
+    "longitude": 16.3713,
+    "latitude": 48.1983,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "vienna.karlskirche"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "schonbrunn-palace",
+    "name": "Schönbrunn Palace",
+    "parentId": "vienna",
+    "longitude": 16.3122,
+    "latitude": 48.1845,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "vienna.schonbrunn"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-stephens-cathedral",
+    "name": "St Stephen’s Cathedral",
+    "parentId": "vienna",
+    "longitude": 16.3731,
+    "latitude": 48.2085,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "vienna.stephansdom"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "upper-belvedere",
+    "name": "Upper Belvedere",
+    "parentId": "vienna",
+    "longitude": 16.3809,
+    "latitude": 48.1916,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "vienna.belvedere"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "vienna-city-hall",
+    "name": "Vienna City Hall",
+    "parentId": "vienna",
+    "longitude": 16.3578,
+    "latitude": 48.2108,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "vienna.rathaus"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "vienna-giant-ferris-wheel",
+    "name": "Vienna Giant Ferris Wheel",
+    "parentId": "vienna",
+    "longitude": 16.3959,
+    "latitude": 48.2167,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "vienna.riesenrad"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "vienna-state-opera",
+    "name": "Vienna State Opera",
+    "parentId": "vienna",
+    "longitude": 16.36919,
+    "latitude": 48.20329,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "vienna.opera"
+    }
+  }
+]

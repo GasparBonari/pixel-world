@@ -1,0 +1,88 @@
+[
+  {
+    "kind": "country",
+    "id": "UKR",
+    "name": "Ukraine",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "kyiv",
+    "name": "Kyiv",
+    "parentId": "UKR",
+    "longitude": 30.5234,
+    "latitude": 50.4501
+  },
+  {
+    "kind": "landmark",
+    "id": "golden-gate",
+    "name": "Golden Gate",
+    "parentId": "kyiv",
+    "longitude": 30.51333,
+    "latitude": 50.44889,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_ukraine.py",
+      "key": "golden-gate"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "great-lavra-bell-tower",
+    "name": "Great Lavra Bell Tower",
+    "parentId": "kyiv",
+    "longitude": 30.556455,
+    "latitude": 50.434691,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_ukraine.py",
+      "key": "lavra-belltower"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "motherland-monument",
+    "name": "Motherland Monument",
+    "parentId": "kyiv",
+    "longitude": 30.563187,
+    "latitude": 50.426521,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_ukraine.py",
+      "key": "motherland"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "saint-sophia-cathedral",
+    "name": "Saint Sophia Cathedral",
+    "parentId": "kyiv",
+    "longitude": 30.5144,
+    "latitude": 50.4528,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_ukraine.py",
+      "key": "st-sophia"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-andrews-church",
+    "name": "St Andrew’s Church",
+    "parentId": "kyiv",
+    "longitude": 30.51806,
+    "latitude": 50.45889,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_ukraine.py",
+      "key": "st-andrew"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "st-michaels-golden-domed-monastery",
+    "name": "St Michael’s Golden-Domed Monastery",
+    "parentId": "kyiv",
+    "longitude": 30.5228167,
+    "latitude": 50.4557845,
+    "coordinateSource": {
+      "path": "scripts/art/landmarks_ukraine.py",
+      "key": "st-michael"
+    }
+  }
+]

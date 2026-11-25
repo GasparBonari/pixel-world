@@ -1,0 +1,124 @@
+[
+  {
+    "kind": "country",
+    "id": "ISL",
+    "name": "Iceland",
+    "parentId": "europe"
+  },
+  {
+    "kind": "capital",
+    "id": "reykjavik",
+    "name": "Reykjavík",
+    "parentId": "ISL",
+    "longitude": -21.9426,
+    "latitude": 64.1466
+  },
+  {
+    "kind": "landmark",
+    "id": "althingishusid",
+    "name": "Alþingishúsið",
+    "parentId": "reykjavik",
+    "longitude": -21.9403,
+    "latitude": 64.1467,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "reykjavik.parliament"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "hallgrimskirkja",
+    "name": "Hallgrímskirkja",
+    "parentId": "reykjavik",
+    "longitude": -21.9266,
+    "latitude": 64.1417,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "reykjavik.hallgrimskirkja"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "harpa",
+    "name": "Harpa",
+    "parentId": "reykjavik",
+    "longitude": -21.9325,
+    "latitude": 64.1503,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "reykjavik.harpa"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "hofdi",
+    "name": "Höfði",
+    "parentId": "reykjavik",
+    "longitude": -21.9067,
+    "latitude": 64.1464,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "reykjavik.hofdi"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "landakotskirkja",
+    "name": "Landakotskirkja",
+    "parentId": "reykjavik",
+    "longitude": -21.9485,
+    "latitude": 64.1475,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "reykjavik.landakotskirkja"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "leif-erikson-statue",
+    "name": "Leif Erikson Statue",
+    "parentId": "reykjavik",
+    "longitude": -21.9266,
+    "latitude": 64.1417,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "reykjavik.leif"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "perlan",
+    "name": "Perlan",
+    "parentId": "reykjavik",
+    "longitude": -21.9189,
+    "latitude": 64.1292,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "reykjavik.perlan"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "reykjavik-city-hall",
+    "name": "Reykjavík City Hall",
+    "parentId": "reykjavik",
+    "longitude": -21.9422,
+    "latitude": 64.1458,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "reykjavik.city_hall"
+    }
+  },
+  {
+    "kind": "landmark",
+    "id": "sun-voyager",
+    "name": "Sun Voyager",
+    "parentId": "reykjavik",
+    "longitude": -21.9223,
+    "latitude": 64.1476,
+    "coordinateSource": {
+      "path": "scripts/art/capital_sites.py",
+      "key": "reykjavik.sun_voyager"
+    }
+  }
+]
